@@ -1,0 +1,104 @@
+/**
+ * Timer duration settings — work/short break/long break durations.
+ */
+import React from 'react';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useColors } from '../../theme';
+import { typography } from '../../theme/typography';
+import { spacing } from '../../theme/spacing';
+import { radius } from '../../theme/radius';
+import { SectionHeader } from '../../components/SectionHeader';
+import { IconButton } from '../../components/IconButton';
+import { Ionicons } from '@expo/vector-icons';
+import { useSettingsStore } from '../../../state';
+
+function DurationRow({
+  label,
+  seconds,
+  onIncrease,
+  onDecrease,
+}: {
+  label: string;
+  seconds: number;
+  onIncrease: () => void;
+  onDecrease: () => void;
+}) {
+  const colors = useColors();
+  const minutes = Math.round(seconds / 60);
+
+  return (
+    <View style={[styles.durationRow, { borderBottomColor: colors.divider }]}>
+      <Text style={[typography.body, { color: colors.textPrimary, flex: 1 }]}>{label}</Text>
+      <IconButton
+        icon={<Ionicons name="remove" size={18} color={colors.textPrimary} />}
+        onPress={onDecrease}
+        size={32}
+      />
+      <Text style={[typography.h3, { color: colors.primary, width: 60, textAlign: 'center' }]}>
+        {minutes}dk
+      </Text>
+      <IconButton
+        icon={<Ionicons name="add" size={18} color={colors.textPrimary} />}
+        onPress={onIncrease}
+        size={32}
+      />
+    </View>
+  );
+}
+
+export function TimerSettings() {
+  const colors = useColors();
+  const {
+    workDuration, shortBreakDuration, longBreakDuration, cyclesBeforeLongBreak,
+    setWorkDuration, setShortBreakDuration, setLongBreakDuration, setCyclesBeforeLongBreak,
+  } = useSettingsStore();
+
+  const step = 60; // 1 minute
+
+  return (
+    <ScrollView style={[styles.screen, { backgroundColor: colors.background }]}>
+      <SectionHeader title="Süreler" />
+
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <DurationRow
+          label="Çalışma"
+          seconds={workDuration}
+          onIncrease={() => setWorkDuration(Math.min(workDuration + step * 5, 90 * 60))}
+          onDecrease={() => setWorkDuration(Math.max(workDuration - step * 5, 5 * 60))}
+        />
+        <DurationRow
+          label="Kısa Mola"
+          seconds={shortBreakDuration}
+          onIncrease={() => setShortBreakDuration(Math.min(shortBreakDuration + step, 15 * 60))}
+          onDecrease={() => setShortBreakDuration(Math.max(shortBreakDuration - step, 60))}
+        />
+        <DurationRow
+          label="Uzun Mola"
+          seconds={longBreakDuration}
+          onIncrease={() => setLongBreakDuration(Math.min(longBreakDuration + step * 5, 60 * 60))}
+          onDecrease={() => setLongBreakDuration(Math.max(longBreakDuration - step * 5, 5 * 60))}
+        />
+        <DurationRow
+          label="Uzun Mola Öncesi Döngü"
+          seconds={cyclesBeforeLongBreak * 60}
+          onIncrease={() => setCyclesBeforeLongBreak(Math.min(cyclesBeforeLongBreak + 1, 10))}
+          onDecrease={() => setCyclesBeforeLongBreak(Math.max(cyclesBeforeLongBreak - 1, 2))}
+        />
+      </View>
+
+      <View style={{ height: spacing.xxxl }} />
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, paddingTop: spacing.lg },
+  card: { marginHorizontal: spacing.lg, borderRadius: radius.md, overflow: 'hidden' },
+  durationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderBottomWidth: 1,
+  },
+});

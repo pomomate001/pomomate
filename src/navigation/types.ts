@@ -1,31 +1,78 @@
 /**
  * Navigation type definitions.
  *
- * The param lists here are the single source of truth for route names and
- * their params, giving fully-typed navigation across the app. Real screens are
- * implemented in M02; M01 provides the typed skeleton and placeholders.
+ * Bottom tabs: Sayaç, İstatistik, Çalışma Odası, Profil
+ * Each tab may have its own nested stack.
  */
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 
-export type RootStackParamList = {
-  Home: undefined;
-  Timer: undefined;
-  Tasks: undefined;
-  Room: { roomId?: string } | undefined;
-  Settings: undefined;
+/* ─── Tab param lists ─── */
+
+export type TimerStackParamList = {
+  TimerHome: undefined;
 };
 
-/** Helper for typing a screen component's props by route name. */
-export type RootStackScreenProps<T extends keyof RootStackParamList> =
-  NativeStackScreenProps<RootStackParamList, T>;
+export type StatsStackParamList = {
+  StatsHome: undefined;
+  FriendDetail: { userId: string };
+};
 
-/**
- * Registers the param list globally so `useNavigation()` is typed without
- * passing generics everywhere.
- */
+export type RoomStackParamList = {
+  RoomList: undefined;
+  RoomCreate: undefined;
+  RoomJoin: undefined;
+  RoomActive: { roomId: string };
+};
+
+export type ProfileStackParamList = {
+  ProfileHome: undefined;
+  SettingsAppearance: undefined;
+  SettingsTimer: undefined;
+  SettingsSounds: undefined;
+};
+
+/* ─── Root tab param list ─── */
+
+export type RootTabParamList = {
+  TimerTab: NavigatorScreenParams<TimerStackParamList>;
+  StatsTab: NavigatorScreenParams<StatsStackParamList>;
+  RoomTab: NavigatorScreenParams<RoomStackParamList>;
+  ProfileTab: NavigatorScreenParams<ProfileStackParamList>;
+};
+
+/* ─── Screen-level prop helpers ─── */
+
+export type TabScreenProps<T extends keyof RootTabParamList> = BottomTabScreenProps<
+  RootTabParamList,
+  T
+>;
+
+export type TimerStackScreenProps<T extends keyof TimerStackParamList> = CompositeScreenProps<
+  NativeStackScreenProps<TimerStackParamList, T>,
+  BottomTabScreenProps<RootTabParamList>
+>;
+
+export type StatsStackScreenProps<T extends keyof StatsStackParamList> = CompositeScreenProps<
+  NativeStackScreenProps<StatsStackParamList, T>,
+  BottomTabScreenProps<RootTabParamList>
+>;
+
+export type RoomStackScreenProps<T extends keyof RoomStackParamList> = CompositeScreenProps<
+  NativeStackScreenProps<RoomStackParamList, T>,
+  BottomTabScreenProps<RootTabParamList>
+>;
+
+export type ProfileStackScreenProps<T extends keyof ProfileStackParamList> = CompositeScreenProps<
+  NativeStackScreenProps<ProfileStackParamList, T>,
+  BottomTabScreenProps<RootTabParamList>
+>;
+
+/** Global navigation typing. */
 declare global {
   namespace ReactNavigation {
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    interface RootParamList extends RootStackParamList {}
+    interface RootParamList extends RootTabParamList {}
   }
 }

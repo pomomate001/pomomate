@@ -1,8 +1,11 @@
-/**
- * Barrel export for global state stores (Zustand).
- */
 export { useTimerStore } from './timerStore';
 export { useTaskStore } from './taskStore';
 export { useRoomStore } from './roomStore';
 export { useUserStore } from './userStore';
 export { useChatStore } from './chatStore';
+export { useSettingsStore } from './settingsStore';
+export type { SettingsState } from './settingsStore';
+export { useStatsStore } from './statsStore';
+export type { DailyStat, StatsState } from './statsStore';
+export { useFriendsStore } from './friendsStore';
+export type { FriendSummary, FriendRequest, FriendRequestStatus } from './friendsStore';

@@ -1,31 +1,59 @@
 /**
- * Root navigator.
+ * Root tab navigator — 4 bottom tabs.
  *
- * Defines the app's native stack navigator using the typed RootStackParamList.
- * Screens are placeholders (M02 implements the real ones). This file wires the
- * navigation graph together and is rendered inside NavigationContainer by
- * AppNavigator.
+ * Sayaç | İstatistik | Çalışma Odası | Profil
  */
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import {
-  HomeScreen,
-  RoomScreen,
-  SettingsScreen,
-  TasksScreen,
-  TimerScreen,
-} from './screens';
-import type { RootStackParamList } from './types';
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { useColors } from '../ui/theme';
+import { TimerStack, StatsStack, RoomStack, ProfileStack } from './stacks';
+import type { RootTabParamList } from './types';
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<RootTabParamList>();
+
+const tabIcons: Record<keyof RootTabParamList, { active: string; inactive: string }> = {
+  TimerTab: { active: 'timer', inactive: 'timer-outline' },
+  StatsTab: { active: 'stats-chart', inactive: 'stats-chart-outline' },
+  RoomTab: { active: 'people', inactive: 'people-outline' },
+  ProfileTab: { active: 'person', inactive: 'person-outline' },
+};
+
+const tabLabels: Record<keyof RootTabParamList, string> = {
+  TimerTab: 'Sayaç',
+  StatsTab: 'İstatistik',
+  RoomTab: 'Çalışma Odası',
+  ProfileTab: 'Profil',
+};
 
 export function RootNavigator() {
+  const colors = useColors();
+
   return (
-    <Stack.Navigator initialRouteName="Home">
-      <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="Timer" component={TimerScreen} />
-      <Stack.Screen name="Tasks" component={TasksScreen} />
-      <Stack.Screen name="Room" component={RoomScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-    </Stack.Navigator>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ focused, size }) => {
+          const icons = tabIcons[route.name];
+          const iconName = focused ? icons.active : icons.inactive;
+          return (
+            <Ionicons
+              name={iconName as keyof typeof Ionicons.glyphMap}
+              size={size}
+              color={focused ? colors.tabBarActive : colors.tabBarInactive}
+            />
+          );
+        },
+        tabBarLabel: tabLabels[route.name],
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
+        tabBarStyle: { backgroundColor: colors.tabBarBackground, borderTopColor: colors.divider },
+      })}
+    >
+      <Tab.Screen name="TimerTab" component={TimerStack} />
+      <Tab.Screen name="StatsTab" component={StatsStack} />
+      <Tab.Screen name="RoomTab" component={RoomStack} />
+      <Tab.Screen name="ProfileTab" component={ProfileStack} />
+    </Tab.Navigator>
   );
 }
