@@ -126,6 +126,17 @@
         {
           "microphonePermission": "Sesli görüşme için mikrofon izni gerekiyor."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "2.3.0",
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "minSdkVersion": 24
+          }
+        }
       ]
     ],
     "extra": {
