@@ -10,6 +10,7 @@ import { Button } from '../../components/Button';
 import { TimerFace } from './TimerFace';
 import { BackgroundEffect } from '../../animations';
 import { AdPlacement } from '../../ads';
+import { notificationService } from '../../../services/mobile';
 import type { TimerMode } from '../../../types';
 
 const modeLabels: Record<TimerMode, string> = {
@@ -51,11 +52,20 @@ export function TimerScreen() {
     };
   }, [isRunning, tick]);
 
-  // When timer hits 0, auto-advance
+  // When timer hits 0, auto-advance and notify
   useEffect(() => {
     if (remainingSeconds === 0 && !isRunning) {
       if (mode === 'work') {
         recordPomodoro(workDuration);
+        notificationService.scheduleTimerComplete(
+          'Pomodoro Tamamlandı! 🍅',
+          'Mola zamanı. İyi dinlenmeler!',
+        );
+      } else {
+        notificationService.scheduleTimerComplete(
+          'Mola Bitti! ⏰',
+          'Çalışmaya geri dön.',
+        );
       }
     }
   }, [remainingSeconds, isRunning, mode, recordPomodoro, workDuration]);

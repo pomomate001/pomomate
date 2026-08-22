@@ -112,6 +112,8 @@ export class RoomClient {
 
   async enableAudioVideo(audio: boolean, video: boolean): Promise<MediaStream | null> {
     try {
+      // On native, we use MediaService for permission handling
+      // On web, we use navigator.mediaDevices directly
       const stream = await navigator.mediaDevices.getUserMedia({ audio, video });
       this.peerManager.setLocalStream(stream);
       return stream;
