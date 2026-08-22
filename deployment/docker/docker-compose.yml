@@ -1,0 +1,67 @@
+# PomoMate — Production Deployment
+# Supabase (self-hosted) + Node.js Backend
+
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: pomomate-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: pomomate
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../server/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - pomomate-network
+
+  # Supabase Studio (admin UI)
+  supabase-studio:
+    image: supabase/studio:latest
+    container_name: pomomate-studio
+    restart: always
+    environment:
+      SUPABASE_URL: http://localhost:8000
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/pomomate
+    ports:
+      - "3001:3000"
+    networks:
+      - pomomate-network
+    depends_on:
+      - postgres
+
+  # Node.js Backend
+  backend:
+    build:
+      context: ../../server
+      dockerfile: ../deployment/docker/Dockerfile.backend
+    container_name: pomomate-backend
+    restart: always
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "3000:3000"
+    networks:
+      - pomomate-network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+
+networks:
+  pomomate-network:
+    driver: bridge

@@ -44,3 +44,4 @@ yarn-error.*
 server/node_modules/
 server/dist/
 server/.env
+.env.production
