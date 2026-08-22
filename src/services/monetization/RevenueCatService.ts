@@ -17,9 +17,8 @@ export class RevenueCatService {
 
     try {
       // RevenueCat API key should be in config
-      const apiKey = config.env === 'dev'
-        ? 'YOUR_DEV_REVENUECAT_API_KEY'
-        : 'YOUR_PROD_REVENUECAT_API_KEY';
+      const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY
+        ?? 'goog_rVJqGtFlnIyDyMlcxRjpNdQEUHw';
 
       await Purchases.configure({ apiKey, appUserID: userId });
       this.initialized = true;
