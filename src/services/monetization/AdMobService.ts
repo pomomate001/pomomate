@@ -15,11 +15,11 @@ import { config } from '../../config';
 
 const BANNER_AD_UNIT_ID = config.env === 'dev'
   ? TestIds.BANNER
-  : 'YOUR_PROD_BANNER_AD_UNIT_ID';
+  : (process.env.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID ?? 'ca-app-pub-1530810645169749/3062671787');
 
 const INTERSTITIAL_AD_UNIT_ID = config.env === 'dev'
   ? TestIds.INTERSTITIAL
-  : 'YOUR_PROD_INTERSTITIAL_AD_UNIT_ID';
+  : (process.env.EXPO_PUBLIC_ADMOB_ANDROID_INTERSTITIAL_ID ?? 'ca-app-pub-1530810645169749/2847049363');
 
 export class AdMobService {
   private initialized = false;
