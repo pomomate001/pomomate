@@ -46,8 +46,7 @@
       "android": {
         "serviceAccountKeyPath": "./pc-api-service-account.json",
         "track": "internal",
-        "releaseStatus": "draft",
-        "rollout": 1.0
+        "releaseStatus": "draft"
       },
       "ios": {
         "appleId": "REPLACE_WITH_YOUR_APPLE_ID",
