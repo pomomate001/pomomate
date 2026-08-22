@@ -50,23 +50,36 @@ export class SupabaseAuthService implements AuthService {
   async signUpWithEmail(email: string, password: string): Promise<User> {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error || !data.user) {
-      throw new Error(error?.message ?? 'Sign-up failed');
+      throw new Error(error?.message ?? 'Kayıt işlemi başarısız oldu');
     }
 
-    // Create user profile
-    const { error: profileError } = await supabase.from('users').insert({
-      id: data.user.id,
-      email,
-      display_name: email.split('@')[0],
-    });
+    // Kullanıcı profilini oluştur / güncelle.
+    const { error: profileError } = await supabase.from('users').upsert(
+      {
+        id: data.user.id,
+        email,
+        display_name: email.split('@')[0],
+      },
+      { onConflict: 'id' },
+    );
 
     if (profileError) {
-      throw new Error('Failed to create user profile');
+      throw new Error('Kullanıcı profili oluşturulamadı');
     }
 
     const user = await this.getCurrentUser();
-    if (!user) throw new Error('Failed to fetch user profile');
-    return user;
+    if (user) return user;
+
+    // E-posta doğrulama açık olduğunda oturum hemen oluşmayabilir.
+    return {
+      id: data.user.id,
+      email,
+      displayName: (data.user.user_metadata?.display_name as string | undefined) ?? email.split('@')[0],
+      avatarUrl: undefined,
+      subscriptionTier: 'free',
+      createdAt: data.user.created_at,
+      updatedAt: new Date().toISOString(),
+    };
   }
 
   async signOut(): Promise<void> {

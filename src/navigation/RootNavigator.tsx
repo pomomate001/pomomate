@@ -1,14 +1,18 @@
 /**
- * Root tab navigator — 4 bottom tabs.
+ * Kök gezinme yapısı.
  *
- * Sayaç | İstatistik | Çalışma Odası | Profil
+ * Kullanıcı oturum açmışsa alt sekmeler gösterilir,
+ * oturum yoksa kimlik doğrulama akışı gösterilir.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../ui/theme';
 import { TimerStack, StatsStack, RoomStack, ProfileStack } from './stacks';
+import { AuthNavigator } from './AuthNavigator';
 import type { RootTabParamList } from './types';
+import { useUserStore } from '../state';
+import { authService, supabase } from '../services/auth';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -26,7 +30,7 @@ const tabLabels: Record<keyof RootTabParamList, string> = {
   ProfileTab: 'Profil',
 };
 
-export function RootNavigator() {
+function MainTabs() {
   const colors = useColors();
 
   return (
@@ -56,4 +60,43 @@ export function RootNavigator() {
       <Tab.Screen name="ProfileTab" component={ProfileStack} />
     </Tab.Navigator>
   );
+}
+
+export function RootNavigator() {
+  const user = useUserStore((state) => state.user);
+  const setUser = useUserStore((state) => state.setUser);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const hydrateUser = async () => {
+      const currentUser = await authService.getCurrentUser();
+      if (isMounted) {
+        setUser(currentUser);
+      }
+    };
+
+    void hydrateUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
+        setUser(null);
+        return;
+      }
+
+      const currentUser = await authService.getCurrentUser();
+      setUser(currentUser);
+    });
+
+    return () => {
+      isMounted = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, [setUser]);
+
+  if (!user) {
+    return <AuthNavigator />;
+  }
+
+  return <MainTabs />;
 }

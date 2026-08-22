@@ -10,6 +10,7 @@ export * from './screens/tasks';
 export * from './screens/stats';
 export * from './screens/room';
 export * from './screens/profile';
+export * from './screens/auth';
 
 // Animations
 export * from './animations';

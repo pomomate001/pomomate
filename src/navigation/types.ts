@@ -1,14 +1,14 @@
 /**
  * Navigation type definitions.
  *
- * Bottom tabs: Sayaç, İstatistik, Çalışma Odası, Profil
- * Each tab may have its own nested stack.
+ * Alt sekmeler: Sayaç, İstatistik, Çalışma Odası, Profil
+ * Kimlik doğrulama: Giriş, Kayıt
  */
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 
-/* ─── Tab param lists ─── */
+/* ─── Tab param listeleri ─── */
 
 export type TimerStackParamList = {
   TimerHome: undefined;
@@ -33,7 +33,12 @@ export type ProfileStackParamList = {
   SettingsSounds: undefined;
 };
 
-/* ─── Root tab param list ─── */
+export type AuthStackParamList = {
+  Login: undefined;
+  Register: undefined;
+};
+
+/* ─── Root tab param listesi ─── */
 
 export type RootTabParamList = {
   TimerTab: NavigatorScreenParams<TimerStackParamList>;
@@ -42,7 +47,7 @@ export type RootTabParamList = {
   ProfileTab: NavigatorScreenParams<ProfileStackParamList>;
 };
 
-/* ─── Screen-level prop helpers ─── */
+/* ─── Ekran tip yardımcıları ─── */
 
 export type TabScreenProps<T extends keyof RootTabParamList> = BottomTabScreenProps<
   RootTabParamList,
@@ -67,6 +72,11 @@ export type RoomStackScreenProps<T extends keyof RoomStackParamList> = Composite
 export type ProfileStackScreenProps<T extends keyof ProfileStackParamList> = CompositeScreenProps<
   NativeStackScreenProps<ProfileStackParamList, T>,
   BottomTabScreenProps<RootTabParamList>
+>;
+
+export type AuthStackScreenProps<T extends keyof AuthStackParamList> = NativeStackScreenProps<
+  AuthStackParamList,
+  T
 >;
 
 /** Global navigation typing. */
