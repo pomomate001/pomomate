@@ -97,8 +97,8 @@ eas build --platform android --profile preview
 ```bash
 eas build --platform android --profile production
 ```
-- [ ] Build başarılı oldu mu kontrol et
-- [ ] AAB dosyasını indir (veya EAS üzerinden Play Store'a gönder)
+- [x] Build başarılı oldu mu kontrol et
+- [x] AAB dosyasını indir → build-output/pomomate-production.aab
 
 ---
 
