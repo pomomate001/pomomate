@@ -45,3 +45,15 @@ server/node_modules/
 server/dist/
 server/.env
 .env.production
+
+# Play Store servis hesabı (hassas dosya)
+pc-api-service-account.json
+play-store-credentials.json
+
+# EAS / Expo build outputs
+*.aab
+*.apk
+
+# Google Services (gerçek dosya, örnek değil)
+# google-services.json git'te PLACEHOLDER olarak tutulur
+# Gerçek dosyayı CI/CD ortamında env değişkeninden sağlayın
