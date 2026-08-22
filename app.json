@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "PomoMate \u2013 Birlikte \u00c7al\u0131\u015f",
+    "name": "PomoMate – Birlikte Çalış",
     "slug": "pomomate",
     "version": "1.0.0",
     "runtimeVersion": {
@@ -22,10 +22,10 @@
       "bundleIdentifier": "com.pomomate.app",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "Profil foto\u011fraf\u0131 eklemek i\u00e7in kamera eri\u015fimi gerekiyor.",
-        "NSMicrophoneUsageDescription": "Sesli g\u00f6r\u00fc\u015fme \u00f6zelli\u011fi i\u00e7in mikrofon eri\u015fimi gerekiyor.",
-        "NSPhotoLibraryUsageDescription": "Profil foto\u011fraf\u0131 se\u00e7mek i\u00e7in galeri eri\u015fimi gerekiyor.",
-        "NSUserNotificationsUsageDescription": "Pomodoro tamamland\u0131\u011f\u0131nda bildirim g\u00f6ndermek i\u00e7in izin gerekiyor.",
+        "NSCameraUsageDescription": "Profil fotoğrafı eklemek için kamera erişimi gerekiyor.",
+        "NSMicrophoneUsageDescription": "Sesli görüşme özelliği için mikrofon erişimi gerekiyor.",
+        "NSPhotoLibraryUsageDescription": "Profil fotoğrafı seçmek için galeri erişimi gerekiyor.",
+        "NSUserNotificationsUsageDescription": "Pomodoro tamamlandığında bildirim göndermek için izin gerekiyor.",
         "UIBackgroundModes": [
           "audio",
           "fetch",
@@ -102,14 +102,14 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Profil foto\u011fraf\u0131 \u00e7ekmek i\u00e7in kamera izni gerekiyor."
+          "cameraPermission": "Profil fotoğrafı çekmek için kamera izni gerekiyor."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Profil foto\u011fraf\u0131 se\u00e7mek i\u00e7in galeri izni gerekiyor.",
-          "cameraPermission": "Profil foto\u011fraf\u0131 \u00e7ekmek i\u00e7in kamera izni gerekiyor."
+          "photosPermission": "Profil fotoğrafı seçmek için galeri izni gerekiyor.",
+          "cameraPermission": "Profil fotoğrafı çekmek için kamera izni gerekiyor."
         }
       ],
       [
@@ -117,14 +117,14 @@
         {
           "androidAppId": "ca-app-pub-1530810645169749~8885949301",
           "iosAppId": "ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX",
-          "userTrackingUsageDescription": "Bu tan\u0131mlay\u0131c\u0131, ki\u015fiselle\u015ftirilmi\u015f reklamlar sunmak i\u00e7in kullan\u0131l\u0131r.",
+          "userTrackingUsageDescription": "Bu tanımlayıcı, kişiselleştirilmiş reklamlar sunmak için kullanılır.",
           "skAdNetworkItems": []
         }
       ],
       [
         "expo-av",
         {
-          "microphonePermission": "Sesli g\u00f6r\u00fc\u015fme i\u00e7in mikrofon izni gerekiyor."
+          "microphonePermission": "Sesli görüşme için mikrofon izni gerekiyor."
         }
       ]
     ],
@@ -139,6 +139,7 @@
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0
     },
-    "scheme": "pomomate"
+    "scheme": "pomomate",
+    "newArchEnabled": false
   }
 }
