@@ -19,6 +19,7 @@ import statsRouter from './routes/stats.js';
 import friendsRouter from './routes/friends.js';
 import assetsRouter from './routes/assets.js';
 import messagesRouter from './routes/messages.js';
+import referralsRouter from './routes/referrals.js';
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/stats', authMiddleware, statsRouter);
 app.use('/api/friends', authMiddleware, friendsRouter);
 app.use('/api/assets', authMiddleware, assetsRouter);
 app.use('/api/messages', authMiddleware, messagesRouter);
+app.use('/api/referrals', authMiddleware, referralsRouter);
 
 // Create HTTP server & attach WebSocket signaling
 const server = createServer(app);

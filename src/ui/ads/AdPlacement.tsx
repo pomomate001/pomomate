@@ -1,48 +1,39 @@
 /**
- * Ad placement component — responsive placeholder.
- *
- * M02 only prepares the UI slot. The actual ad SDK integration
- * happens in M08. Premium users see nothing.
+ * Ad placement component — AdMob banner integration.
  *
  * Rules:
  *  - Never overlays timer, task interaction, or room controls.
  *  - Stays within designated zones (bottom banner, between sections).
+ *  - Premium users see nothing.
  */
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { useColors } from '../theme';
+import { View, StyleSheet, ViewStyle } from 'react-native';
 import { spacing } from '../theme/spacing';
-import { radius } from '../theme/radius';
 import { useSettingsStore } from '../../state';
-
-type AdSize = 'banner' | 'medium';
+import { BannerAd, BannerAdSize, adMobService } from '../../services/monetization';
 
 interface AdPlacementProps {
-  size?: AdSize;
+  size?: 'banner' | 'medium';
   style?: ViewStyle;
 }
 
-const adHeights: Record<AdSize, number> = {
-  banner: 50,
-  medium: 100,
-};
-
 export function AdPlacement({ size = 'banner', style }: AdPlacementProps) {
   const isPremium = useSettingsStore((s) => s.isPremium);
-  const colors = useColors();
 
   // Premium users — no ads
   if (isPremium) return null;
 
+  const adSize = size === 'banner' ? BannerAdSize.BANNER : BannerAdSize.MEDIUM_RECTANGLE;
+
   return (
-    <View
-      style={[
-        styles.container,
-        { height: adHeights[size], backgroundColor: colors.surfaceVariant, borderColor: colors.border },
-        style,
-      ]}
-    >
-      <Text style={[styles.label, { color: colors.textDisabled }]}>Reklam Alanı</Text>
+    <View style={[styles.container, style]}>
+      <BannerAd
+        unitId={adMobService.getBannerAdUnitId()}
+        size={adSize}
+        requestOptions={{
+          requestNonPersonalizedAdsOnly: true,
+        }}
+      />
     </View>
   );
 }
@@ -50,12 +41,7 @@ export function AdPlacement({ size = 'banner', style }: AdPlacementProps) {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: radius.sm,
     marginVertical: spacing.sm,
     marginHorizontal: spacing.lg,
   },
-  label: { fontSize: 11 },
 });
