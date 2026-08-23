@@ -20,14 +20,27 @@ const ThemeContext = createContext<ThemeContextValue>({
   availableThemes: [lightTheme],
 });
 
+import { useSettingsStore } from '../../state';
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeId, setThemeIdState] = useState('light');
+  const storeThemeId = useSettingsStore((s) => s.themeId);
+  const saveThemeId = useSettingsStore((s) => s.setThemeId);
+
+  // Sync internal state with store on mount or store change
+  const [themeId, setThemeIdState] = useState(storeThemeId);
+
+  React.useEffect(() => {
+    setThemeIdState(storeThemeId);
+  }, [storeThemeId]);
 
   const theme = useMemo(() => themes.get(themeId) ?? lightTheme, [themeId]);
 
   const setThemeId = useCallback((id: string) => {
-    if (themes.has(id)) setThemeIdState(id);
-  }, []);
+    if (themes.has(id)) {
+      setThemeIdState(id);
+      saveThemeId(id); // Persist to store immediately
+    }
+  }, [saveThemeId]);
 
   const availableThemes = useMemo(() => Array.from(themes.values()), []);
 

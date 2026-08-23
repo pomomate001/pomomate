@@ -63,6 +63,14 @@ export interface RoomMember {
 /* Task                                                                       */
 /* -------------------------------------------------------------------------- */
 
+export type RecurrenceType = 'none' | 'daily' | 'weekdays' | 'weekends' | 'custom';
+
+export interface TaskRecurrence {
+  type: RecurrenceType;
+  /** Custom days of the week, 0=Sun, 1=Mon, ..., 6=Sat. Only used if type is 'custom'. */
+  customDays?: number[];
+}
+
 export interface Task {
   id: ID;
   userId: ID;
@@ -73,6 +81,12 @@ export interface Task {
   /** Number of completed pomodoro cycles associated with this task. */
   pomodoroCount: number;
   createdAt: ISODateString;
+  /** Optional — tag/category for the task, e.g. "Matematik" */
+  tag?: string | null;
+  /** Target date in YYYY-MM-DD format. If omitted, applies to the created date. */
+  targetDate?: string;
+  /** Defines if and how this task repeats */
+  recurrence?: TaskRecurrence | null;
 }
 
 /* -------------------------------------------------------------------------- */

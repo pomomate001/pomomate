@@ -56,7 +56,7 @@ export function FriendsSection() {
               icon={<Ionicons name="people-outline" size={48} color={colors.textDisabled} />}
               title="Henüz arkadaş yok"
               action={
-                <Button title="Arkadaş Ekle" variant="outline" size="sm" onPress={() => {}} />
+                <Button title="Arkadaş Ekle" variant="outline" size="sm" onPress={() => { alert('Arkadaş ekleme akışı yakında (M06)'); }} />
               }
             />
           ) : (

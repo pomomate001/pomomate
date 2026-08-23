@@ -8,7 +8,7 @@ import { validateConfig } from './src/config';
 import { notificationService } from './src/services/mobile';
 import { adMobService, revenueCatService } from './src/services/monetization';
 import { authService } from './src/services/auth';
-import { useTimerStore, useUserStore, useSettingsStore } from './src/state';
+import { useTimerStore, useUserStore, useSettingsStore, useTaskStore } from './src/state';
 
 // Warn (dev only) about any missing env configuration at startup.
 validateConfig();
@@ -34,6 +34,9 @@ export default function App() {
         // Check subscription status
         const tier = await revenueCatService.checkSubscription();
         setIsPremium(tier === 'premium');
+
+        // Generate recurring tasks for today
+        useTaskStore.getState().generateRecurringTasks();
       }
     };
 

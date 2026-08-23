@@ -5,11 +5,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
-import { useStatsStore } from '../../../state';
+import { useStatsStore, useTaskStore } from '../../../state';
 import { Card } from '../../components/Card';
 import { StatCard } from './StatCard';
 import { MiniBarChart } from './MiniBarChart';
 import { FriendsSection } from './FriendsSection';
+import { CalendarView } from './CalendarView';
 import { AdPlacement } from '../../ads';
 
 type Period = 'daily' | 'weekly' | 'monthly';
@@ -48,11 +49,31 @@ function mockChartData(period: Period) {
 
 export function StatsScreen() {
   const [period, setPeriod] = useState<Period>('daily');
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
   const { totalPomodoros, totalWorkSeconds, totalTasksCompleted, streak } = useStatsStore();
+  const tasks = useTaskStore((s) => s.tasks);
   const colors = useColors();
   const chartData = mockChartData(period);
 
   const periods: Period[] = ['daily', 'weekly', 'monthly'];
+  
+  // Extract unique tags from tasks
+  const allTags = Array.from(new Set(tasks.map(t => t.tag).filter(Boolean))) as string[];
+
+  // Tasks for the selected date (and optionally filtered by tag)
+  const selectedDateTasks = tasks.filter(t => 
+    t.targetDate === selectedDate && (!selectedTag || t.tag === selectedTag)
+  );
+
+  // Compute marked dates (dates with at least one completed task, optionally filtered by tag)
+  const markedDates = new Set(
+    tasks
+      .filter(t => t.completed && (!selectedTag || t.tag === selectedTag))
+      .map(t => t.targetDate)
+      .filter(Boolean) as string[]
+  );
 
   return (
     <ScrollView style={[styles.screen, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
@@ -92,6 +113,33 @@ export function StatsScreen() {
       </View>
 
       <View style={styles.contentWrap}>
+        {/* Tag Filter */}
+        {allTags.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tagFilterList}>
+            <Pressable
+              onPress={() => setSelectedTag(null)}
+              style={[
+                styles.tagChip,
+                { backgroundColor: selectedTag === null ? colors.primary : colors.surfaceVariant }
+              ]}
+            >
+              <Text style={[typography.captionBold, { color: selectedTag === null ? colors.textInverse : colors.textPrimary }]}>Tümü</Text>
+            </Pressable>
+            {allTags.map(tag => (
+              <Pressable
+                key={tag}
+                onPress={() => setSelectedTag(tag)}
+                style={[
+                  styles.tagChip,
+                  { backgroundColor: selectedTag === tag ? colors.primary : colors.surfaceVariant }
+                ]}
+              >
+                <Text style={[typography.captionBold, { color: selectedTag === tag ? colors.textInverse : colors.textPrimary }]}>{tag}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
+
         {/* Summary cards */}
         <View style={styles.cardRow}>
           <StatCard
@@ -128,6 +176,43 @@ export function StatsScreen() {
           </Text>
           <MiniBarChart data={chartData} />
         </Card>
+
+        {/* Calendar and Tasks for Selected Date (Only shown in Monthly view as requested) */}
+        {period === 'monthly' && (
+          <Card variant="glass" style={styles.chartCard}>
+            <CalendarView 
+              selectedDate={selectedDate} 
+              onSelectDate={setSelectedDate} 
+              markedDates={markedDates} 
+            />
+            
+            <View style={{ marginTop: spacing.md, borderTopWidth: 1, borderColor: colors.divider, paddingTop: spacing.md }}>
+              <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.sm }]}>
+                {selectedDate} GÖREVLERİ
+              </Text>
+              
+              {selectedDateTasks.length === 0 ? (
+                <Text style={[typography.body, { color: colors.textDisabled, textAlign: 'center', marginVertical: spacing.md }]}>
+                  Bu tarihte görev yok.
+                </Text>
+              ) : (
+                selectedDateTasks.map(t => (
+                  <View key={t.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
+                    <Ionicons 
+                      name={t.completed ? 'checkmark-circle' : 'ellipse-outline'} 
+                      size={20} 
+                      color={t.completed ? colors.success : colors.textDisabled} 
+                      style={{ marginRight: spacing.sm }}
+                    />
+                    <Text style={[typography.body, { color: t.completed ? colors.textDisabled : colors.textPrimary, textDecorationLine: t.completed ? 'line-through' : 'none' }]}>
+                      {t.title}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </View>
+          </Card>
+        )}
 
         {/* Ad between sections */}
         <AdPlacement size="banner" />
@@ -175,4 +260,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   chartCard: { marginHorizontal: spacing.lg, marginTop: spacing.xl },
+  tagFilterList: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  tagChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  }
 });

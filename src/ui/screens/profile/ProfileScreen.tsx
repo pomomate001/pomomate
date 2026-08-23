@@ -101,7 +101,7 @@ export function ProfileScreen({
           {/* Premium / Referral */}
           <PremiumReferralCard
             onPremiumPress={() => setShowPaywall(true)}
-            onReferralPress={() => { /* Referral flow — M08 */ }}
+            onReferralPress={() => { alert('Bedava Pro Kazanma (Arkadaş Davet) akışı çok yakında aktif olacak! (M08)'); }}
           />
 
           {/* Settings */}
@@ -115,7 +115,13 @@ export function ProfileScreen({
           </View>
 
           {/* Sign out */}
-          <Pressable style={[styles.signOut, { backgroundColor: colors.surface }]} onPress={() => { /* M08 sign-out */ }}>
+          <Pressable 
+            style={[styles.signOut, { backgroundColor: colors.surface }]} 
+            onPress={async () => { 
+              await import('../../../services/auth').then(m => m.authService.signOut());
+              useUserStore.getState().setUser(null);
+            }}
+          >
             <Ionicons name="log-out-outline" size={20} color={colors.error} />
             <Text style={[typography.bodyBold, { color: colors.error, marginLeft: spacing.sm }]}>
               Çıkış Yap

@@ -51,11 +51,20 @@ export function TaskItem({ task, onToggle, onDelete, onDragHandle }: TaskItemPro
         >
           {task.title}
         </Text>
-        {task.pomodoroCount > 0 && (
-          <Text style={[typography.caption, { color: colors.textSecondary }]}>
-            🍅 {task.pomodoroCount}
-          </Text>
-        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+          {!!task.tag && (
+            <View style={[styles.tagBadge, { backgroundColor: colors.surfaceVariant }]}>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                🏷️ {task.tag}
+              </Text>
+            </View>
+          )}
+          {task.pomodoroCount > 0 && (
+            <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: task.tag ? spacing.sm : 0 }]}>
+              🍅 {task.pomodoroCount}
+            </Text>
+          )}
+        </View>
       </View>
 
       {/* Delete */}
@@ -79,4 +88,9 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   strikethrough: { textDecorationLine: 'line-through' },
   deleteBtn: { padding: spacing.xs, opacity: 0.6 },
+  tagBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
 });

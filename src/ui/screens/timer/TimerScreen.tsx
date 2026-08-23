@@ -14,7 +14,7 @@ import { notificationService } from '../../../services/mobile';
 import type { TimerMode, Task } from '../../../types';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
-import { AddTaskInput } from '../tasks/AddTaskInput';
+import { AddTaskSheet } from '../tasks/AddTaskSheet';
 import { TaskItem } from '../tasks/TaskItem';
 
 const modeLabels: Record<TimerMode, string> = {
@@ -81,12 +81,17 @@ export function TimerScreen() {
     }
   }, [remainingSeconds, isRunning, mode, recordPomodoro, workDuration]);
 
+  const [showAddTask, setShowAddTask] = React.useState(false);
+
   const handleAddTask = useCallback(
-    (title: string) => {
+    (title: string, tag: string | null, recurrence: any) => {
       const task: Task = {
         id: generateId(),
         userId: '',
         title,
+        tag,
+        recurrence: { type: recurrence },
+        targetDate: new Date().toISOString().split('T')[0],
         completed: false,
         pomodoroCount: 0,
         createdAt: nowIso(),
@@ -108,6 +113,9 @@ export function TimerScreen() {
   );
 
   const modeButtons: TimerMode[] = ['work', 'shortBreak', 'longBreak'];
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayTasks = tasks.filter(t => !t.targetDate || t.targetDate === todayStr);
 
   return (
     <BackgroundEffect effectId={backgroundEffectId}>
@@ -174,22 +182,28 @@ export function TimerScreen() {
             <Text style={[typography.h3, { color: colors.textPrimary }]}>📋 Görevlerim</Text>
             <View style={[styles.taskCountBadge, { backgroundColor: colors.primaryLight }]}>
               <Text style={[typography.captionBold, { color: colors.textInverse }]}>
-                {tasks.filter(t => !t.completed).length}
+                {todayTasks.filter(t => !t.completed).length}
               </Text>
             </View>
+            <View style={{ flex: 1 }} />
+            <Button 
+              title="Yeni Ekle" 
+              size="sm" 
+              variant="outline" 
+              icon={<Ionicons name="add" size={16} color={colors.primary} />}
+              onPress={() => setShowAddTask(true)}
+            />
           </View>
           
-          <AddTaskInput onAdd={handleAddTask} />
-          
           <View style={styles.taskList}>
-            {tasks.length === 0 ? (
+            {todayTasks.length === 0 ? (
               <View style={styles.emptyTasks}>
                 <Text style={[typography.body, { color: colors.textDisabled, textAlign: 'center' }]}>
                   Şu an için hiç göreviniz yok. Yeni bir görev ekleyerek çalışmaya başlayın.
                 </Text>
               </View>
             ) : (
-              tasks.map((task) => (
+              todayTasks.map((task) => (
                 <TaskItem
                   key={task.id}
                   task={task}
@@ -204,6 +218,12 @@ export function TimerScreen() {
         {/* Ad banner — below controls, never over timer */}
         <AdPlacement size="banner" />
       </ScrollView>
+
+      <AddTaskSheet 
+        visible={showAddTask}
+        onClose={() => setShowAddTask(false)}
+        onAdd={handleAddTask}
+      />
     </BackgroundEffect>
   );
 }

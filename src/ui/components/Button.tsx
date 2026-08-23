@@ -79,7 +79,8 @@ export function Button({
   };
 
   const textColor =
-    variant === 'primary' || variant === 'gradient' ? colors.textInverse :
+    variant === 'gradient' ? colors.textPrimary :
+    variant === 'primary' ? colors.textInverse :
     variant === 'outline' || variant === 'ghost' ? colors.primary :
     colors.textPrimary;
 

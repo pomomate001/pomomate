@@ -11,7 +11,11 @@ import { BottomSheet } from '../../components/BottomSheet';
 import { BackgroundEffect } from '../../animations/BackgroundEffect';
 import { ParticipantsBar } from './ParticipantsBar';
 import { RoomTimer, RoomTasks, RoomChat, RoomMedia, RoomFiles } from './features';
-import { useRoomStore, useTimerStore, useSettingsStore } from '../../../state';
+import { useRoomStore, useTimerStore, useSettingsStore, useTaskStore } from '../../../state';
+import { AddTaskSheet } from '../tasks/AddTaskSheet';
+import { generateId } from '../../../utils/id';
+import { nowIso } from '../../../utils/datetime';
+import type { Task } from '../../../types';
 
 /** Registry of toggleable room features. Add new entries here. */
 interface RoomFeatureDef {
@@ -42,6 +46,10 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const timer = useTimerStore();
   const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
 
+  const tasks = useTaskStore((s) => s.tasks);
+  const addTask = useTaskStore((s) => s.addTask);
+  const [showAddTask, setShowAddTask] = useState(false);
+
   const participants = members.map((m) => ({
     userId: m.userId,
     displayName: m.userId.slice(0, 6),
@@ -54,9 +62,30 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     );
   };
 
+  const handleAddTask = (title: string, tag: string | null, recurrence: any) => {
+    addTask({
+      id: generateId(),
+      userId: '', // M03 auth
+      roomId, // Scope to this room
+      title,
+      tag,
+      recurrence: { type: recurrence },
+      targetDate: new Date().toISOString().split('T')[0],
+      completed: false,
+      pomodoroCount: 0,
+      createdAt: nowIso(),
+    });
+  };
+
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <BackgroundEffect effectId={backgroundEffectId} />
+
+      <AddTaskSheet 
+        visible={showAddTask}
+        onClose={() => setShowAddTask(false)}
+        onAdd={handleAddTask}
+      />
 
       {/* Gradient Header */}
       <View style={styles.headerWrap}>
@@ -106,10 +135,15 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
         {activeFeatures.includes('tasks') && (
           <Card variant="glass" style={styles.featureCard}>
-            <Text style={[typography.captionBold, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-              Ortak Görevler
-            </Text>
-            <RoomTasks tasks={[]} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm }}>
+              <Text style={[typography.captionBold, { color: colors.textPrimary }]}>
+                Ortak Görevler
+              </Text>
+              <Pressable onPress={() => setShowAddTask(true)} style={{ padding: 4 }}>
+                <Ionicons name="add-circle" size={24} color={colors.primary} />
+              </Pressable>
+            </View>
+            <RoomTasks tasks={tasks.filter(t => t.roomId === roomId)} />
           </Card>
         )}
 
