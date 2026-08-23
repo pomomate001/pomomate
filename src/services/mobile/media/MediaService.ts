@@ -3,7 +3,7 @@
  * 
  * Wraps platform-specific media APIs and integrates with WebRTC.
  */
-import { Audio } from 'expo-av';
+import { setAudioModeAsync } from 'expo-audio';
 import * as ScreenCapture from 'expo-screen-capture';
 import { logger } from '../../../utils/logger';
 import { permissionManager } from '../permissions/PermissionManager';
@@ -39,11 +39,11 @@ export class MediaService {
 
       // Configure audio session for VoIP
       if (config.audio) {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: true,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-          shouldDuckAndroid: true,
+        await setAudioModeAsync({
+          allowsRecording: true,
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: 'duckOthers',
         });
       }
 
@@ -96,12 +96,12 @@ export class MediaService {
 
   async setAudioRoute(route: 'speaker' | 'earpiece'): Promise<void> {
     try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
-        ...(route === 'speaker' && { interruptionModeIOS: 2, interruptionModeAndroid: 1 }),
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        shouldRouteThroughEarpiece: route === 'earpiece',
+        interruptionMode: route === 'speaker' ? 'duckOthers' : 'doNotMix',
       });
       logger.info(`[Media] Audio route set to ${route}`);
     } catch (err) {
