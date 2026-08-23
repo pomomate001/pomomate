@@ -38,7 +38,7 @@
     },
     "android": {
       "package": "com.pomomate.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#1A73E8",
         "foregroundImage": "./assets/android-icon-foreground.png",
