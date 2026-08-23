@@ -11,9 +11,9 @@ import { SnowEffect } from './SnowEffect';
 import { AuroraEffect } from './AuroraEffect';
 import { BubblesEffect } from './BubblesEffect';
 
-interface BackgroundEffectProps {
+export interface BackgroundEffectProps {
   effectId: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 /** Particles — simple animated dots rendered as plain Views. */

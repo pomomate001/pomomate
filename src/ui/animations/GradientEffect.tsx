@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useColors } from '../../theme';
+import { useColors } from '../theme';
 
 export function GradientEffect() {
   const colors = useColors();
-  const anim = useRef(new Animated.Value(0)).current;
+  const [anim] = React.useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.loop(

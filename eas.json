@@ -26,7 +26,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "prod"
+        "EXPO_PUBLIC_ENV": "prod",
+        "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1"
       }
     },
     "production": {
@@ -38,7 +39,8 @@
         "autoIncrement": true
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "prod"
+        "EXPO_PUBLIC_ENV": "prod",
+        "EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK": "1"
       }
     }
   },

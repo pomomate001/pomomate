@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useColors } from '../../theme';
+import { useColors } from '../theme';
 
 export function RainEffect() {
   const colors = useColors();

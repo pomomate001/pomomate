@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useColors } from '../../theme';
+import { useColors } from '../theme';
 
 export function SnowEffect() {
   const colors = useColors();
@@ -17,7 +17,7 @@ export function SnowEffect() {
               width: size,
               height: size,
               borderRadius: size / 2,
-              backgroundColor: colors.white,
+              backgroundColor: '#FFF',
               opacity: Math.random() * 0.5 + 0.3,
               left: `${Math.random() * 100}%` as any,
               top: `${Math.random() * 100}%` as any,

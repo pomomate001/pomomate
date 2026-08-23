@@ -56,7 +56,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      <BackgroundEffect effectId={backgroundEffectId} style={StyleSheet.absoluteFill} />
+      <BackgroundEffect effectId={backgroundEffectId} />
 
       {/* Gradient Header */}
       <View style={styles.headerWrap}>

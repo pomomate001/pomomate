@@ -3,7 +3,7 @@ import { StyleSheet, Animated, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export function AuroraEffect() {
-  const anim = useRef(new Animated.Value(0)).current;
+  const [anim] = React.useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.loop(
