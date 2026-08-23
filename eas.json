@@ -20,12 +20,13 @@
       }
     },
     "preview": {
+      "environment": "production",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_ENV": "staging"
+        "EXPO_PUBLIC_ENV": "prod"
       }
     },
     "production": {
