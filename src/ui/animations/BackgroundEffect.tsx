@@ -5,6 +5,11 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useColors } from '../theme';
+import { GradientEffect } from './GradientEffect';
+import { RainEffect } from './RainEffect';
+import { SnowEffect } from './SnowEffect';
+import { AuroraEffect } from './AuroraEffect';
+import { BubblesEffect } from './BubblesEffect';
 
 interface BackgroundEffectProps {
   effectId: string;
@@ -42,7 +47,11 @@ export function BackgroundEffect({ effectId, children }: BackgroundEffectProps) 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {effectId === 'particles' && <ParticlesEffect />}
-      {/* 'gradient' and future effects can be added here */}
+      {effectId === 'gradient' && <GradientEffect />}
+      {effectId === 'rain' && <RainEffect />}
+      {effectId === 'snow' && <SnowEffect />}
+      {effectId === 'aurora' && <AuroraEffect />}
+      {effectId === 'bubbles' && <BubblesEffect />}
       {children}
     </View>
   );

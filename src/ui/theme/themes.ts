@@ -49,6 +49,11 @@ export interface ThemeColors {
 
   // Overlay
   overlay: string;
+
+  // Gradients (for backgrounds and special elements)
+  gradientStart: string;
+  gradientMiddle?: string;
+  gradientEnd: string;
 }
 
 export interface AppTheme {
@@ -56,6 +61,7 @@ export interface AppTheme {
   label: string;
   dark: boolean;
   colors: ThemeColors;
+  isPremium?: boolean;
 }
 
 /* ─── built-in themes ─── */
@@ -93,6 +99,9 @@ const lightColors: ThemeColors = {
   tabBarInactive: palette.grey500,
 
   overlay: palette.overlay,
+  
+  gradientStart: '#F5F5F5',
+  gradientEnd: '#E0E0E0',
 };
 
 const darkColors: ThemeColors = {
@@ -128,6 +137,9 @@ const darkColors: ThemeColors = {
   tabBarInactive: '#888888',
 
   overlay: 'rgba(0,0,0,0.7)',
+  
+  gradientStart: '#1E1E1E',
+  gradientEnd: '#121212',
 };
 
 export const lightTheme: AppTheme = {
@@ -144,11 +156,133 @@ export const darkTheme: AppTheme = {
   colors: darkColors,
 };
 
+const oceanColors: ThemeColors = {
+  ...lightColors,
+  background: '#E0F7FA',
+  surface: '#FFFFFF',
+  surfaceVariant: '#B2EBF2',
+  card: '#FFFFFF',
+  primary: '#00BCD4',
+  primaryLight: '#4DD0E1',
+  primaryDark: '#0097A7',
+  gradientStart: '#E0F7FA',
+  gradientEnd: '#80DEEA',
+  timerWork: '#00BCD4',
+  timerShortBreak: '#4CAF50',
+  timerLongBreak: '#03A9F4',
+};
+
+export const oceanTheme: AppTheme = {
+  id: 'ocean',
+  label: 'Okyanus',
+  dark: false,
+  colors: oceanColors,
+};
+
+const forestColors: ThemeColors = {
+  ...darkColors,
+  background: '#1B5E20',
+  surface: '#2E7D32',
+  surfaceVariant: '#388E3C',
+  card: '#2E7D32',
+  primary: '#81C784',
+  primaryLight: '#A5D6A7',
+  primaryDark: '#388E3C',
+  gradientStart: '#1B5E20',
+  gradientEnd: '#33691E',
+  timerWork: '#81C784',
+  timerShortBreak: '#FFB300',
+  timerLongBreak: '#4DD0E1',
+};
+
+export const forestTheme: AppTheme = {
+  id: 'forest',
+  label: 'Orman',
+  dark: true,
+  colors: forestColors,
+};
+
+const sunsetColors: ThemeColors = {
+  ...lightColors,
+  background: '#FFF3E0',
+  surface: '#FFFFFF',
+  surfaceVariant: '#FFE0B2',
+  card: '#FFFFFF',
+  primary: '#FF9800',
+  primaryLight: '#FFB74D',
+  primaryDark: '#F57C00',
+  gradientStart: '#FFCC80',
+  gradientMiddle: '#FFAB40',
+  gradientEnd: '#FF7043',
+  timerWork: '#FF9800',
+  timerShortBreak: '#4CAF50',
+  timerLongBreak: '#2196F3',
+};
+
+export const sunsetTheme: AppTheme = {
+  id: 'sunset',
+  label: 'Gün Batımı',
+  dark: false,
+  colors: sunsetColors,
+};
+
+const roseColors: ThemeColors = {
+  ...lightColors,
+  background: '#FCE4EC',
+  surface: '#FFFFFF',
+  surfaceVariant: '#F8BBD0',
+  card: '#FFFFFF',
+  primary: '#E91E63',
+  primaryLight: '#F06292',
+  primaryDark: '#C2185B',
+  gradientStart: '#FCE4EC',
+  gradientEnd: '#F48FB1',
+  timerWork: '#E91E63',
+  timerShortBreak: '#8BC34A',
+  timerLongBreak: '#03A9F4',
+};
+
+export const roseTheme: AppTheme = {
+  id: 'rose',
+  label: 'Gül',
+  dark: false,
+  colors: roseColors,
+};
+
+const neonColors: ThemeColors = {
+  ...darkColors,
+  background: '#000000',
+  surface: '#111111',
+  surfaceVariant: '#222222',
+  card: '#111111',
+  primary: '#00FF00',
+  primaryLight: '#66FF66',
+  primaryDark: '#00CC00',
+  accent: '#FF00FF',
+  gradientStart: '#000000',
+  gradientEnd: '#1A001A',
+  timerWork: '#00FF00',
+  timerShortBreak: '#FF00FF',
+  timerLongBreak: '#00FFFF',
+};
+
+export const neonTheme: AppTheme = {
+  id: 'neon',
+  label: 'Neon',
+  dark: true,
+  colors: neonColors,
+  isPremium: true,
+};
+
 /**
  * Registry — add new themes here. UI pickers enumerate this map.
- * Example: themes.set('ocean', { id: 'ocean', ... })
  */
 export const themes = new Map<string, AppTheme>([
   ['light', lightTheme],
   ['dark', darkTheme],
+  ['ocean', oceanTheme],
+  ['forest', forestTheme],
+  ['sunset', sunsetTheme],
+  ['rose', roseTheme],
+  ['neon', neonTheme],
 ]);

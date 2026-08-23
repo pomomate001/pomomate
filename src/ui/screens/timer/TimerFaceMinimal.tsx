@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { formatDuration } from '../../../core/pomodoro';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
+import { spacing } from '../../theme/spacing';
 import type { TimerMode } from '../../../types';
 
 interface TimerFaceProps {
@@ -19,9 +21,9 @@ function modeColor(mode: TimerMode, colors: ReturnType<typeof useColors>) {
 }
 
 const modeLabel: Record<TimerMode, string> = {
-  work: 'Çalışma',
-  shortBreak: 'Kısa Mola',
-  longBreak: 'Uzun Mola',
+  work: 'ÇALIŞMA',
+  shortBreak: 'KISA MOLA',
+  longBreak: 'UZUN MOLA',
 };
 
 export function TimerFaceMinimal({ remainingSeconds, mode }: TimerFaceProps) {
@@ -30,14 +32,27 @@ export function TimerFaceMinimal({ remainingSeconds, mode }: TimerFaceProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}>
-        {modeLabel[mode]}
+      <Text style={[typography.timer, { color, fontSize: 80, fontWeight: '200', letterSpacing: 4 }]}>
+        {formatDuration(remainingSeconds)}
       </Text>
-      <Text style={[typography.timer, { color }]}>{formatDuration(remainingSeconds)}</Text>
+      <View style={[styles.labelBadge, { backgroundColor: `${color}20` }]}>
+        <Ionicons name="time-outline" size={16} color={color} style={{ marginRight: spacing.xs }} />
+        <Text style={[typography.captionBold, { color, letterSpacing: 2 }]}>
+          {modeLabel[mode]}
+        </Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', justifyContent: 'center' },
+  container: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xxl },
+  labelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 20,
+    marginTop: spacing.md,
+  },
 });

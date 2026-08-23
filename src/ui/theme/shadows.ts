@@ -26,4 +26,11 @@ export const shadows: Record<string, ViewStyle> = {
     shadowRadius: 8,
     elevation: 6,
   },
+  glow: {
+    shadowColor: '#6C63FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 15,
+    elevation: 8,
+  },
 } as const;

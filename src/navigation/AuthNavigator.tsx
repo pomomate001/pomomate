@@ -7,19 +7,19 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export function AuthNavigator() {
   return (
-    <Stack.Navigator initialRouteName="Login">
-      <Stack.Screen
-        name="Login"
-        options={{ title: 'Giriş Yap', headerShown: false }}
-      >
+    <Stack.Navigator 
+      initialRouteName="Login"
+      screenOptions={{
+        headerShown: false,
+        animation: 'fade', // Smooth transition
+      }}
+    >
+      <Stack.Screen name="Login">
         {({ navigation }) => (
           <LoginScreen onGoToRegister={() => navigation.navigate('Register')} />
         )}
       </Stack.Screen>
-      <Stack.Screen
-        name="Register"
-        options={{ title: 'Kayıt Ol', headerShown: false }}
-      >
+      <Stack.Screen name="Register">
         {({ navigation }) => (
           <RegisterScreen onGoToLogin={() => navigation.navigate('Login')} />
         )}

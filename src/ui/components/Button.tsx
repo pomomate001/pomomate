@@ -6,13 +6,17 @@ import {
   Text,
   ViewStyle,
   TextStyle,
+  Animated,
+  View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '../theme';
 import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
 import { typography } from '../theme/typography';
+import { shadows } from '../theme/shadows';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'gradient';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps {
@@ -43,11 +47,30 @@ export function Button({
   style,
 }: ButtonProps) {
   const colors = useColors();
+  const [scale] = React.useState(() => new Animated.Value(1));
 
-  const containerStyle: ViewStyle = {
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 10,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 10,
+    }).start();
+  };
+
+  const baseContainerStyle: ViewStyle = {
     ...styles.base,
     ...sizeStyles[size].container,
-    ...(variant === 'primary' && { backgroundColor: colors.primary }),
+    ...(variant === 'primary' && { backgroundColor: colors.primary, ...shadows.sm }),
     ...(variant === 'secondary' && { backgroundColor: colors.surfaceVariant }),
     ...(variant === 'outline' && { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary }),
     ...(variant === 'ghost' && { backgroundColor: 'transparent' }),
@@ -56,36 +79,68 @@ export function Button({
   };
 
   const textColor =
-    variant === 'primary' ? colors.textInverse :
+    variant === 'primary' || variant === 'gradient' ? colors.textInverse :
     variant === 'outline' || variant === 'ghost' ? colors.primary :
     colors.textPrimary;
 
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled || loading}
-      style={({ pressed }) => [containerStyle, pressed && styles.pressed]}
-    >
+  const content = (
+    <>
       {loading ? (
         <ActivityIndicator size="small" color={textColor} />
       ) : (
-        <>
+        <View style={styles.contentRow}>
           {icon}
           <Text style={[typography.bodyBold, sizeStyles[size].text, { color: textColor, marginLeft: icon ? spacing.xs : 0 }]}>
             {title}
           </Text>
-        </>
+        </View>
       )}
-    </Pressable>
+    </>
+  );
+
+  return (
+    <Animated.View style={[{ transform: [{ scale }] }, disabled && styles.disabled]}>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled || loading}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={({ pressed }) => [
+          variant !== 'gradient' && baseContainerStyle,
+          pressed && variant !== 'gradient' && styles.pressed,
+        ]}
+      >
+        {variant === 'gradient' ? (
+          <LinearGradient
+            colors={[colors.gradientStart, colors.gradientEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[baseContainerStyle, styles.gradientContainer]}
+          >
+            {content}
+          </LinearGradient>
+        ) : (
+          content
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.lg,
+  },
+  contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.md,
+  },
+  gradientContainer: {
+    borderWidth: 0,
   },
   pressed: { opacity: 0.8 },
+  disabled: { opacity: 0.5 },
 });

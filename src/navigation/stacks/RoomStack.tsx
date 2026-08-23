@@ -20,17 +20,17 @@ function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamLi
       <RoomCreateSheet
         visible={showCreate}
         onClose={() => setShowCreate(false)}
-        onCreate={(_name) => {
-          // M03 will handle actual creation
+        onCreate={(name) => {
           setShowCreate(false);
+          navigation.navigate('RoomActive', { roomId: `room-${Date.now()}` });
         }}
       />
       <RoomJoinSheet
         visible={showJoin}
         onClose={() => setShowJoin(false)}
-        onJoin={(_code) => {
-          // M03 will handle actual join
+        onJoin={(code) => {
           setShowJoin(false);
+          navigation.navigate('RoomActive', { roomId: code });
         }}
       />
     </>

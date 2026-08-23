@@ -19,5 +19,9 @@ export interface BackgroundEffectDef {
 export const backgroundEffects: BackgroundEffectDef[] = [
   { id: 'none', label: 'Yok', free: true },
   { id: 'particles', label: 'Parçacıklar', free: true },
-  { id: 'gradient', label: 'Gradient', free: false },
+  { id: 'gradient', label: 'Gradient Akış', free: true },
+  { id: 'rain', label: 'Yağmur', free: false },
+  { id: 'snow', label: 'Kar', free: false },
+  { id: 'aurora', label: 'Kutup Işıkları', free: false },
+  { id: 'bubbles', label: 'Baloncuklar', free: false },
 ];

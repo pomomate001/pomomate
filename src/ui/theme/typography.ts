@@ -13,6 +13,7 @@ export const typography: Record<string, TextStyle> = {
   bodyBold: { fontSize: 14, fontWeight: '600', lineHeight: 20 },
   caption: { fontSize: 12, fontWeight: '400', lineHeight: 16 },
   captionBold: { fontSize: 12, fontWeight: '600', lineHeight: 16 },
+  overline: { fontSize: 10, fontWeight: '700', lineHeight: 14, textTransform: 'uppercase', letterSpacing: 0.5 },
   timer: { fontSize: 64, fontWeight: '300', lineHeight: 72, fontVariant: ['tabular-nums'] },
   timerSmall: { fontSize: 48, fontWeight: '300', lineHeight: 56, fontVariant: ['tabular-nums'] },
 } as const;

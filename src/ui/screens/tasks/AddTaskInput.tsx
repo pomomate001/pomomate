@@ -22,7 +22,7 @@ export function AddTaskInput({ onAdd }: AddTaskInputProps) {
   };
 
   return (
-    <View style={[styles.row, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+    <View style={[styles.row, { backgroundColor: colors.surfaceVariant }]}>
       <TextInput
         value={text}
         onChangeText={setText}
@@ -33,7 +33,7 @@ export function AddTaskInput({ onAdd }: AddTaskInputProps) {
         style={[typography.body, styles.input, { color: colors.textPrimary }]}
       />
       <Pressable onPress={handleSubmit} style={[styles.addBtn, { backgroundColor: colors.primary }]}>
-        <Ionicons name="add" size={22} color={colors.textInverse} />
+        <Ionicons name="add" size={24} color={colors.textInverse} />
       </Pressable>
     </View>
   );
@@ -43,18 +43,18 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     paddingLeft: spacing.md,
-    margin: spacing.lg,
+    marginBottom: spacing.md,
+    height: 56,
   },
-  input: { flex: 1, paddingVertical: spacing.sm },
+  input: { flex: 1, height: '100%' },
   addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.sm,
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    margin: spacing.xs,
+    marginRight: 6,
   },
 });

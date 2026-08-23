@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 import { formatDuration } from '../../../core/pomodoro';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
@@ -13,8 +14,8 @@ interface TimerFaceProps {
   isRunning: boolean;
 }
 
-const SIZE = 220;
-const STROKE = 8;
+const SIZE = 280;
+const STROKE = 12;
 const R = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * R;
 
@@ -30,6 +31,12 @@ const modeLabel: Record<TimerMode, string> = {
   longBreak: 'Uzun Mola',
 };
 
+const modeIcon: Record<TimerMode, keyof typeof Ionicons.glyphMap> = {
+  work: 'barbell-outline',
+  shortBreak: 'cafe-outline',
+  longBreak: 'bed-outline',
+};
+
 export function TimerFaceCircle({ remainingSeconds, duration, mode }: TimerFaceProps) {
   const colors = useColors();
   const color = modeColor(mode, colors);
@@ -39,6 +46,12 @@ export function TimerFaceCircle({ remainingSeconds, duration, mode }: TimerFaceP
   return (
     <View style={styles.container}>
       <Svg width={SIZE} height={SIZE} style={styles.svg}>
+        <Defs>
+          <LinearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={color} stopOpacity="1" />
+            <Stop offset="1" stopColor={colors.gradientEnd} stopOpacity="0.8" />
+          </LinearGradient>
+        </Defs>
         {/* Track */}
         <Circle
           cx={SIZE / 2}
@@ -53,7 +66,7 @@ export function TimerFaceCircle({ remainingSeconds, duration, mode }: TimerFaceP
           cx={SIZE / 2}
           cy={SIZE / 2}
           r={R}
-          stroke={color}
+          stroke="url(#grad)"
           strokeWidth={STROKE}
           fill="none"
           strokeLinecap="round"
@@ -63,10 +76,11 @@ export function TimerFaceCircle({ remainingSeconds, duration, mode }: TimerFaceP
         />
       </Svg>
       <View style={styles.center}>
-        <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 2 }]}>
+        <Ionicons name={modeIcon[mode]} size={32} color={color} style={{ marginBottom: 8 }} />
+        <Text style={[typography.timerSmall, { color, fontSize: 60, fontWeight: '200' }]}>{formatDuration(remainingSeconds)}</Text>
+        <Text style={[typography.subtitle, { color: colors.textSecondary, marginTop: 4 }]}>
           {modeLabel[mode]}
         </Text>
-        <Text style={[typography.timer, { color }]}>{formatDuration(remainingSeconds)}</Text>
       </View>
     </View>
   );
@@ -75,5 +89,5 @@ export function TimerFaceCircle({ remainingSeconds, duration, mode }: TimerFaceP
 const styles = StyleSheet.create({
   container: { width: SIZE, height: SIZE, alignItems: 'center', justifyContent: 'center' },
   svg: { position: 'absolute' },
-  center: { alignItems: 'center' },
+  center: { alignItems: 'center', justifyContent: 'center' },
 });

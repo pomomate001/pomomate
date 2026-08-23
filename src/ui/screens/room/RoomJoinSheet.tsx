@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
+import { typography } from '../../theme/typography';
+import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 
 interface RoomJoinSheetProps {
@@ -13,6 +15,7 @@ interface RoomJoinSheetProps {
 
 export function RoomJoinSheet({ visible, onClose, onJoin }: RoomJoinSheetProps) {
   const [code, setCode] = useState('');
+  const colors = useColors();
 
   const handleJoin = () => {
     const trimmed = code.trim();
@@ -24,21 +27,34 @@ export function RoomJoinSheet({ visible, onClose, onJoin }: RoomJoinSheetProps) 
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
+      <View style={styles.header}>
+        <Text style={[typography.h3, { color: colors.textPrimary }]}>Odaya Katıl</Text>
+        <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
+          Arkadaşının paylaştığı bağlantı kodunu girerek odaya katılabilirsin.
+        </Text>
+      </View>
+      
       <Input
         label="Oda Kodu"
         value={code}
         onChangeText={setCode}
-        placeholder="Oda kodunu girin…"
-        autoCapitalize="none"
+        placeholder="Örn: X7A-9P2"
+        autoCapitalize="characters"
         autoFocus
       />
+      
       <View style={styles.footer}>
-        <Button title="Katıl" onPress={handleJoin} disabled={!code.trim()} />
+        <Button 
+          title="Odaklanmaya Katıl" 
+          onPress={handleJoin} 
+          disabled={!code.trim()} 
+        />
       </View>
     </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  footer: { marginTop: spacing.md },
+  header: { marginBottom: spacing.lg },
+  footer: { marginTop: spacing.xl },
 });

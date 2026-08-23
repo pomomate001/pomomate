@@ -12,6 +12,7 @@ export const palette = {
   // Accent
   accent: '#FF6584',
   accentLight: '#FF8FA3',
+  accentSecondary: '#00D2D3',
 
   // Semantic
   success: '#4CAF50',
@@ -32,6 +33,9 @@ export const palette = {
   grey700: '#616161',
   grey800: '#424242',
   grey900: '#212121',
+
+  // Special Effects
+  shimmer: 'rgba(255,255,255,0.3)',
 
   // Timer modes
   work: '#6C63FF',

@@ -15,10 +15,7 @@ export interface TimerDesignDef {
 export const timerDesigns: TimerDesignDef[] = [
   { id: 'minimal', label: 'Minimal', free: true },
   { id: 'circle', label: 'Daire', free: true },
+  { id: 'digital', label: 'Dijital', free: true },
   { id: 'arc', label: 'Yay', free: false },
+  { id: 'neon', label: 'Neon', free: false },
 ];
-
-/**
- * Add new timer designs:
- *   timerDesigns.push({ id: 'neon', label: 'Neon', free: false });
- */

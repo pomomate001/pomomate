@@ -9,6 +9,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { Input, Button } from '../../components';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
@@ -51,12 +53,17 @@ export function LoginScreen({ onGoToRegister }: LoginScreenProps) {
   };
 
   const handleGoogleSignIn = () => {
-    // TODO: Expo AuthSession ile Supabase Google OAuth entegrasyonu eklenecek.
     setError('Google ile giriş yakında eklenecek.');
   };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <LinearGradient
+        colors={[colors.gradientStart, colors.gradientEnd]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
@@ -67,8 +74,11 @@ export function LoginScreen({ onGoToRegister }: LoginScreenProps) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <Text style={[typography.h2, { color: colors.textPrimary }]}>Hoş geldin</Text>
-            <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}> 
+            <View style={[styles.iconContainer, { backgroundColor: colors.surfaceVariant }]}>
+              <Ionicons name="time" size={36} color={colors.primary} />
+            </View>
+            <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>Hoş geldin</Text>
+            <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, textAlign: 'center' }]}> 
               PomoMate hesabınla giriş yap ve birlikte çalışmaya devam et.
             </Text>
           </View>
@@ -81,6 +91,7 @@ export function LoginScreen({ onGoToRegister }: LoginScreenProps) {
             autoCorrect={false}
             keyboardType="email-address"
             placeholder="ornek@eposta.com"
+            leftIcon="mail-outline"
           />
 
           <Input
@@ -91,6 +102,7 @@ export function LoginScreen({ onGoToRegister }: LoginScreenProps) {
             autoCorrect={false}
             secureTextEntry
             placeholder="••••••••"
+            leftIcon="lock-closed-outline"
           />
 
           {error && (
@@ -104,7 +116,9 @@ export function LoginScreen({ onGoToRegister }: LoginScreenProps) {
             onPress={handleEmailLogin}
             loading={isLoading}
             disabled={isLoading}
+            variant="gradient"
             style={styles.primaryButton}
+            icon={<Ionicons name="log-in-outline" size={20} color={colors.textInverse} />}
           />
 
           <Button
@@ -112,12 +126,13 @@ export function LoginScreen({ onGoToRegister }: LoginScreenProps) {
             onPress={handleGoogleSignIn}
             variant="outline"
             disabled={isLoading}
+            icon={<Ionicons name="logo-google" size={18} color={colors.primary} />}
           />
 
           <View style={styles.footer}>
             <Text style={[typography.body, { color: colors.textSecondary }]}>Hesabın yok mu?</Text>
-            <Pressable onPress={onGoToRegister} hitSlop={8}>
-              <Text style={[typography.bodyBold, { color: colors.primary }]}> Kayıt ol</Text>
+            <Pressable onPress={onGoToRegister} hitSlop={8} style={{ padding: spacing.xs }}>
+              <Text style={[typography.bodyBold, { color: colors.primary }]}>Kayıt ol</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -136,9 +151,18 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
   },
   header: {
-    marginBottom: spacing.xl,
+    alignItems: 'center',
+    marginBottom: spacing.xxl,
+  },
+  iconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   primaryButton: {
+    marginTop: spacing.md,
     marginBottom: spacing.md,
   },
   footer: {

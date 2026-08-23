@@ -1,20 +1,17 @@
-/**
- * Active room screen — modular feature layout.
- *
- * Features (Timer, Tasks, Chat, Media, Files) are independent components.
- * The "+" button lets future features be plugged in without touching this file.
- */
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
+import { radius } from '../../theme/radius';
 import { Card } from '../../components/Card';
 import { BottomSheet } from '../../components/BottomSheet';
+import { BackgroundEffect } from '../../animations/BackgroundEffect';
 import { ParticipantsBar } from './ParticipantsBar';
 import { RoomTimer, RoomTasks, RoomChat, RoomMedia, RoomFiles } from './features';
-import { useRoomStore, useTimerStore } from '../../../state';
+import { useRoomStore, useTimerStore, useSettingsStore } from '../../../state';
 
 /** Registry of toggleable room features. Add new entries here. */
 interface RoomFeatureDef {
@@ -43,6 +40,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const room = useRoomStore((s) => s.currentRoom);
   const members = useRoomStore((s) => s.members);
   const timer = useTimerStore();
+  const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
 
   const participants = members.map((m) => ({
     userId: m.userId,
@@ -58,49 +56,66 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.divider }]}>
-        <Pressable onPress={onLeave}>
-          <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={[typography.subtitle, { color: colors.textPrimary, flex: 1, marginLeft: spacing.sm }]} numberOfLines={1}>
-          {room?.name ?? 'Çalışma Odası'}
-        </Text>
-        {/* "+" expand button */}
-        <Pressable onPress={() => setShowFeatureMenu(true)} style={styles.addBtn}>
-          <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
-        </Pressable>
-      </View>
+      <BackgroundEffect effectId={backgroundEffectId} style={StyleSheet.absoluteFill} />
 
-      {/* Participants */}
-      <ParticipantsBar participants={participants} />
+      {/* Gradient Header */}
+      <View style={styles.headerWrap}>
+        <LinearGradient
+          colors={[colors.gradientStart, colors.gradientEnd]}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        <View style={styles.headerContent}>
+          <Pressable onPress={onLeave} hitSlop={10} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color={colors.textInverse} />
+          </Pressable>
+          <View style={styles.headerTitleWrap}>
+            <Text style={[typography.h3, { color: colors.textInverse }]} numberOfLines={1}>
+              {room?.name ?? 'Çalışma Odası'}
+            </Text>
+            <View style={styles.liveBadge}>
+              <View style={[styles.liveDot, { backgroundColor: colors.error }]} />
+              <Text style={[typography.overline, { color: colors.textInverse }]}>CANLI</Text>
+            </View>
+          </View>
+          <Pressable onPress={() => setShowFeatureMenu(true)} style={styles.addBtn}>
+            <Ionicons name="add-circle" size={32} color={colors.textInverse} />
+          </Pressable>
+        </View>
+        
+        {/* Participants */}
+        <View style={styles.participantsWrap}>
+          <ParticipantsBar participants={participants} />
+        </View>
+      </View>
 
       {/* Feature panels */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {activeFeatures.includes('timer') && (
-          <Card style={styles.featureCard}>
+          <Card variant="glass" style={styles.featureCard}>
             <RoomTimer remainingSeconds={timer.remainingSeconds} mode={timer.mode} />
           </Card>
         )}
 
         {activeFeatures.includes('media') && (
-          <Card style={styles.featureCard}>
+          <Card variant="glass" style={styles.featureCard}>
             <RoomMedia />
           </Card>
         )}
 
         {activeFeatures.includes('tasks') && (
-          <Card style={styles.featureCard}>
-            <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
-              Görevler
+          <Card variant="glass" style={styles.featureCard}>
+            <Text style={[typography.captionBold, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
+              Ortak Görevler
             </Text>
             <RoomTasks tasks={[]} />
           </Card>
         )}
 
         {activeFeatures.includes('files') && (
-          <Card style={styles.featureCard}>
-            <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+          <Card variant="glass" style={styles.featureCard}>
+            <Text style={[typography.captionBold, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
               Dosyalar
             </Text>
             <RoomFiles />
@@ -108,7 +123,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         )}
 
         {activeFeatures.includes('chat') && (
-          <Card style={{ ...styles.featureCard, padding: 0, overflow: 'hidden' as const }}>
+          <Card variant="glass" style={{ ...styles.featureCard, padding: 0, overflow: 'hidden' as const }}>
             <RoomChat roomId={roomId} />
           </Card>
         )}
@@ -119,7 +134,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       {/* Feature toggle sheet */}
       <BottomSheet visible={showFeatureMenu} onClose={() => setShowFeatureMenu(false)}>
         <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.md }]}>
-          Özellikler
+          Oda Özellikleri
         </Text>
         {allFeatures.map((f) => {
           const active = activeFeatures.includes(f.id);
@@ -129,13 +144,15 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
               onPress={() => toggleFeature(f.id)}
               style={[styles.featureToggleRow, { borderBottomColor: colors.divider }]}
             >
-              <Ionicons name={f.icon as keyof typeof Ionicons.glyphMap} size={20} color={colors.textPrimary} />
+              <View style={[styles.featureIconWrap, { backgroundColor: active ? `${colors.success}20` : colors.surfaceVariant }]}>
+                <Ionicons name={f.icon as keyof typeof Ionicons.glyphMap} size={20} color={active ? colors.success : colors.textSecondary} />
+              </View>
               <Text style={[typography.body, { color: colors.textPrimary, flex: 1, marginLeft: spacing.md }]}>
                 {f.label}
               </Text>
               <Ionicons
                 name={active ? 'checkmark-circle' : 'ellipse-outline'}
-                size={22}
+                size={28}
                 color={active ? colors.success : colors.textDisabled}
               />
             </Pressable>
@@ -148,20 +165,38 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: {
+  headerWrap: {
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.lg,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: 'hidden',
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
   },
-  addBtn: { padding: spacing.xs },
-  content: { flex: 1, paddingHorizontal: spacing.md },
-  featureCard: { marginTop: spacing.sm },
+  backBtn: { padding: spacing.xs },
+  headerTitleWrap: { flex: 1, alignItems: 'center' },
+  liveBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12, marginTop: 4 },
+  liveDot: { width: 6, height: 6, borderRadius: 3, marginRight: 4 },
+  addBtn: { padding: spacing.xs, opacity: 0.9 },
+  participantsWrap: { marginTop: spacing.lg },
+  content: { flex: 1, paddingHorizontal: spacing.md, paddingTop: spacing.md },
+  featureCard: { marginTop: spacing.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   featureToggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
+  },
+  featureIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

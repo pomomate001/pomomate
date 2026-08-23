@@ -9,6 +9,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { Input, Button } from '../../components';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
@@ -22,13 +24,13 @@ interface RegisterScreenProps {
 
 export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
   const colors = useColors();
-  const setUser = useUserStore((state) => state.setUser);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleRegister = async () => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -51,8 +53,9 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
     setError(null);
     setIsLoading(true);
     try {
-      const user = await authService.signUpWithEmail(normalizedEmail, password);
-      setUser(user);
+      // Sadece kayıt yapıyoruz, setUser çağırmıyoruz ki ana ekrana atmasın.
+      await authService.signUpWithEmail(normalizedEmail, password);
+      setIsSuccess(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Kayıt sırasında beklenmeyen bir hata oluştu.';
       setError(message);
@@ -61,8 +64,42 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
     }
   };
 
+  if (isSuccess) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <LinearGradient
+          colors={[colors.gradientStart, colors.gradientEnd]}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        <View style={styles.successContainer}>
+          <Ionicons name="mail-unread-outline" size={80} color={colors.primary} />
+          <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.lg, textAlign: 'center' }]}>
+            E-postanı Doğrula
+          </Text>
+          <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.md, textAlign: 'center', marginHorizontal: spacing.xl }]}>
+            {email} adresine bir doğrulama bağlantısı gönderdik. Lütfen e-postanı kontrol et ve hesabını doğrula.
+          </Text>
+          <Button
+            title="Giriş Sayfasına Dön"
+            onPress={onGoToLogin}
+            variant="gradient"
+            style={{ marginTop: spacing.xl, width: '80%' }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}> 
+      <LinearGradient
+        colors={[colors.gradientStart, colors.gradientEnd]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
@@ -73,9 +110,12 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <Text style={[typography.h2, { color: colors.textPrimary }]}>Yeni Hesap Oluştur</Text>
+            <View style={[styles.iconContainer, { backgroundColor: colors.surfaceVariant }]}>
+              <Ionicons name="person-add" size={32} color={colors.primary} />
+            </View>
+            <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>Yeni Hesap</Text>
             <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}> 
-              Hesabını oluştur, çalışma odalarına katıl ve ilerlemeni takip et.
+              PomoMate'e katıl ve odaklanmaya başla.
             </Text>
           </View>
 
@@ -87,6 +127,7 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
             autoCorrect={false}
             keyboardType="email-address"
             placeholder="ornek@eposta.com"
+            leftIcon="mail-outline"
           />
 
           <Input
@@ -97,6 +138,7 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
             autoCorrect={false}
             secureTextEntry
             placeholder="En az 6 karakter"
+            leftIcon="lock-closed-outline"
           />
 
           <Input
@@ -107,11 +149,8 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
             autoCorrect={false}
             secureTextEntry
             placeholder="Şifreni tekrar gir"
+            leftIcon="lock-closed-outline"
           />
-
-          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}> 
-            Kayıttan sonra e-posta doğrulama bağlantısı gönderilebilir. Lütfen gelen kutunu kontrol et.
-          </Text>
 
           {error && (
             <Text style={[typography.caption, { color: colors.error, marginBottom: spacing.sm }]}> 
@@ -124,13 +163,15 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
             onPress={handleRegister}
             loading={isLoading}
             disabled={isLoading}
+            variant="gradient"
             style={styles.primaryButton}
+            icon={<Ionicons name="arrow-forward" size={20} color={colors.textInverse} />}
           />
 
           <View style={styles.footer}>
-            <Text style={[typography.body, { color: colors.textSecondary }]}>Zaten hesabın var mı?</Text>
-            <Pressable onPress={onGoToLogin} hitSlop={8}>
-              <Text style={[typography.bodyBold, { color: colors.primary }]}> Giriş yap</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>Zaten hesabın var mı?</Text>
+            <Pressable onPress={onGoToLogin} hitSlop={8} style={{ padding: spacing.xs }}>
+              <Text style={[typography.bodyBold, { color: colors.primary }]}>Giriş yap</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -149,9 +190,24 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
   },
   header: {
-    marginBottom: spacing.xl,
+    alignItems: 'center',
+    marginBottom: spacing.xxl,
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
   },
   primaryButton: {
+    marginTop: spacing.md,
     marginBottom: spacing.md,
   },
   footer: {

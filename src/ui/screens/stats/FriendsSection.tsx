@@ -1,6 +1,3 @@
-/**
- * Collapsible friends section inside the Stats screen.
- */
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +7,7 @@ import { spacing } from '../../theme/spacing';
 import { useFriendsStore } from '../../../state';
 import { EmptyState } from '../../components/EmptyState';
 import { Button } from '../../components/Button';
+import { Avatar } from '../../components/Avatar';
 import { FriendRow } from './FriendRow';
 import { FriendDetailSheet } from './FriendDetailSheet';
 import type { FriendSummary } from '../../../state/friendsStore';
@@ -25,21 +23,37 @@ export function FriendsSection() {
       {/* Toggle header */}
       <Pressable
         onPress={() => setExpanded((v) => !v)}
-        style={[styles.header, { borderColor: colors.divider }]}
+        style={[styles.header, { borderColor: colors.divider, backgroundColor: colors.surface }]}
       >
-        <Text style={[typography.subtitle, { color: colors.textPrimary }]}>Arkadaşlar</Text>
+        <View style={styles.headerLeft}>
+          <Text style={[typography.h3, { color: colors.textPrimary }]}>Arkadaşlarım</Text>
+          {!expanded && friends.length > 0 && (
+            <View style={styles.avatarStack}>
+              {friends.slice(0, 3).map((f, i) => (
+                <View key={f.userId} style={[styles.stackItem, { zIndex: 3 - i, borderColor: colors.surface }]}>
+                  <Avatar uri={f.avatarUrl} size={28} />
+                </View>
+              ))}
+              {friends.length > 3 && (
+                <View style={[styles.moreBadge, { backgroundColor: colors.surfaceVariant, borderColor: colors.surface }]}>
+                  <Text style={[typography.overline, { color: colors.textSecondary }]}>+{friends.length - 3}</Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={20}
+          size={24}
           color={colors.textSecondary}
         />
       </Pressable>
 
       {expanded && (
-        <View>
+        <View style={{ backgroundColor: colors.surface, paddingBottom: spacing.md }}>
           {friends.length === 0 ? (
             <EmptyState
-              icon={<Ionicons name="people-outline" size={36} color={colors.textDisabled} />}
+              icon={<Ionicons name="people-outline" size={48} color={colors.textDisabled} />}
               title="Henüz arkadaş yok"
               action={
                 <Button title="Arkadaş Ekle" variant="outline" size="sm" onPress={() => {}} />
@@ -70,13 +84,36 @@ export function FriendsSection() {
 }
 
 const styles = StyleSheet.create({
-  container: { marginTop: spacing.lg },
+  container: { marginTop: spacing.xl, marginHorizontal: spacing.lg, borderRadius: 24, overflow: 'hidden' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderTopWidth: 1,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarStack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: spacing.md,
+  },
+  stackItem: {
+    marginLeft: -8,
+    borderWidth: 2,
+    borderRadius: 16,
+  },
+  moreBadge: {
+    marginLeft: -8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 0,
+  }
 });

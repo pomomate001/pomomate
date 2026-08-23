@@ -1,16 +1,7 @@
-/**
- * Statistics / progress screen.
- *
- * Layout:
- *   İstatistiklerim
- *     → Günlük / Haftalık / Aylık tab
- *     → Summary cards (toplam süre, pomodoro, görev, streak)
- *     → Bar chart
- *     → Arkadaşlar ▼ (collapsible)
- */
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
@@ -32,7 +23,7 @@ const periodLabels: Record<Period, string> = {
 function formatHours(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  return h > 0 ? `${h}s ${m}dk` : `${m}dk`;
+  return h > 0 ? `${h}s ${m}d` : `${m}dk`;
 }
 
 // Mock chart data — replaced by real data in M03
@@ -65,75 +56,85 @@ export function StatsScreen() {
 
   return (
     <ScrollView style={[styles.screen, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
-      <Text style={[typography.h2, styles.title, { color: colors.textPrimary }]}>İstatistiklerim</Text>
-
-      {/* Period tabs */}
-      <View style={styles.periodRow}>
-        {periods.map((p) => (
-          <Pressable
-            key={p}
-            onPress={() => setPeriod(p)}
-            style={[
-              styles.periodTab,
-              {
-                backgroundColor: p === period ? colors.primary : colors.surfaceVariant,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                typography.captionBold,
-                { color: p === period ? colors.textInverse : colors.textSecondary },
-              ]}
-            >
-              {periodLabels[p]}
-            </Text>
-          </Pressable>
-        ))}
+      {/* Header with gradient background */}
+      <View style={styles.headerWrap}>
+        <LinearGradient
+          colors={[colors.gradientStart, colors.gradientEnd]}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        <View style={styles.headerContent}>
+          <Text style={[typography.h2, { color: colors.textInverse }]}>İstatistiklerim</Text>
+          
+          <View style={[styles.periodRow, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+            {periods.map((p) => (
+              <Pressable
+                key={p}
+                onPress={() => setPeriod(p)}
+                style={[
+                  styles.periodTab,
+                  p === period && { backgroundColor: colors.background },
+                ]}
+              >
+                <Text
+                  style={[
+                    typography.captionBold,
+                    { color: p === period ? colors.primary : colors.textInverse },
+                  ]}
+                >
+                  {periodLabels[p]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
       </View>
 
-      {/* Summary cards */}
-      <View style={styles.cardRow}>
-        <StatCard
-          icon={<Ionicons name="time-outline" size={20} color={colors.info} />}
-          label="Toplam Süre"
-          value={formatHours(totalWorkSeconds)}
-        />
-        <View style={{ width: spacing.sm }} />
-        <StatCard
-          icon={<Text style={{ fontSize: 18 }}>🍅</Text>}
-          label="Pomodoro"
-          value={String(totalPomodoros)}
-        />
+      <View style={styles.contentWrap}>
+        {/* Summary cards */}
+        <View style={styles.cardRow}>
+          <StatCard
+            icon={<Ionicons name="time-outline" size={24} color={colors.info} />}
+            label="Toplam Süre"
+            value={formatHours(totalWorkSeconds)}
+          />
+          <View style={{ width: spacing.sm }} />
+          <StatCard
+            icon={<Text style={{ fontSize: 22 }}>🍅</Text>}
+            label="Pomodoro"
+            value={String(totalPomodoros)}
+          />
+        </View>
+
+        <View style={[styles.cardRow, { marginTop: spacing.sm }]}>
+          <StatCard
+            icon={<Ionicons name="checkmark-done-outline" size={24} color={colors.success} />}
+            label="Görev"
+            value={String(totalTasksCompleted)}
+          />
+          <View style={{ width: spacing.sm }} />
+          <StatCard
+            icon={<Text style={{ fontSize: 22 }}>🔥</Text>}
+            label="Streak"
+            value={`${streak} gün`}
+          />
+        </View>
+
+        {/* Chart */}
+        <Card variant="glass" style={styles.chartCard}>
+          <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.md }]}>
+            POMODORO AKTİVİTESİ
+          </Text>
+          <MiniBarChart data={chartData} />
+        </Card>
+
+        {/* Ad between sections */}
+        <AdPlacement size="banner" />
+
+        {/* Friends */}
+        <FriendsSection />
       </View>
-
-      <View style={[styles.cardRow, { marginTop: spacing.sm }]}>
-        <StatCard
-          icon={<Ionicons name="checkmark-done-outline" size={20} color={colors.success} />}
-          label="Görev"
-          value={String(totalTasksCompleted)}
-        />
-        <View style={{ width: spacing.sm }} />
-        <StatCard
-          icon={<Text style={{ fontSize: 18 }}>🔥</Text>}
-          label="Streak"
-          value={`${streak} gün`}
-        />
-      </View>
-
-      {/* Chart */}
-      <Card style={styles.chartCard}>
-        <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.sm }]}>
-          Pomodoro — {periodLabels[period]}
-        </Text>
-        <MiniBarChart data={chartData} />
-      </Card>
-
-      {/* Ad between sections */}
-      <AdPlacement size="banner" />
-
-      {/* Friends */}
-      <FriendsSection />
 
       <View style={{ height: spacing.xxxl }} />
     </ScrollView>
@@ -142,21 +143,36 @@ export function StatsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  title: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, marginBottom: spacing.md },
+  headerWrap: {
+    paddingTop: spacing.xxxl,
+    paddingBottom: spacing.xl,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: 'hidden',
+  },
+  headerContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+  },
+  contentWrap: {
+    paddingTop: spacing.lg,
+  },
   periodRow: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.xs,
-    marginBottom: spacing.lg,
+    padding: 4,
+    borderRadius: 24,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xs,
   },
   periodTab: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 999,
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   cardRow: {
     flexDirection: 'row',
     paddingHorizontal: spacing.lg,
   },
-  chartCard: { marginHorizontal: spacing.lg, marginTop: spacing.lg },
+  chartCard: { marginHorizontal: spacing.lg, marginTop: spacing.xl },
 });

@@ -16,12 +16,16 @@ export function StatCard({ icon, label, value }: StatCardProps) {
   const colors = useColors();
 
   return (
-    <View style={[styles.card, shadows.sm, { backgroundColor: colors.card }]}>
-      {icon}
-      <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.xs }]}>
-        {value}
-      </Text>
-      <Text style={[typography.caption, { color: colors.textSecondary }]}>{label}</Text>
+    <View style={[styles.card, shadows.sm, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={[styles.iconWrap, { backgroundColor: colors.surfaceVariant }]}>
+        {icon}
+      </View>
+      <View style={styles.textWrap}>
+        <Text style={[typography.h3, { color: colors.textPrimary }]}>
+          {value}
+        </Text>
+        <Text style={[typography.caption, { color: colors.textSecondary }]}>{label}</Text>
+      </View>
     </View>
   );
 }
@@ -29,9 +33,21 @@ export function StatCard({ icon, label, value }: StatCardProps) {
 const styles = StyleSheet.create({
   card: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: radius.md,
-    minWidth: 80,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+  },
+  iconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  textWrap: {
+    flex: 1,
   },
 });
