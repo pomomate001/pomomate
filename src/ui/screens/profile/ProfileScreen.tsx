@@ -10,6 +10,7 @@ import { shadows } from '../../theme/shadows';
 import { useUserStore } from '../../../state';
 import { AvatarPicker } from './AvatarPicker';
 import { PremiumReferralCard } from './PremiumReferralCard';
+import { PremiumPaywallSheet } from './PremiumPaywallSheet';
 import * as ImagePicker from 'expo-image-picker';
 import { AdPlacement } from '../../ads';
 
@@ -50,6 +51,7 @@ export function ProfileScreen({
   const colors = useColors();
   const user = useUserStore((s) => s.user);
   const updateUser = useUserStore((s) => s.updateUser);
+  const [showPaywall, setShowPaywall] = React.useState(false);
 
   const handlePickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -69,61 +71,68 @@ export function ProfileScreen({
   };
 
   return (
-    <ScrollView style={[styles.screen, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
-      {/* Header with Gradient */}
-      <View style={styles.headerWrap}>
-        <LinearGradient
-          colors={[colors.gradientStart, colors.gradientEnd]}
-          style={StyleSheet.absoluteFill}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
-        <View style={styles.headerContent}>
-          <AvatarPicker
-            uri={user?.avatarUrl}
-            name={user?.displayName}
-            onPick={handlePickAvatar}
-            onRemove={handleRemoveAvatar}
+    <>
+      <ScrollView style={[styles.screen, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+        {/* Header with Gradient */}
+        <View style={styles.headerWrap}>
+          <LinearGradient
+            colors={[colors.gradientStart, colors.gradientEnd]}
+            style={StyleSheet.absoluteFill}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
           />
-          <Text style={[typography.h3, { color: colors.textInverse, textAlign: 'center', marginTop: spacing.md }]}>
-            {user?.displayName ?? 'Kullanıcı'}
-          </Text>
-          <Text style={[typography.caption, { color: 'rgba(255,255,255,0.7)', textAlign: 'center' }]}>
-            {user?.email ?? ''}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.contentWrap}>
-        {/* Premium / Referral */}
-        <PremiumReferralCard
-          onPremiumPress={() => { /* RevenueCat paywall — M08 */ }}
-          onReferralPress={() => { /* Referral flow — M08 */ }}
-        />
-
-        {/* Settings */}
-        <View style={[styles.settingsSection, shadows.sm, { backgroundColor: colors.surface }]}>
-          <SettingRow icon="color-palette-outline" label="Tema ve Görünüm" onPress={onNavigateAppearance} />
-          <SettingRow icon="timer-outline" label="Çalışma / Mola Süreleri" onPress={onNavigateTimer} />
-          <SettingRow icon="volume-medium-outline" label="Sesler" onPress={onNavigateSounds} />
-          <SettingRow icon="notifications-outline" label="Bildirimler" onPress={() => {}} />
-          <SettingRow icon="shield-checkmark-outline" label="Gizlilik" onPress={() => {}} />
-          <SettingRow icon="information-circle-outline" label="Hakkında" onPress={() => {}} hideBorder />
+          <View style={styles.headerContent}>
+            <AvatarPicker
+              uri={user?.avatarUrl}
+              name={user?.displayName}
+              onPick={handlePickAvatar}
+              onRemove={handleRemoveAvatar}
+            />
+            <Text style={[typography.h3, { color: colors.textInverse, textAlign: 'center', marginTop: spacing.md }]}>
+              {user?.displayName ?? 'Kullanıcı'}
+            </Text>
+            <Text style={[typography.caption, { color: 'rgba(255,255,255,0.7)', textAlign: 'center' }]}>
+              {user?.email ?? ''}
+            </Text>
+          </View>
         </View>
 
-        {/* Sign out */}
-        <Pressable style={[styles.signOut, { backgroundColor: colors.surface }]} onPress={() => { /* M08 sign-out */ }}>
-          <Ionicons name="log-out-outline" size={20} color={colors.error} />
-          <Text style={[typography.bodyBold, { color: colors.error, marginLeft: spacing.sm }]}>
-            Çıkış Yap
-          </Text>
-        </Pressable>
+        <View style={styles.contentWrap}>
+          {/* Premium / Referral */}
+          <PremiumReferralCard
+            onPremiumPress={() => setShowPaywall(true)}
+            onReferralPress={() => { /* Referral flow — M08 */ }}
+          />
 
-        <AdPlacement size="banner" />
+          {/* Settings */}
+          <View style={[styles.settingsSection, shadows.sm, { backgroundColor: colors.surface }]}>
+            <SettingRow icon="color-palette-outline" label="Tema ve Görünüm" onPress={onNavigateAppearance} />
+            <SettingRow icon="timer-outline" label="Çalışma / Mola Süreleri" onPress={onNavigateTimer} />
+            <SettingRow icon="volume-medium-outline" label="Sesler" onPress={onNavigateSounds} />
+            <SettingRow icon="notifications-outline" label="Bildirimler" onPress={() => {}} />
+            <SettingRow icon="shield-checkmark-outline" label="Gizlilik" onPress={() => {}} />
+            <SettingRow icon="information-circle-outline" label="Hakkında" onPress={() => {}} hideBorder />
+          </View>
 
-        <View style={{ height: spacing.xxxl }} />
-      </View>
-    </ScrollView>
+          {/* Sign out */}
+          <Pressable style={[styles.signOut, { backgroundColor: colors.surface }]} onPress={() => { /* M08 sign-out */ }}>
+            <Ionicons name="log-out-outline" size={20} color={colors.error} />
+            <Text style={[typography.bodyBold, { color: colors.error, marginLeft: spacing.sm }]}>
+              Çıkış Yap
+            </Text>
+          </Pressable>
+
+          <AdPlacement size="banner" />
+
+          <View style={{ height: spacing.xxxl }} />
+        </View>
+      </ScrollView>
+
+      <PremiumPaywallSheet 
+        visible={showPaywall} 
+        onClose={() => setShowPaywall(false)} 
+      />
+    </>
   );
 }
 
