@@ -57,8 +57,8 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
           end={{ x: 1, y: 1 }}
         />
         <View style={styles.headerContent}>
-          <Text style={[typography.h2, { color: colors.textInverse }]}>Çalışma Odaları</Text>
-          <Text style={[typography.body, { color: 'rgba(255,255,255,0.8)', marginTop: spacing.xs }]}>
+          <Text style={[typography.h2, { color: colors.textPrimary }]}>Çalışma Odaları</Text>
+          <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
             Arkadaşlarınla birlikte odaklan
           </Text>
         </View>
@@ -66,20 +66,22 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
 
       {/* Actions */}
       <View style={styles.actions}>
-        <Button
-          title="Oda Oluştur"
-          onPress={onCreateRoom}
-          icon={<Ionicons name="add-circle-outline" size={20} color={colors.textInverse} />}
-          style={styles.actionBtn}
-        />
+        <View style={{ flex: 1 }}>
+          <Button
+            title="Oda Oluştur"
+            onPress={onCreateRoom}
+            icon={<Ionicons name="add-circle-outline" size={20} color={colors.textInverse} />}
+          />
+        </View>
         <View style={{ width: spacing.md }} />
-        <Button
-          title="Katıl"
-          variant="outline"
-          onPress={onJoinRoom}
-          icon={<Ionicons name="enter-outline" size={20} color={colors.primary} />}
-          style={styles.actionBtn}
-        />
+        <View style={{ flex: 1 }}>
+          <Button
+            title="Katıl"
+            variant="outline"
+            onPress={onJoinRoom}
+            icon={<Ionicons name="enter-outline" size={20} color={colors.primary} />}
+          />
+        </View>
       </View>
 
       <FlatList

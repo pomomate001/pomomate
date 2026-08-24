@@ -86,22 +86,22 @@ export function StatsScreen() {
           end={{ x: 1, y: 1 }}
         />
         <View style={styles.headerContent}>
-          <Text style={[typography.h2, { color: colors.textInverse }]}>İstatistiklerim</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]}>İstatistiklerim</Text>
           
-          <View style={[styles.periodRow, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+          <View style={[styles.periodRow, { backgroundColor: colors.surfaceVariant }]}>
             {periods.map((p) => (
               <Pressable
                 key={p}
                 onPress={() => setPeriod(p)}
                 style={[
                   styles.periodTab,
-                  p === period && { backgroundColor: colors.background },
+                  p === period && { backgroundColor: colors.primary },
                 ]}
               >
                 <Text
                   style={[
                     typography.captionBold,
-                    { color: p === period ? colors.primary : colors.textInverse },
+                    { color: p === period ? colors.textInverse : colors.textPrimary },
                   ]}
                 >
                   {periodLabels[p]}

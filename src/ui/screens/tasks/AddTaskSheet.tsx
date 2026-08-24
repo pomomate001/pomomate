@@ -8,13 +8,15 @@ import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
-import type { RecurrenceType } from '../../../types';
+import type { Task, RecurrenceType } from '../../../types';
 
 interface AddTaskSheetProps {
   visible: boolean;
   onClose: () => void;
   onAdd: (title: string, tag: string | null, recurrence: RecurrenceType, targetDate?: string) => void;
+  onEdit?: (id: string, updates: Partial<Task>) => void;
   initialDate?: string;
+  initialTask?: Task;
 }
 
 const RECURRENCE_OPTIONS: { label: string; value: RecurrenceType }[] = [
@@ -24,29 +26,49 @@ const RECURRENCE_OPTIONS: { label: string; value: RecurrenceType }[] = [
   { label: 'Hafta Sonu', value: 'weekends' },
 ];
 
-export function AddTaskSheet({ visible, onClose, onAdd, initialDate }: AddTaskSheetProps) {
+export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, initialTask }: AddTaskSheetProps) {
   const colors = useColors();
   const [title, setTitle] = useState('');
   const [tag, setTag] = useState('');
   const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
 
-  const handleAdd = () => {
+  React.useEffect(() => {
+    if (visible) {
+      if (initialTask) {
+        setTitle(initialTask.title);
+        setTag(initialTask.tag || '');
+        setRecurrence(initialTask.recurrence?.type || 'none');
+      } else {
+        setTitle('');
+        setTag('');
+        setRecurrence('none');
+      }
+    }
+  }, [visible, initialTask]);
+
+  const handleSave = () => {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
     
     const trimmedTag = tag.trim() || null;
-    onAdd(trimmedTitle, trimmedTag, recurrence, initialDate);
+
+    if (initialTask && onEdit) {
+      onEdit(initialTask.id, {
+        title: trimmedTitle,
+        tag: trimmedTag,
+        recurrence: { type: recurrence }
+      });
+    } else {
+      onAdd(trimmedTitle, trimmedTag, recurrence, initialDate);
+    }
     
-    setTitle('');
-    setTag('');
-    setRecurrence('none');
     onClose();
   };
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.lg }]}>
-        Yeni Görev Ekle
+        {initialTask ? 'Görevi Düzenle' : 'Yeni Görev Ekle'}
       </Text>
 
       <Input
@@ -97,10 +119,10 @@ export function AddTaskSheet({ visible, onClose, onAdd, initialDate }: AddTaskSh
 
       <View style={styles.footer}>
         <Button 
-          title="Görevi Ekle" 
-          onPress={handleAdd} 
+          title={initialTask ? 'Kaydet' : 'Görevi Ekle'} 
+          onPress={handleSave} 
           disabled={!title.trim()} 
-          icon={<Ionicons name="add" size={20} color={colors.textInverse} />}
+          icon={<Ionicons name={initialTask ? "save" : "add"} size={20} color={colors.textInverse} />}
         />
       </View>
     </BottomSheet>

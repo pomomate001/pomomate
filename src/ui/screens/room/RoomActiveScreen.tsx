@@ -97,19 +97,19 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         />
         <View style={styles.headerContent}>
           <Pressable onPress={onLeave} hitSlop={10} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={colors.textInverse} />
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </Pressable>
           <View style={styles.headerTitleWrap}>
-            <Text style={[typography.h3, { color: colors.textInverse }]} numberOfLines={1}>
+            <Text style={[typography.h3, { color: colors.textPrimary }]} numberOfLines={1}>
               {room?.name ?? 'Çalışma Odası'}
             </Text>
             <View style={styles.liveBadge}>
               <View style={[styles.liveDot, { backgroundColor: colors.error }]} />
-              <Text style={[typography.overline, { color: colors.textInverse }]}>CANLI</Text>
+              <Text style={[typography.overline, { color: colors.error }]}>CANLI</Text>
             </View>
           </View>
           <Pressable onPress={() => setShowFeatureMenu(true)} style={styles.addBtn}>
-            <Ionicons name="add-circle" size={32} color={colors.textInverse} />
+            <Ionicons name="add-circle" size={32} color={colors.textPrimary} />
           </Pressable>
         </View>
         

@@ -88,10 +88,10 @@ export function ProfileScreen({
               onPick={handlePickAvatar}
               onRemove={handleRemoveAvatar}
             />
-            <Text style={[typography.h3, { color: colors.textInverse, textAlign: 'center', marginTop: spacing.md }]}>
+            <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center', marginTop: spacing.md }]}>
               {user?.displayName ?? 'Kullanıcı'}
             </Text>
-            <Text style={[typography.caption, { color: 'rgba(255,255,255,0.7)', textAlign: 'center' }]}>
+            <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>
               {user?.email ?? ''}
             </Text>
           </View>

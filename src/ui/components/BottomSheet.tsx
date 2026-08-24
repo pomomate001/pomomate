@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Modal, Pressable, StyleSheet } from 'react-native';
+import { View, Modal, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useColors } from '../theme';
 import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
@@ -15,11 +15,16 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={[styles.backdrop, { backgroundColor: colors.overlay }]} onPress={onClose} />
-      <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
-        <View style={[styles.handle, { backgroundColor: colors.border }]} />
-        {children}
-      </View>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1, justifyContent: 'flex-end' }}
+      >
+        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay }]} onPress={onClose} />
+        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+          <View style={[styles.handle, { backgroundColor: colors.border }]} />
+          {children}
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

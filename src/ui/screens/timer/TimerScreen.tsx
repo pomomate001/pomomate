@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { Ionicons } from '@expo/vector-icons';
 import { useTimerStore, useSettingsStore, useStatsStore, useTaskStore } from '../../../state';
 import { useColors } from '../../theme';
@@ -68,6 +69,18 @@ export function TimerScreen() {
     if (remainingSeconds === 0 && !isRunning) {
       if (mode === 'work') {
         recordPomodoro(workDuration);
+        
+        // Find the first uncompleted task for today and increment its pomodoroCount
+        const todayStr = new Date().toISOString().split('T')[0];
+        const activeTask = useTaskStore.getState().tasks.find(t => 
+          (!t.targetDate || t.targetDate === todayStr) && !t.completed
+        );
+        if (activeTask) {
+          useTaskStore.getState().updateTask(activeTask.id, { 
+            pomodoroCount: (activeTask.pomodoroCount || 0) + 1 
+          });
+        }
+        
         notificationService.scheduleTimerComplete(
           'Pomodoro Tamamlandı! 🍅',
           'Mola zamanı. İyi dinlenmeler!',
@@ -82,6 +95,7 @@ export function TimerScreen() {
   }, [remainingSeconds, isRunning, mode, recordPomodoro, workDuration]);
 
   const [showAddTask, setShowAddTask] = React.useState(false);
+  const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
 
   const handleAddTask = useCallback(
     (title: string, tag: string | null, recurrence: any) => {
@@ -100,6 +114,21 @@ export function TimerScreen() {
     },
     [addTask]
   );
+  
+  const handleEditTask = useCallback((id: string, updates: Partial<Task>) => {
+    useTaskStore.getState().updateTask(id, updates);
+  }, []);
+
+  const openEditTask = useCallback((task: Task) => {
+    setEditingTask(task);
+    setShowAddTask(true);
+  }, []);
+
+  const handleCloseSheet = useCallback(() => {
+    setShowAddTask(false);
+    // slight delay to clear editing task so the transition is smooth
+    setTimeout(() => setEditingTask(undefined), 300);
+  }, []);
 
   const handleToggleTask = useCallback(
     (id: string) => {
@@ -117,9 +146,28 @@ export function TimerScreen() {
   const todayStr = new Date().toISOString().split('T')[0];
   const todayTasks = tasks.filter(t => !t.targetDate || t.targetDate === todayStr);
 
-  return (
-    <BackgroundEffect effectId={backgroundEffectId}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+  const reorderTasks = useTaskStore((s) => s.reorderTasks);
+
+  const firstUncompletedTaskId = todayTasks.find(t => !t.completed)?.id;
+
+  const renderTask = ({ item, drag, isActive }: RenderItemParams<Task>) => {
+    return (
+      <ScaleDecorator>
+        <TaskItem
+          task={item}
+          onToggle={handleToggleTask}
+          onDelete={removeTask}
+          onPress={openEditTask}
+          onDragHandle={drag}
+          isActive={isActive}
+          isWorkingTask={item.id === firstUncompletedTaskId && isRunning && mode === 'work'}
+        />
+      </ScaleDecorator>
+    );
+  };
+
+  const header = (
+    <>
         {/* Mode selector */}
         <View style={styles.modeRow}>
           {modeButtons.map((m) => (
@@ -176,7 +224,7 @@ export function TimerScreen() {
           />
         </View>
 
-        {/* Tasks Section */}
+        {/* Tasks Header */}
         <View style={styles.tasksSection}>
           <View style={styles.tasksHeader}>
             <Text style={[typography.h3, { color: colors.textPrimary }]}>📋 Görevlerim</Text>
@@ -194,35 +242,36 @@ export function TimerScreen() {
               onPress={() => setShowAddTask(true)}
             />
           </View>
-          
-          <View style={styles.taskList}>
-            {todayTasks.length === 0 ? (
-              <View style={styles.emptyTasks}>
-                <Text style={[typography.body, { color: colors.textDisabled, textAlign: 'center' }]}>
-                  Şu an için hiç göreviniz yok. Yeni bir görev ekleyerek çalışmaya başlayın.
-                </Text>
-              </View>
-            ) : (
-              todayTasks.map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  onToggle={handleToggleTask}
-                  onDelete={removeTask}
-                />
-              ))
-            )}
-          </View>
         </View>
+    </>
+  );
 
-        {/* Ad banner — below controls, never over timer */}
-        <AdPlacement size="banner" />
-      </ScrollView>
+  return (
+    <BackgroundEffect effectId={backgroundEffectId}>
+      <DraggableFlatList
+        data={todayTasks}
+        onDragEnd={({ data }) => reorderTasks(data)}
+        keyExtractor={(item) => item.id}
+        renderItem={renderTask}
+        ListHeaderComponent={header}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyTasks}>
+            <Text style={[typography.body, { color: colors.textDisabled, textAlign: 'center' }]}>
+              Şu an için hiç göreviniz yok. Yeni bir görev ekleyerek çalışmaya başlayın.
+            </Text>
+          </View>
+        }
+        ListFooterComponent={<AdPlacement size="banner" />}
+      />
 
       <AddTaskSheet 
         visible={showAddTask}
-        onClose={() => setShowAddTask(false)}
+        onClose={handleCloseSheet}
         onAdd={handleAddTask}
+        onEdit={handleEditTask}
+        initialTask={editingTask}
       />
     </BackgroundEffect>
   );

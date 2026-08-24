@@ -21,6 +21,7 @@ interface TaskStore {
   setError: (error: string | null) => void;
   reset: () => void;
   generateRecurringTasks: () => void;
+  reorderTasks: (newTasks: Task[]) => void;
 }
 
 export const useTaskStore = create<TaskStore>((set) => ({
@@ -106,5 +107,15 @@ export const useTaskStore = create<TaskStore>((set) => ({
       return { tasks: [...state.tasks, ...newTasks] };
     }
     return state;
+  }),
+  
+  reorderTasks: (newTasks) => set((state) => {
+    // newTasks only contains a subset (e.g. today's uncompleted tasks).
+    // We need to merge this back into the full tasks array preserving order.
+    // An easy way is to remove all tasks that are in newTasks from state.tasks,
+    // and then add newTasks back. Or just replace the matched tasks in place.
+    const newTaskIds = new Set(newTasks.map(t => t.id));
+    const otherTasks = state.tasks.filter(t => !newTaskIds.has(t.id));
+    return { tasks: [...newTasks, ...otherTasks] }; // Put newTasks first
   }),
 }));

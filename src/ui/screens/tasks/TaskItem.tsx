@@ -11,10 +11,13 @@ interface TaskItemProps {
   task: Task;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onPress?: (task: Task) => void;
   onDragHandle?: () => void;
+  isActive?: boolean;
+  isWorkingTask?: boolean;
 }
 
-export function TaskItem({ task, onToggle, onDelete, onDragHandle }: TaskItemProps) {
+export function TaskItem({ task, onToggle, onDelete, onPress, onDragHandle, isActive, isWorkingTask }: TaskItemProps) {
   const colors = useColors();
   const [scaleAnim] = useState(() => new Animated.Value(1));
 
@@ -27,7 +30,19 @@ export function TaskItem({ task, onToggle, onDelete, onDragHandle }: TaskItemPro
   };
 
   return (
-    <View style={[styles.row, { backgroundColor: colors.surface }]}>
+    <View style={[
+      styles.row, 
+      { backgroundColor: isActive ? colors.surfaceVariant : colors.surface },
+      isActive && { elevation: 5, shadowOpacity: 0.2, shadowRadius: 5 },
+      isWorkingTask && { borderColor: colors.primary, borderWidth: 1 }
+    ]}>
+      {/* Drag Handle */}
+      {onDragHandle && (
+        <Pressable onLongPress={onDragHandle} style={styles.dragHandle}>
+          <Ionicons name="menu-outline" size={24} color={colors.textDisabled} />
+        </Pressable>
+      )}
+
       {/* Checkbox */}
       <Pressable onPress={handleToggle} style={styles.checkWrap}>
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
@@ -40,7 +55,7 @@ export function TaskItem({ task, onToggle, onDelete, onDragHandle }: TaskItemPro
       </Pressable>
 
       {/* Title + pomodoro count */}
-      <View style={styles.content}>
+      <Pressable style={styles.content} onPress={() => onPress && onPress(task)}>
         <Text
           style={[
             typography.bodyBold,
@@ -65,7 +80,7 @@ export function TaskItem({ task, onToggle, onDelete, onDragHandle }: TaskItemPro
             </Text>
           )}
         </View>
-      </View>
+      </Pressable>
 
       {/* Delete */}
       <Pressable onPress={() => onDelete(task.id)} style={styles.deleteBtn}>
@@ -84,6 +99,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     marginBottom: spacing.xs,
   },
+  dragHandle: { marginRight: spacing.sm, padding: 4 },
   checkWrap: { marginRight: spacing.md },
   content: { flex: 1 },
   strikethrough: { textDecorationLine: 'line-through' },
