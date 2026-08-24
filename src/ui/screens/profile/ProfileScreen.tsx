@@ -11,6 +11,7 @@ import { useUserStore } from '../../../state';
 import { AvatarPicker } from './AvatarPicker';
 import { PremiumReferralCard } from './PremiumReferralCard';
 import { PremiumPaywallSheet } from './PremiumPaywallSheet';
+import { ReferralSheet } from './ReferralSheet';
 import * as ImagePicker from 'expo-image-picker';
 import { AdPlacement } from '../../ads';
 
@@ -52,6 +53,7 @@ export function ProfileScreen({
   const user = useUserStore((s) => s.user);
   const updateUser = useUserStore((s) => s.updateUser);
   const [showPaywall, setShowPaywall] = React.useState(false);
+  const [showReferral, setShowReferral] = React.useState(false);
 
   const handlePickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -101,22 +103,21 @@ export function ProfileScreen({
           {/* Premium / Referral */}
           <PremiumReferralCard
             onPremiumPress={() => setShowPaywall(true)}
-            onReferralPress={() => { alert('Bedava Pro Kazanma (Arkadaş Davet) akışı çok yakında aktif olacak! (M08)'); }}
+            onReferralPress={() => setShowReferral(true)}
           />
 
           {/* Settings */}
           <View style={[styles.settingsSection, shadows.sm, { backgroundColor: colors.surface }]}>
             <SettingRow icon="color-palette-outline" label="Tema ve Görünüm" onPress={onNavigateAppearance} />
             <SettingRow icon="timer-outline" label="Çalışma / Mola Süreleri" onPress={onNavigateTimer} />
-            <SettingRow icon="volume-medium-outline" label="Sesler" onPress={onNavigateSounds} />
-            <SettingRow icon="notifications-outline" label="Bildirimler" onPress={() => {}} />
-            <SettingRow icon="shield-checkmark-outline" label="Gizlilik" onPress={() => {}} />
-            <SettingRow icon="information-circle-outline" label="Hakkında" onPress={() => {}} hideBorder />
+            <SettingRow icon="volume-high-outline" label="Sesler ve Bildirimler" onPress={onNavigateSounds} />
+            <SettingRow icon="shield-checkmark-outline" label="Gizlilik ve Veriler" onPress={() => alert('PomoMate verilerinizi yerel ve güvenli Supabase veritabanında saklar.')} />
+            <SettingRow icon="information-circle-outline" label="Hakkında" onPress={() => alert('PomoMate v1.0.0 — Birlikte Çalış')} hideBorder />
           </View>
 
           {/* Sign out */}
           <Pressable 
-            style={[styles.signOut, { backgroundColor: colors.surface }]} 
+            style={[styles.signOut, { backgroundColor: `${colors.error}15` }]} 
             onPress={async () => { 
               await import('../../../services/auth').then(m => m.authService.signOut());
               useUserStore.getState().setUser(null);
@@ -137,6 +138,11 @@ export function ProfileScreen({
       <PremiumPaywallSheet 
         visible={showPaywall} 
         onClose={() => setShowPaywall(false)} 
+      />
+
+      <ReferralSheet
+        visible={showReferral}
+        onClose={() => setShowReferral(false)}
       />
     </>
   );

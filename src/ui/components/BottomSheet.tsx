@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Modal,
@@ -8,7 +8,9 @@ import {
   Platform,
   ScrollView,
   Dimensions,
+  PanResponder,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../theme';
 import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
@@ -42,6 +44,20 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
     };
   }, []);
 
+  // PanResponder to handle swipe-down to dismiss
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy > 10,
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 50 || gestureState.vy > 0.5) {
+          Keyboard.dismiss();
+          onClose();
+        }
+      },
+    }),
+  ).current;
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalContainer}>
@@ -62,7 +78,21 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
             },
           ]}
         >
-          <View style={[styles.handle, { backgroundColor: colors.border }]} />
+          {/* Draggable Handle Bar */}
+          <View {...panResponder.panHandlers} style={styles.dragArea}>
+            <View style={[styles.handle, { backgroundColor: colors.border }]} />
+            <Pressable
+              onPress={() => {
+                Keyboard.dismiss();
+                onClose();
+              }}
+              hitSlop={12}
+              style={styles.closeBtn}
+            >
+              <Ionicons name="close-circle" size={24} color={colors.textDisabled} />
+            </Pressable>
+          </View>
+
           <ScrollView
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -86,18 +116,29 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
+    paddingTop: spacing.xs,
     paddingBottom: spacing.lg,
     overflow: 'hidden',
+  },
+  dragArea: {
+    paddingVertical: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    minHeight: 28,
   },
   scrollContent: {
     paddingBottom: spacing.md,
   },
   handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
+    width: 44,
+    height: 5,
+    borderRadius: 3,
     alignSelf: 'center',
-    marginBottom: spacing.md,
+  },
+  closeBtn: {
+    position: 'absolute',
+    right: 0,
+    top: 2,
   },
 });

@@ -12,6 +12,7 @@ import { TimerFace } from './TimerFace';
 import { BackgroundEffect } from '../../animations';
 import { AdPlacement } from '../../ads';
 import { notificationService } from '../../../services/mobile';
+import { soundService } from '../../../services/mobile/sound/SoundService';
 import type { TimerMode, Task } from '../../../types';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
@@ -105,11 +106,13 @@ export function TimerScreen() {
           });
         }
         
+        soundService.playCompletionSound();
         notificationService.scheduleTimerComplete(
           'Pomodoro Tamamlandı! 🍅',
           'Mola zamanı. İyi dinlenmeler!',
         );
       } else {
+        soundService.playCompletionSound();
         notificationService.scheduleTimerComplete(
           'Mola Bitti! ⏰',
           'Çalışmaya geri dön.',
