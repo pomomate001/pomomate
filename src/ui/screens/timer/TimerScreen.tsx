@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
+import { View, Text, StyleSheet, ScrollView, Pressable, Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTimerStore, useSettingsStore, useStatsStore, useTaskStore } from '../../../state';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
+import { radius } from '../../theme/radius';
 import { IconButton } from '../../components/IconButton';
 import { Button } from '../../components/Button';
 import { TimerFace } from './TimerFace';
@@ -17,6 +17,11 @@ import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
 import { TaskItem } from '../tasks/TaskItem';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const modeLabels: Record<TimerMode, string> = {
   work: 'Çalışma',
@@ -51,6 +56,25 @@ export function TimerScreen() {
   const toggleCompleted = useTaskStore((s) => s.toggleCompleted);
   const removeTask = useTaskStore((s) => s.removeTask);
   const recordTaskCompleted = useStatsStore((s) => s.recordTaskCompleted);
+
+  // Expandable task list
+  const [isTaskListExpanded, setIsTaskListExpanded] = useState(false);
+  const chevronAnim = useRef(new Animated.Value(0)).current;
+
+  const toggleTaskList = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsTaskListExpanded(!isTaskListExpanded);
+    Animated.timing(chevronAnim, {
+      toValue: isTaskListExpanded ? 0 : 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const chevronRotation = chevronAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
 
   // Tick interval
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -126,7 +150,6 @@ export function TimerScreen() {
 
   const handleCloseSheet = useCallback(() => {
     setShowAddTask(false);
-    // slight delay to clear editing task so the transition is smooth
     setTimeout(() => setEditingTask(undefined), 300);
   }, []);
 
@@ -145,29 +168,13 @@ export function TimerScreen() {
 
   const todayStr = new Date().toISOString().split('T')[0];
   const todayTasks = tasks.filter(t => !t.targetDate || t.targetDate === todayStr);
+  const uncompletedTasks = todayTasks.filter(t => !t.completed);
+  const activeTask = uncompletedTasks[0];
+  const remainingTaskList = todayTasks.slice(1); // all tasks except the first one
 
-  const reorderTasks = useTaskStore((s) => s.reorderTasks);
-
-  const firstUncompletedTaskId = todayTasks.find(t => !t.completed)?.id;
-
-  const renderTask = ({ item, drag, isActive }: RenderItemParams<Task>) => {
-    return (
-      <ScaleDecorator>
-        <TaskItem
-          task={item}
-          onToggle={handleToggleTask}
-          onDelete={removeTask}
-          onPress={openEditTask}
-          onDragHandle={drag}
-          isActive={isActive}
-          isWorkingTask={item.id === firstUncompletedTaskId && isRunning && mode === 'work'}
-        />
-      </ScaleDecorator>
-    );
-  };
-
-  const header = (
-    <>
+  return (
+    <BackgroundEffect effectId={backgroundEffectId}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         {/* Mode selector */}
         <View style={styles.modeRow}>
           {modeButtons.map((m) => (
@@ -224,13 +231,14 @@ export function TimerScreen() {
           />
         </View>
 
-        {/* Tasks Header */}
+        {/* Tasks Section */}
         <View style={styles.tasksSection}>
+          {/* Header */}
           <View style={styles.tasksHeader}>
             <Text style={[typography.h3, { color: colors.textPrimary }]}>📋 Görevlerim</Text>
             <View style={[styles.taskCountBadge, { backgroundColor: colors.primaryLight }]}>
               <Text style={[typography.captionBold, { color: colors.textInverse }]}>
-                {todayTasks.filter(t => !t.completed).length}
+                {uncompletedTasks.length}
               </Text>
             </View>
             <View style={{ flex: 1 }} />
@@ -239,32 +247,75 @@ export function TimerScreen() {
               size="sm" 
               variant="outline" 
               icon={<Ionicons name="add" size={16} color={colors.primary} />}
-              onPress={() => setShowAddTask(true)}
+              onPress={() => { setEditingTask(undefined); setShowAddTask(true); }}
             />
           </View>
-        </View>
-    </>
-  );
+          
+          {/* Active / Primary Task Card */}
+          {todayTasks.length === 0 ? (
+            <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="clipboard-outline" size={32} color={colors.textDisabled} />
+              <Text style={[typography.body, { color: colors.textDisabled, textAlign: 'center', marginTop: spacing.sm }]}>
+                Henüz görev eklenmedi.{'\n'}Yeni bir görev ekleyerek başlayın.
+              </Text>
+            </View>
+          ) : (
+            <>
+              {/* First (active) task */}
+              <View style={[
+                styles.activeTaskCard,
+                { backgroundColor: colors.surface, borderColor: isRunning && mode === 'work' ? colors.primary : colors.border }
+              ]}>
+                {isRunning && mode === 'work' && (
+                  <View style={[styles.workingIndicator, { backgroundColor: colors.primary }]}>
+                    <Ionicons name="radio" size={10} color={colors.textInverse} />
+                    <Text style={[typography.overline, { color: colors.textInverse, marginLeft: 3 }]}>ÜZERİNDE ÇALIŞILIYOR</Text>
+                  </View>
+                )}
+                <TaskItem
+                  task={todayTasks[0]}
+                  onToggle={handleToggleTask}
+                  onDelete={removeTask}
+                  onPress={openEditTask}
+                />
+              </View>
 
-  return (
-    <BackgroundEffect effectId={backgroundEffectId}>
-      <DraggableFlatList
-        data={todayTasks}
-        onDragEnd={({ data }) => reorderTasks(data)}
-        keyExtractor={(item) => item.id}
-        renderItem={renderTask}
-        ListHeaderComponent={header}
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyTasks}>
-            <Text style={[typography.body, { color: colors.textDisabled, textAlign: 'center' }]}>
-              Şu an için hiç göreviniz yok. Yeni bir görev ekleyerek çalışmaya başlayın.
-            </Text>
-          </View>
-        }
-        ListFooterComponent={<AdPlacement size="banner" />}
-      />
+              {/* Expand/Collapse button */}
+              {remainingTaskList.length > 0 && (
+                <Pressable 
+                  onPress={toggleTaskList} 
+                  style={[styles.expandBtn, { backgroundColor: colors.surfaceVariant }]}
+                >
+                  <Text style={[typography.captionBold, { color: colors.textSecondary }]}>
+                    {isTaskListExpanded ? 'Görevleri Gizle' : `+${remainingTaskList.length} görev daha`}
+                  </Text>
+                  <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>
+                    <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+                  </Animated.View>
+                </Pressable>
+              )}
+
+              {/* Expanded task list */}
+              {isTaskListExpanded && (
+                <View style={[styles.expandedList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  {remainingTaskList.map((task) => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      onToggle={handleToggleTask}
+                      onDelete={removeTask}
+                      onPress={openEditTask}
+                    />
+                  ))}
+                </View>
+              )}
+            </>
+          )}
+        </View>
+
+        {/* Ad banner */}
+        <AdPlacement size="banner" />
+      </ScrollView>
 
       <AddTaskSheet 
         visible={showAddTask}
@@ -296,6 +347,7 @@ const styles = StyleSheet.create({
   timerWrap: {
     marginVertical: spacing.lg,
     alignItems: 'center',
+    width: '100%',
   },
   cycleIndicator: {
     paddingHorizontal: spacing.md,
@@ -306,14 +358,16 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xxl,
     marginTop: spacing.md,
     marginBottom: spacing.xxl,
+    width: '100%',
   },
   tasksSection: {
     width: '100%',
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
   },
   tasksHeader: {
     flexDirection: 'row',
@@ -326,11 +380,39 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 12,
   },
-  taskList: {
-    marginTop: spacing.sm,
-  },
-  emptyTasks: {
-    padding: spacing.xl,
+  emptyCard: {
     alignItems: 'center',
-  }
+    justifyContent: 'center',
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  activeTaskCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  workingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
+  expandBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
+    gap: spacing.xs,
+  },
+  expandedList: {
+    marginTop: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
 });

@@ -12,12 +12,9 @@ interface TaskItemProps {
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
   onPress?: (task: Task) => void;
-  onDragHandle?: () => void;
-  isActive?: boolean;
-  isWorkingTask?: boolean;
 }
 
-export function TaskItem({ task, onToggle, onDelete, onPress, onDragHandle, isActive, isWorkingTask }: TaskItemProps) {
+export function TaskItem({ task, onToggle, onDelete, onPress }: TaskItemProps) {
   const colors = useColors();
   const [scaleAnim] = useState(() => new Animated.Value(1));
 
@@ -30,19 +27,7 @@ export function TaskItem({ task, onToggle, onDelete, onPress, onDragHandle, isAc
   };
 
   return (
-    <View style={[
-      styles.row, 
-      { backgroundColor: isActive ? colors.surfaceVariant : colors.surface },
-      isActive && { elevation: 5, shadowOpacity: 0.2, shadowRadius: 5 },
-      isWorkingTask && { borderColor: colors.primary, borderWidth: 1 }
-    ]}>
-      {/* Drag Handle */}
-      {onDragHandle && (
-        <Pressable onLongPress={onDragHandle} style={styles.dragHandle}>
-          <Ionicons name="menu-outline" size={24} color={colors.textDisabled} />
-        </Pressable>
-      )}
-
+    <View style={[styles.row]}>
       {/* Checkbox */}
       <Pressable onPress={handleToggle} style={styles.checkWrap}>
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
@@ -54,7 +39,7 @@ export function TaskItem({ task, onToggle, onDelete, onPress, onDragHandle, isAc
         </Animated.View>
       </Pressable>
 
-      {/* Title + pomodoro count */}
+      {/* Title + tag + pomodoro count */}
       <Pressable style={styles.content} onPress={() => onPress && onPress(task)}>
         <Text
           style={[
@@ -66,7 +51,7 @@ export function TaskItem({ task, onToggle, onDelete, onPress, onDragHandle, isAc
         >
           {task.title}
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+        <View style={styles.metaRow}>
           {!!task.tag && (
             <View style={[styles.tagBadge, { backgroundColor: colors.surfaceVariant }]}>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>
@@ -74,8 +59,16 @@ export function TaskItem({ task, onToggle, onDelete, onPress, onDragHandle, isAc
               </Text>
             </View>
           )}
+          {task.recurrence && task.recurrence.type !== 'none' && (
+            <View style={[styles.tagBadge, { backgroundColor: `${colors.info}15` }]}>
+              <Ionicons name="repeat" size={10} color={colors.info} />
+              <Text style={[typography.caption, { color: colors.info, marginLeft: 2 }]}>
+                {task.recurrence.type === 'daily' ? 'Her gün' : task.recurrence.type === 'weekdays' ? 'Hafta içi' : 'Hafta sonu'}
+              </Text>
+            </View>
+          )}
           {task.pomodoroCount > 0 && (
-            <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: task.tag ? spacing.sm : 0 }]}>
+            <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: spacing.xs }]}>
               🍅 {task.pomodoroCount}
             </Text>
           )}
@@ -84,7 +77,7 @@ export function TaskItem({ task, onToggle, onDelete, onPress, onDragHandle, isAc
 
       {/* Delete */}
       <Pressable onPress={() => onDelete(task.id)} style={styles.deleteBtn}>
-        <Ionicons name="trash-outline" size={20} color={colors.textDisabled} />
+        <Ionicons name="trash-outline" size={18} color={colors.textDisabled} />
       </Pressable>
     </View>
   );
@@ -96,15 +89,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    marginBottom: spacing.xs,
   },
-  dragHandle: { marginRight: spacing.sm, padding: 4 },
   checkWrap: { marginRight: spacing.md },
   content: { flex: 1 },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
   strikethrough: { textDecorationLine: 'line-through' },
   deleteBtn: { padding: spacing.xs, opacity: 0.6 },
   tagBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
