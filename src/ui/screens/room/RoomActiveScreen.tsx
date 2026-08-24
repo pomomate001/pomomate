@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '../../theme';
@@ -7,30 +7,15 @@ import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { Card } from '../../components/Card';
-import { BottomSheet } from '../../components/BottomSheet';
 import { BackgroundEffect } from '../../animations/BackgroundEffect';
 import { ParticipantsBar } from './ParticipantsBar';
 import { RoomTimer, RoomTasks, RoomChat, RoomMedia, RoomFiles } from './features';
-import { useRoomStore, useTimerStore, useSettingsStore, useTaskStore } from '../../../state';
+import { useRoomStore, useSettingsStore, useTaskStore, useUserStore } from '../../../state';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
-import type { Task } from '../../../types';
 
-/** Registry of toggleable room features. Add new entries here. */
-interface RoomFeatureDef {
-  id: string;
-  label: string;
-  icon: string;
-}
-
-const allFeatures: RoomFeatureDef[] = [
-  { id: 'timer', label: 'Sayaç', icon: 'timer-outline' },
-  { id: 'tasks', label: 'Görevler', icon: 'list-outline' },
-  { id: 'chat', label: 'Sohbet', icon: 'chatbubbles-outline' },
-  { id: 'media', label: 'Medya', icon: 'videocam-outline' },
-  { id: 'files', label: 'Dosyalar', icon: 'document-outline' },
-];
+type RoomTab = 'tasks' | 'chat' | 'files';
 
 interface RoomActiveScreenProps {
   roomId: string;
@@ -38,35 +23,39 @@ interface RoomActiveScreenProps {
 }
 
 export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
-  const [activeFeatures, setActiveFeatures] = useState<string[]>(['timer', 'chat', 'media']);
-  const [showFeatureMenu, setShowFeatureMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState<RoomTab>('tasks');
+  const [showAddTask, setShowAddTask] = useState(false);
   const colors = useColors();
+
   const room = useRoomStore((s) => s.currentRoom);
   const members = useRoomStore((s) => s.members);
-  const timer = useTimerStore();
   const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
+  const user = useUserStore((s) => s.user);
 
   const tasks = useTaskStore((s) => s.tasks);
   const addTask = useTaskStore((s) => s.addTask);
-  const [showAddTask, setShowAddTask] = useState(false);
 
-  const participants = members.map((m) => ({
-    userId: m.userId,
-    displayName: m.userId.slice(0, 6),
-    avatarUrl: undefined,
-  }));
+  const roomTasks = tasks.filter((t) => t.roomId === roomId);
+  const isHost = !room?.hostId || room.hostId === (user?.id ?? 'host');
 
-  const toggleFeature = (id: string) => {
-    setActiveFeatures((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id],
-    );
-  };
+  const participants = [
+    {
+      userId: user?.id ?? 'my-user',
+      displayName: user?.displayName ?? 'Sen (Host)',
+      avatarUrl: user?.avatarUrl ?? undefined,
+    },
+    ...members.map((m) => ({
+      userId: m.userId,
+      displayName: m.userId.slice(0, 6),
+      avatarUrl: undefined,
+    })),
+  ];
 
   const handleAddTask = (title: string, tag: string | null, recurrence: any) => {
     addTask({
       id: generateId(),
-      userId: '', // M03 auth
-      roomId, // Scope to this room
+      userId: user?.id ?? 'my-user',
+      roomId,
       title,
       tag,
       recurrence: { type: recurrence },
@@ -77,17 +66,25 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     });
   };
 
+  const handleShareCode = () => {
+    Alert.alert(
+      'Odaya Arkadaş Davet Et',
+      `Oda Kodu: ${roomId}\n\nArkadaşların bu kodu "Odaya Katıl" ekranına yazarak doğrudan bu oturuma bağlanabilir.`,
+      [{ text: 'Tamam' }],
+    );
+  };
+
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <BackgroundEffect effectId={backgroundEffectId} />
 
-      <AddTaskSheet 
+      <AddTaskSheet
         visible={showAddTask}
         onClose={() => setShowAddTask(false)}
         onAdd={handleAddTask}
       />
 
-      {/* Gradient Header */}
+      {/* Header */}
       <View style={styles.headerWrap}>
         <LinearGradient
           colors={[colors.gradientStart, colors.gradientEnd]}
@@ -96,103 +93,151 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           end={{ x: 1, y: 1 }}
         />
         <View style={styles.headerContent}>
-          <Pressable onPress={onLeave} hitSlop={10} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+          <Pressable onPress={onLeave} hitSlop={10} style={styles.iconBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
           </Pressable>
-          <View style={styles.headerTitleWrap}>
-            <Text style={[typography.h3, { color: colors.textPrimary }]} numberOfLines={1}>
+
+          <View style={styles.titleWrap}>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary, fontSize: 17 }]} numberOfLines={1}>
               {room?.name ?? 'Çalışma Odası'}
             </Text>
-            <View style={styles.liveBadge}>
-              <View style={[styles.liveDot, { backgroundColor: colors.error }]} />
-              <Text style={[typography.overline, { color: colors.error }]}>CANLI</Text>
+            <View style={styles.badgeRow}>
+              <View style={[styles.liveBadge, { backgroundColor: colors.error }]}>
+                <View style={styles.liveDot} />
+                <Text style={[typography.overline, { color: '#FFFFFF', fontSize: 9 }]}>CANLI</Text>
+              </View>
+
+              <Pressable onPress={handleShareCode} style={[styles.codePill, { backgroundColor: colors.surfaceVariant }]}>
+                <Ionicons name="key-outline" size={11} color={colors.primary} style={{ marginRight: 3 }} />
+                <Text style={[typography.captionBold, { color: colors.primary, fontSize: 11 }]}>
+                  {roomId.slice(-6).toUpperCase()}
+                </Text>
+              </Pressable>
             </View>
           </View>
-          <Pressable onPress={() => setShowFeatureMenu(true)} style={styles.addBtn}>
-            <Ionicons name="add-circle" size={32} color={colors.textPrimary} />
+
+          <Pressable onPress={handleShareCode} hitSlop={10} style={styles.iconBtn}>
+            <Ionicons name="share-social-outline" size={22} color={colors.textPrimary} />
           </Pressable>
         </View>
-        
-        {/* Participants */}
+
+        {/* Participants Avatars Bar */}
         <View style={styles.participantsWrap}>
           <ParticipantsBar participants={participants} />
         </View>
       </View>
 
-      {/* Feature panels */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeFeatures.includes('timer') && (
-          <Card variant="glass" style={styles.featureCard}>
-            <RoomTimer remainingSeconds={timer.remainingSeconds} mode={timer.mode} />
-          </Card>
-        )}
+      {/* Content */}
+      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Main Session Card: Compact Timer & Media Controls */}
+        <Card variant="glass" style={styles.mainSessionCard}>
+          <RoomTimer isHost={isHost} />
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+          <RoomMedia />
+        </Card>
 
-        {activeFeatures.includes('media') && (
-          <Card variant="glass" style={styles.featureCard}>
-            <RoomMedia />
-          </Card>
-        )}
+        {/* Tab Selector: Tasks vs Chat vs Files */}
+        <View style={[styles.tabBar, { backgroundColor: colors.surfaceVariant }]}>
+          <Pressable
+            onPress={() => setActiveTab('tasks')}
+            style={[
+              styles.tabBtn,
+              activeTab === 'tasks' && { backgroundColor: colors.primary },
+            ]}
+          >
+            <Ionicons
+              name="list"
+              size={16}
+              color={activeTab === 'tasks' ? colors.textInverse : colors.textSecondary}
+              style={{ marginRight: 4 }}
+            />
+            <Text
+              style={[
+                typography.captionBold,
+                { color: activeTab === 'tasks' ? colors.textInverse : colors.textSecondary },
+              ]}
+            >
+              Görevler ({roomTasks.length})
+            </Text>
+          </Pressable>
 
-        {activeFeatures.includes('tasks') && (
-          <Card variant="glass" style={styles.featureCard}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm }}>
-              <Text style={[typography.captionBold, { color: colors.textPrimary }]}>
-                Ortak Görevler
-              </Text>
-              <Pressable onPress={() => setShowAddTask(true)} style={{ padding: 4 }}>
-                <Ionicons name="add-circle" size={24} color={colors.primary} />
-              </Pressable>
-            </View>
-            <RoomTasks tasks={tasks.filter(t => t.roomId === roomId)} />
-          </Card>
-        )}
+          <Pressable
+            onPress={() => setActiveTab('chat')}
+            style={[
+              styles.tabBtn,
+              activeTab === 'chat' && { backgroundColor: colors.primary },
+            ]}
+          >
+            <Ionicons
+              name="chatbubble-ellipses"
+              size={16}
+              color={activeTab === 'chat' ? colors.textInverse : colors.textSecondary}
+              style={{ marginRight: 4 }}
+            />
+            <Text
+              style={[
+                typography.captionBold,
+                { color: activeTab === 'chat' ? colors.textInverse : colors.textSecondary },
+              ]}
+            >
+              Sohbet
+            </Text>
+          </Pressable>
 
-        {activeFeatures.includes('files') && (
-          <Card variant="glass" style={styles.featureCard}>
-            <Text style={[typography.captionBold, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
+          <Pressable
+            onPress={() => setActiveTab('files')}
+            style={[
+              styles.tabBtn,
+              activeTab === 'files' && { backgroundColor: colors.primary },
+            ]}
+          >
+            <Ionicons
+              name="folder-open"
+              size={16}
+              color={activeTab === 'files' ? colors.textInverse : colors.textSecondary}
+              style={{ marginRight: 4 }}
+            />
+            <Text
+              style={[
+                typography.captionBold,
+                { color: activeTab === 'files' ? colors.textInverse : colors.textSecondary },
+              ]}
+            >
               Dosyalar
             </Text>
-            <RoomFiles />
-          </Card>
-        )}
+          </Pressable>
+        </View>
 
-        {activeFeatures.includes('chat') && (
-          <Card variant="glass" style={{ ...styles.featureCard, padding: 0, overflow: 'hidden' as const }}>
-            <RoomChat roomId={roomId} />
-          </Card>
-        )}
+        {/* Tab Content Card */}
+        <Card variant="glass" style={styles.tabContentCard}>
+          {activeTab === 'tasks' && (
+            <View>
+              <View style={styles.tasksHeader}>
+                <Text style={[typography.captionBold, { color: colors.textSecondary }]}>
+                  ORTAK ÇALIŞMA GÖREVLERİ
+                </Text>
+                <Pressable
+                  onPress={() => setShowAddTask(true)}
+                  style={[styles.addTaskMiniBtn, { backgroundColor: colors.primary }]}
+                >
+                  <Ionicons name="add" size={16} color={colors.textInverse} />
+                  <Text style={[typography.captionBold, { color: colors.textInverse, marginLeft: 2 }]}>
+                    Görev Ekle
+                  </Text>
+                </Pressable>
+              </View>
+
+              <RoomTasks tasks={roomTasks} onAddTask={() => setShowAddTask(true)} />
+            </View>
+          )}
+
+          {activeTab === 'chat' && <RoomChat roomId={roomId} />}
+
+          {activeTab === 'files' && <RoomFiles />}
+        </Card>
 
         <View style={{ height: spacing.xxxl }} />
       </ScrollView>
-
-      {/* Feature toggle sheet */}
-      <BottomSheet visible={showFeatureMenu} onClose={() => setShowFeatureMenu(false)}>
-        <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.md }]}>
-          Oda Özellikleri
-        </Text>
-        {allFeatures.map((f) => {
-          const active = activeFeatures.includes(f.id);
-          return (
-            <Pressable
-              key={f.id}
-              onPress={() => toggleFeature(f.id)}
-              style={[styles.featureToggleRow, { borderBottomColor: colors.divider }]}
-            >
-              <View style={[styles.featureIconWrap, { backgroundColor: active ? `${colors.success}20` : colors.surfaceVariant }]}>
-                <Ionicons name={f.icon as keyof typeof Ionicons.glyphMap} size={20} color={active ? colors.success : colors.textSecondary} />
-              </View>
-              <Text style={[typography.body, { color: colors.textPrimary, flex: 1, marginLeft: spacing.md }]}>
-                {f.label}
-              </Text>
-              <Ionicons
-                name={active ? 'checkmark-circle' : 'ellipse-outline'}
-                size={28}
-                color={active ? colors.success : colors.textDisabled}
-              />
-            </Pressable>
-          );
-        })}
-      </BottomSheet>
     </View>
   );
 }
@@ -201,36 +246,106 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   headerWrap: {
     paddingTop: spacing.xxl,
-    paddingBottom: spacing.lg,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    paddingBottom: spacing.sm,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
     overflow: 'hidden',
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
+  },
+  iconBtn: {
+    padding: spacing.xs,
+  },
+  titleWrap: {
+    alignItems: 'center',
+    flex: 1,
+    paddingHorizontal: spacing.xs,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: 2,
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+  },
+  liveDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#fff',
+    marginRight: 3,
+  },
+  codePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+  },
+  participantsWrap: {
+    marginTop: spacing.xs,
+  },
+  scrollContent: {
+    flex: 1,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
   },
-  backBtn: { padding: spacing.xs },
-  headerTitleWrap: { flex: 1, alignItems: 'center' },
-  liveBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12, marginTop: 4 },
-  liveDot: { width: 6, height: 6, borderRadius: 3, marginRight: 4 },
-  addBtn: { padding: spacing.xs, opacity: 0.9 },
-  participantsWrap: { marginTop: spacing.lg },
-  content: { flex: 1, paddingHorizontal: spacing.md, paddingTop: spacing.md },
-  featureCard: { marginTop: spacing.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  featureToggleRow: {
+  mainSessionCard: {
+    borderRadius: radius.xl,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  divider: {
+    height: 1,
+    marginVertical: spacing.xs,
+    opacity: 0.5,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    borderRadius: radius.full,
+    padding: 3,
+    marginBottom: spacing.sm,
+  },
+  tabBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  featureIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: radius.full,
+  },
+  tabContentCard: {
+    borderRadius: radius.xl,
+    padding: spacing.md,
+    minHeight: 280,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  tasksHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  addTaskMiniBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.full,
   },
 });

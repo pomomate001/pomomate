@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '../../theme';
@@ -10,10 +10,8 @@ import { shadows } from '../../theme/shadows';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { AdPlacement } from '../../ads';
+import { useRoomStore, useUserStore } from '../../../state';
 import type { Room } from '../../../types';
-
-// Mock rooms until M03
-const mockRooms: Room[] = [];
 
 interface RoomListScreenProps {
   onCreateRoom: () => void;
@@ -21,30 +19,111 @@ interface RoomListScreenProps {
   onEnterRoom: (roomId: string) => void;
 }
 
-function RoomCard({ room, onPress }: { room: Room; onPress: () => void }) {
+function RoomCard({
+  room,
+  isHost,
+  onPress,
+  onDelete,
+}: {
+  room: Room;
+  isHost: boolean;
+  onPress: () => void;
+  onDelete: () => void;
+}) {
   const colors = useColors();
+
+  const handleCopyCode = () => {
+    Alert.alert('Oda Kodu', `Oda Kodu: ${room.id}\nArkadaşlarınla paylaşarak onları davet edebilirsin!`);
+  };
 
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.roomCard, shadows.sm, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      style={[
+        styles.roomCard,
+        shadows.sm,
+        {
+          backgroundColor: colors.surface,
+          borderColor: room.isActive ? colors.success : colors.border,
+          borderWidth: room.isActive ? 1.5 : 1,
+        },
+      ]}
     >
-      <View style={[styles.iconBox, { backgroundColor: room.isActive ? `${colors.success}20` : colors.surfaceVariant }]}>
-        <Ionicons name={room.isActive ? "radio" : "time-outline"} size={20} color={room.isActive ? colors.success : colors.textSecondary} />
+      {/* Icon Status */}
+      <View
+        style={[
+          styles.iconBox,
+          {
+            backgroundColor: room.isActive ? `${colors.success}20` : colors.surfaceVariant,
+          },
+        ]}
+      >
+        <Ionicons
+          name={room.isActive ? 'radio' : 'pause-circle-outline'}
+          size={22}
+          color={room.isActive ? colors.success : colors.textDisabled}
+        />
       </View>
+
+      {/* Info */}
       <View style={styles.roomInfo}>
-        <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{room.name}</Text>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>
-          {room.isActive ? 'Aktif oturum' : 'Sona erdi'}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={[typography.bodyBold, { color: colors.textPrimary, flex: 1 }]} numberOfLines={1}>
+            {room.name}
+          </Text>
+          {isHost && (
+            <View style={[styles.hostBadge, { backgroundColor: `${colors.primary}15` }]}>
+              <Text style={[typography.overline, { color: colors.primary }]}>👑 SAHİBİ</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.statusRow}>
+          <View style={[styles.statusDot, { backgroundColor: room.isActive ? colors.success : colors.textDisabled }]} />
+          <Text
+            style={[
+              typography.captionBold,
+              { color: room.isActive ? colors.success : colors.textDisabled, marginRight: spacing.md },
+            ]}
+          >
+            {room.isActive ? 'Aktif (Canlı)' : 'Pasif (Kapalı)'}
+          </Text>
+
+          <Pressable onPress={handleCopyCode} style={styles.codeBadge}>
+            <Ionicons name="copy-outline" size={12} color={colors.textSecondary} style={{ marginRight: 3 }} />
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>Kod: {room.id.slice(-6).toUpperCase()}</Text>
+          </Pressable>
+        </View>
       </View>
-      <Ionicons name="chevron-forward" size={20} color={colors.textDisabled} />
+
+      {/* Delete / Enter Action */}
+      <View style={styles.cardActions}>
+        {isHost && (
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              Alert.alert('Odayı Sil', `"${room.name}" odasını silmek istediğinize emin misiniz?`, [
+                { text: 'İptal', style: 'cancel' },
+                { text: 'Sil', style: 'destructive', onPress: onDelete },
+              ]);
+            }}
+            hitSlop={10}
+            style={styles.deleteBtn}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.error} />
+          </Pressable>
+        )}
+        <Ionicons name="chevron-forward" size={20} color={colors.textDisabled} />
+      </View>
     </Pressable>
   );
 }
 
 export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomListScreenProps) {
   const colors = useColors();
+  const rooms = useRoomStore((s) => s.rooms);
+  const deleteRoom = useRoomStore((s) => s.deleteRoom);
+  const user = useUserStore((s) => s.user);
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -59,7 +138,7 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
         <View style={styles.headerContent}>
           <Text style={[typography.h2, { color: colors.textPrimary }]}>Çalışma Odaları</Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-            Arkadaşlarınla birlikte odaklan
+            Arkadaşlarınla birlikte odaklan, hedeflerini paylaş
           </Text>
         </View>
       </View>
@@ -84,18 +163,24 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
         </View>
       </View>
 
+      {/* Rooms List */}
       <FlatList
-        data={mockRooms}
+        data={rooms}
         keyExtractor={(r) => r.id}
         renderItem={({ item }) => (
-          <RoomCard room={item} onPress={() => onEnterRoom(item.id)} />
+          <RoomCard
+            room={item}
+            isHost={item.hostId === (user?.id ?? 'host')}
+            onPress={() => onEnterRoom(item.id)}
+            onDelete={() => deleteRoom(item.id)}
+          />
         )}
-        contentContainerStyle={mockRooms.length === 0 ? styles.emptyContainer : styles.listContent}
+        contentContainerStyle={rooms.length === 0 ? styles.emptyContainer : styles.listContent}
         ListEmptyComponent={
           <EmptyState
             icon={<Ionicons name="library-outline" size={56} color={colors.textDisabled} />}
-            title="Açık çalışma odası yok"
-            message="Yeni bir oda oluşturarak odaklanmaya başla veya var olan bir odaya katıl."
+            title="Henüz çalışma odası yok"
+            message="Yeni bir oda oluşturarak canlı oturum başlat veya bir oda koduna katılarak arkadaşlarına katıl."
           />
         }
         ListFooterComponent={<AdPlacement size="banner" />}
@@ -122,7 +207,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
   },
-  actionBtn: { flex: 1 },
   listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl },
   emptyContainer: { flex: 1, justifyContent: 'center' },
   roomCard: {
@@ -130,16 +214,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.md,
     borderRadius: radius.lg,
-    borderWidth: 1,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
   roomInfo: { flex: 1 },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  hostBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: spacing.xs,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  codeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginLeft: spacing.sm,
+  },
+  deleteBtn: {
+    padding: 6,
+  },
 });
