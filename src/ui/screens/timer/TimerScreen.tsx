@@ -90,6 +90,14 @@ export function TimerScreen() {
     };
   }, [isRunning, tick]);
 
+  // Sync ambient background sound (rain, campfire, birds) with timer
+  useEffect(() => {
+    soundService.syncAmbientWithTimer(isRunning, mode);
+    return () => {
+      soundService.stopAmbient();
+    };
+  }, [isRunning, mode]);
+
   // When timer hits 0, auto-advance and notify
   useEffect(() => {
     if (remainingSeconds === 0 && !isRunning) {

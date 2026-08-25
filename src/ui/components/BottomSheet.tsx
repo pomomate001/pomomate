@@ -10,6 +10,7 @@ import {
   Dimensions,
   PanResponder,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../theme';
 import { spacing } from '../theme/spacing';
@@ -24,6 +25,7 @@ interface BottomSheetProps {
 const screenHeight = Dimensions.get('window').height;
 
 export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
+  const insets = useSafeAreaInsets();
   const colors = useColors();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
@@ -74,7 +76,8 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
             {
               backgroundColor: colors.surface,
               marginBottom: keyboardHeight,
-              maxHeight: keyboardHeight > 0 ? screenHeight - keyboardHeight - 40 : '85%',
+              paddingBottom: Math.max(insets.bottom, 20) + spacing.md,
+              maxHeight: keyboardHeight > 0 ? screenHeight - keyboardHeight - 40 : '88%',
             },
           ]}
         >

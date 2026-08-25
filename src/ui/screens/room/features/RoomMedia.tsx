@@ -13,6 +13,7 @@ import { radius } from '../../../theme/radius';
 import { typography } from '../../../theme/typography';
 import { IconButton } from '../../../components/IconButton';
 import { mediaService } from '../../../../services/mobile/media/MediaService';
+import type { MediaStream } from 'react-native-webrtc';
 
 interface RoomMediaProps {
   onStreamChange?: (stream: MediaStream | null) => void;
@@ -83,7 +84,7 @@ export function RoomMedia({ onStreamChange }: RoomMediaProps) {
         try {
           const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
           setScreenShare(true);
-          onStreamChange?.(stream);
+          onStreamChange?.(stream as any);
           // Listen for user stopping screen share via browser UI
           stream.getVideoTracks()[0]?.addEventListener('ended', () => {
             setScreenShare(false);

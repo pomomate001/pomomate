@@ -7,15 +7,19 @@
  */
 import { create } from 'zustand';
 
+export type AmbientSoundMode = 'work' | 'break' | 'always' | 'off';
+
 export interface SettingsState {
   // Appearance
   themeId: string;
   timerDesignId: string;
   backgroundEffectId: string;
 
-  // Sounds
+  // Sounds (Notification & Ambient)
   soundEnabled: boolean;
   soundId: string;
+  ambientSoundId: string;
+  ambientSoundMode: AmbientSoundMode;
 
   // Pomodoro durations (seconds)
   workDuration: number;
@@ -33,6 +37,8 @@ interface SettingsActions {
   setBackgroundEffectId: (id: string) => void;
   setSoundEnabled: (enabled: boolean) => void;
   setSoundId: (id: string) => void;
+  setAmbientSoundId: (id: string) => void;
+  setAmbientSoundMode: (mode: AmbientSoundMode) => void;
   setWorkDuration: (seconds: number) => void;
   setShortBreakDuration: (seconds: number) => void;
   setLongBreakDuration: (seconds: number) => void;
@@ -47,6 +53,8 @@ const initialSettings: SettingsState = {
   backgroundEffectId: 'none',
   soundEnabled: true,
   soundId: 'default',
+  ambientSoundId: 'rain',
+  ambientSoundMode: 'work',
   workDuration: 25 * 60,
   shortBreakDuration: 5 * 60,
   longBreakDuration: 15 * 60,
@@ -62,6 +70,8 @@ export const useSettingsStore = create<SettingsState & SettingsActions>((set) =>
   setBackgroundEffectId: (backgroundEffectId) => set({ backgroundEffectId }),
   setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
   setSoundId: (soundId) => set({ soundId }),
+  setAmbientSoundId: (ambientSoundId) => set({ ambientSoundId }),
+  setAmbientSoundMode: (ambientSoundMode) => set({ ambientSoundMode }),
   setWorkDuration: (workDuration) => set({ workDuration }),
   setShortBreakDuration: (shortBreakDuration) => set({ shortBreakDuration }),
   setLongBreakDuration: (longBreakDuration) => set({ longBreakDuration }),

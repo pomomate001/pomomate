@@ -1,43 +1,81 @@
 /**
- * Sound settings — toggle, preview and sound selection.
+ * Sound settings — toggle, 2s previews, completion sound selection,
+ * and ambient background sound preferences.
  */
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Switch, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, Switch, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { SectionHeader } from '../../components/SectionHeader';
-import { useSettingsStore } from '../../../state';
-import { SOUND_PRESETS, soundService } from '../../../services/mobile/sound/SoundService';
+import { useSettingsStore, AmbientSoundMode } from '../../../state';
+import {
+  NOTIFICATION_SOUNDS,
+  AMBIENT_SOUNDS,
+  soundService,
+  SoundItem,
+} from '../../../services/mobile/sound/SoundService';
+
+const AMBIENT_MODE_OPTIONS: { id: AmbientSoundMode; label: string; desc: string }[] = [
+  { id: 'work', label: 'Sadece Çalışırken', desc: 'Odaklanma oturumu süresince çalar' },
+  { id: 'break', label: 'Sadece Molada', desc: 'Mola ve dinlenme süresince çalar' },
+  { id: 'always', label: 'Her Zaman', desc: 'Hem çalışma hem mola modunda çalar' },
+  { id: 'off', label: 'Kapalı', desc: 'Arka planda ortam sesi çalmaz' },
+];
 
 export function SoundSettings() {
   const colors = useColors();
-  const { soundEnabled, soundId, setSoundEnabled, setSoundId } = useSettingsStore();
-  const [playingId, setPlayingId] = useState<string | null>(null);
+  const {
+    soundEnabled,
+    soundId,
+    ambientSoundId,
+    ambientSoundMode,
+    setSoundEnabled,
+    setSoundId,
+    setAmbientSoundId,
+    setAmbientSoundMode,
+  } = useSettingsStore();
 
-  const handleSelectSound = async (id: string) => {
-    setSoundId(id);
-    setPlayingId(id);
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
 
-    // Play preview
-    await soundService.playSound(id);
+  const handleSelectCompletionSound = async (item: SoundItem) => {
+    setSoundId(item.id);
+    setPreviewingId(item.id);
 
-    // Reset playing state after 3 seconds
+    // Play 2-second preview
+    await soundService.playPreview(item.id, 2000);
+
     setTimeout(() => {
-      setPlayingId((current) => (current === id ? null : current));
-    }, 3000);
+      setPreviewingId((cur) => (cur === item.id ? null : cur));
+    }, 2000);
+  };
+
+  const handleSelectAmbientSound = async (item: SoundItem) => {
+    setAmbientSoundId(item.id);
+
+    if (item.id !== 'none') {
+      setPreviewingId(item.id);
+      await soundService.playPreview(item.id, 2000);
+
+      setTimeout(() => {
+        setPreviewingId((cur) => (cur === item.id ? null : cur));
+      }, 2000);
+    } else {
+      setPreviewingId(null);
+      soundService.stopPreview();
+    }
   };
 
   return (
     <ScrollView style={[styles.screen, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
-      {/* Toggle */}
+      {/* Master Audio Toggle */}
       <View style={[styles.toggleRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={{ flex: 1 }}>
           <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>Ses Efektleri</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
-            Sayaç bittiğinde ve mola başladığında ses çal
+            Sayaç bitiş seslerini ve ortam seslerini etkinleştir
           </Text>
         </View>
         <Switch
@@ -47,24 +85,23 @@ export function SoundSettings() {
         />
       </View>
 
-      {/* Sound list */}
-      <SectionHeader title="BİLDİRİM SESİ (DİNLEMEK İÇİN DOKUNUN)" />
+      {/* ─── 1. Section: Completion Sound ─── */}
+      <SectionHeader title="SAYAÇ BİTİŞ ZİLİ (2 SN ÖNİZLEME)" />
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        {SOUND_PRESETS.map((s, index) => {
+        {NOTIFICATION_SOUNDS.map((s, index) => {
           const isSelected = soundId === s.id;
-          const isPlaying = playingId === s.id;
+          const isPlaying = previewingId === s.id;
 
           return (
             <Pressable
               key={s.id}
-              onPress={() => handleSelectSound(s.id)}
+              onPress={() => handleSelectCompletionSound(s)}
               style={[
                 styles.row,
-                index < SOUND_PRESETS.length - 1 && { borderBottomColor: colors.divider, borderBottomWidth: 1 },
-                isSelected && { backgroundColor: `${colors.primary}10` },
+                index < NOTIFICATION_SOUNDS.length - 1 && { borderBottomColor: colors.divider, borderBottomWidth: 1 },
+                isSelected && { backgroundColor: `${colors.primary}12` },
               ]}
             >
-              {/* Speaker icon */}
               <View
                 style={[
                   styles.iconWrap,
@@ -72,33 +109,125 @@ export function SoundSettings() {
                     backgroundColor: isPlaying
                       ? colors.primary
                       : isSelected
-                      ? `${colors.primary}20`
+                      ? `${colors.primary}25`
                       : colors.surfaceVariant,
                   },
                 ]}
               >
                 <Ionicons
-                  name={isPlaying ? 'volume-high' : isSelected ? 'volume-medium' : 'musical-note'}
+                  name={isPlaying ? 'volume-high' : isSelected ? 'notifications' : 'notifications-outline'}
                   size={18}
-                  color={isPlaying ? colors.textInverse : isSelected ? colors.primary : colors.textSecondary}
+                  color={isPlaying ? '#FFF' : isSelected ? colors.primary : colors.textSecondary}
                 />
               </View>
 
-              {/* Text Info */}
               <View style={styles.infoCol}>
                 <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{s.label}</Text>
                 <Text style={[typography.caption, { color: colors.textSecondary }]}>{s.description}</Text>
               </View>
 
-              {/* Checkmark or playing indicator */}
               {isPlaying ? (
                 <View style={[styles.playingBadge, { backgroundColor: colors.primary }]}>
-                  <Text style={[typography.overline, { color: colors.textInverse, fontSize: 9 }]}>ÇALIYOR</Text>
+                  <Text style={[typography.overline, { color: '#FFF', fontSize: 9 }]}>2 SN ÇALIYOR</Text>
                 </View>
               ) : isSelected ? (
                 <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
               ) : (
                 <Ionicons name="ellipse-outline" size={20} color={colors.textDisabled} />
+              )}
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* ─── 2. Section: Ambient Background Sound ─── */}
+      <SectionHeader title="ODAKLANMA & ORTAM SESİ (AMBİYANS)" />
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {AMBIENT_SOUNDS.map((s, index) => {
+          const isSelected = ambientSoundId === s.id;
+          const isPlaying = previewingId === s.id;
+
+          return (
+            <Pressable
+              key={s.id}
+              onPress={() => handleSelectAmbientSound(s)}
+              style={[
+                styles.row,
+                index < AMBIENT_SOUNDS.length - 1 && { borderBottomColor: colors.divider, borderBottomWidth: 1 },
+                isSelected && { backgroundColor: `${colors.primary}12` },
+              ]}
+            >
+              <View
+                style={[
+                  styles.iconWrap,
+                  {
+                    backgroundColor: isPlaying
+                      ? colors.primary
+                      : isSelected
+                      ? `${colors.primary}25`
+                      : colors.surfaceVariant,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={
+                    s.id === 'rain'
+                      ? 'rainy'
+                      : s.id === 'campfire'
+                      ? 'bonfire'
+                      : s.id === 'bird'
+                      ? 'leaf'
+                      : 'volume-mute'
+                  }
+                  size={18}
+                  color={isPlaying ? '#FFF' : isSelected ? colors.primary : colors.textSecondary}
+                />
+              </View>
+
+              <View style={styles.infoCol}>
+                <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{s.label}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{s.description}</Text>
+              </View>
+
+              {isPlaying ? (
+                <View style={[styles.playingBadge, { backgroundColor: colors.primary }]}>
+                  <Text style={[typography.overline, { color: '#FFF', fontSize: 9 }]}>2 SN ÇALIYOR</Text>
+                </View>
+              ) : isSelected ? (
+                <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+              ) : (
+                <Ionicons name="ellipse-outline" size={20} color={colors.textDisabled} />
+              )}
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* ─── 3. Section: Ambient Sound Mode ─── */}
+      <SectionHeader title="ORTAM SESİ ÇALMA ZAMANI" />
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {AMBIENT_MODE_OPTIONS.map((opt, index) => {
+          const isSelected = ambientSoundMode === opt.id;
+
+          return (
+            <Pressable
+              key={opt.id}
+              onPress={() => setAmbientSoundMode(opt.id)}
+              style={[
+                styles.row,
+                index < AMBIENT_MODE_OPTIONS.length - 1 && { borderBottomColor: colors.divider, borderBottomWidth: 1 },
+                isSelected && { backgroundColor: `${colors.primary}12` },
+              ]}
+            >
+              <View style={styles.infoCol}>
+                <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{opt.label}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{opt.desc}</Text>
+              </View>
+
+              {isSelected ? (
+                <Ionicons name="radio-button-on" size={22} color={colors.primary} />
+              ) : (
+                <Ionicons name="radio-button-off" size={22} color={colors.textDisabled} />
               )}
             </Pressable>
           );
@@ -127,6 +256,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
+    marginBottom: spacing.lg,
   },
   row: {
     flexDirection: 'row',

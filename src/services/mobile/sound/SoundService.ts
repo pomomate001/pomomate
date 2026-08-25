@@ -1,10 +1,12 @@
 /**
- * Sound Service — handles audio cues and timer completion sounds.
+ * Sound Service — handles audio cues, timer completion sounds, 2s previews,
+ * and continuous ambient background audio during focus/break sessions.
  */
 import { createAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { logger } from '../../../utils/logger';
 import { useSettingsStore } from '../../../state';
+import type { TimerMode } from '../../../types';
 
 export interface SoundItem {
   id: string;
@@ -13,7 +15,8 @@ export interface SoundItem {
   url: string;
 }
 
-export const SOUND_PRESETS: SoundItem[] = [
+// 1. Notification / Timer Completion Sounds (Zil Sesleri)
+export const NOTIFICATION_SOUNDS: SoundItem[] = [
   {
     id: 'default',
     label: 'Dijital Melodi',
@@ -27,16 +30,20 @@ export const SOUND_PRESETS: SoundItem[] = [
     url: 'https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3',
   },
   {
-    id: 'bird',
-    label: 'Kuş Cıvıltısı',
-    description: 'Huzur verici orman ve neşeli kuş cıvıltıları',
-    url: 'https://assets.mixkit.co/active_storage/sfx/2436/2436-preview.mp3',
+    id: 'chime',
+    label: 'Yumuşak Melodi',
+    description: 'Sakinleştirici ve nazik bitiş sesi',
+    url: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
   },
+];
+
+// 2. Ambient Focus & Relax Sounds (Ortam Sesleri)
+export const AMBIENT_SOUNDS: SoundItem[] = [
   {
-    id: 'campfire',
-    label: 'Kamp Ateşi',
-    description: 'Çıtırdayan sıcak ve sakinleştirici kamp ateşi',
-    url: 'https://assets.mixkit.co/active_storage/sfx/1256/1256-preview.mp3',
+    id: 'none',
+    label: 'Ortam Sesi Yok',
+    description: 'Sessiz çalışma deneyimi',
+    url: '',
   },
   {
     id: 'rain',
@@ -45,56 +52,148 @@ export const SOUND_PRESETS: SoundItem[] = [
     url: 'https://assets.mixkit.co/active_storage/sfx/1251/1251-preview.mp3',
   },
   {
-    id: 'chime',
-    label: 'Yumuşak Melodi',
-    description: 'Sakinleştirici ve nazik bitiş melodisi',
-    url: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
+    id: 'campfire',
+    label: 'Kamp Ateşi',
+    description: 'Çıtırdayan sıcak ve sakinleştirici kamp ateşi',
+    url: 'https://assets.mixkit.co/active_storage/sfx/1256/1256-preview.mp3',
+  },
+  {
+    id: 'bird',
+    label: 'Kuş Cıvıltısı',
+    description: 'Huzur verici orman ve neşeli kuş cıvıltıları',
+    url: 'https://assets.mixkit.co/active_storage/sfx/2436/2436-preview.mp3',
   },
 ];
 
-class SoundService {
-  private activePlayer: any = null;
+export const ALL_SOUNDS = [...NOTIFICATION_SOUNDS, ...AMBIENT_SOUNDS.filter((s) => s.id !== 'none')];
 
-  async playSound(soundId: string): Promise<void> {
-    const soundItem = SOUND_PRESETS.find((s) => s.id === soundId) || SOUND_PRESETS[0];
+class SoundService {
+  private previewPlayer: any = null;
+  private previewTimeout: ReturnType<typeof setTimeout> | null = null;
+  private ambientPlayer: any = null;
+  private activeAmbientId: string | null = null;
+
+  /* ─── 2-Second Preview for Settings ─── */
+
+  async playPreview(soundId: string, durationMs = 2000): Promise<void> {
+    const soundItem = ALL_SOUNDS.find((s) => s.id === soundId);
+    if (!soundItem || !soundItem.url) return;
 
     try {
-      // Haptic feedback
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // Stop any existing playback
-      if (this.activePlayer) {
-        try {
-          this.activePlayer.pause();
-          this.activePlayer.remove();
-        } catch {}
-        this.activePlayer = null;
-      }
+      // Stop existing preview
+      this.stopPreview();
 
-      // Create new audio player with the sound URL
       const player = createAudioPlayer(soundItem.url);
-      this.activePlayer = player;
+      this.previewPlayer = player;
       player.play();
 
-      logger.info(`[SoundService] Playing sound: ${soundItem.label}`);
+      // Automatically stop preview exactly after durationMs (2 seconds)
+      this.previewTimeout = setTimeout(() => {
+        this.stopPreview();
+      }, durationMs);
+
+      logger.info(`[SoundService] Previewing sound (2s): ${soundItem.label}`);
     } catch (err) {
-      logger.warn('[SoundService] Failed to play sound:', err);
+      logger.warn('[SoundService] Failed to preview sound:', err);
     }
   }
+
+  stopPreview(): void {
+    if (this.previewTimeout) {
+      clearTimeout(this.previewTimeout);
+      this.previewTimeout = null;
+    }
+    if (this.previewPlayer) {
+      try {
+        this.previewPlayer.pause();
+        this.previewPlayer.remove();
+      } catch {}
+      this.previewPlayer = null;
+    }
+  }
+
+  /* ─── Timer Completion Sound ─── */
 
   async playCompletionSound(): Promise<void> {
     const { soundEnabled, soundId } = useSettingsStore.getState();
     if (!soundEnabled) return;
-    await this.playSound(soundId);
+
+    const soundItem = NOTIFICATION_SOUNDS.find((s) => s.id === soundId) || NOTIFICATION_SOUNDS[0];
+
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const player = createAudioPlayer(soundItem.url);
+      player.play();
+      logger.info(`[SoundService] Playing completion sound: ${soundItem.label}`);
+    } catch (err) {
+      logger.warn('[SoundService] Failed to play completion sound:', err);
+    }
   }
 
-  stopSound(): void {
-    if (this.activePlayer) {
+  /* ─── Continuous Ambient Sound for Focus/Break ─── */
+
+  async startAmbient(soundId: string): Promise<void> {
+    if (soundId === 'none') {
+      this.stopAmbient();
+      return;
+    }
+
+    if (this.activeAmbientId === soundId && this.ambientPlayer) {
+      // Already playing this sound
+      return;
+    }
+
+    const soundItem = AMBIENT_SOUNDS.find((s) => s.id === soundId);
+    if (!soundItem || !soundItem.url) {
+      this.stopAmbient();
+      return;
+    }
+
+    this.stopAmbient();
+
+    try {
+      const player = createAudioPlayer(soundItem.url);
+      player.loop = true;
+      this.ambientPlayer = player;
+      this.activeAmbientId = soundId;
+      player.play();
+      logger.info(`[SoundService] Ambient audio started: ${soundItem.label}`);
+    } catch (err) {
+      logger.warn('[SoundService] Failed to start ambient audio:', err);
+    }
+  }
+
+  stopAmbient(): void {
+    if (this.ambientPlayer) {
       try {
-        this.activePlayer.pause();
-        this.activePlayer.remove();
+        this.ambientPlayer.pause();
+        this.ambientPlayer.remove();
       } catch {}
-      this.activePlayer = null;
+      this.ambientPlayer = null;
+    }
+    this.activeAmbientId = null;
+  }
+
+  /** Syncs ambient sound playback with current timer state and user preferences */
+  syncAmbientWithTimer(isRunning: boolean, mode: TimerMode): void {
+    const { ambientSoundId, ambientSoundMode, soundEnabled } = useSettingsStore.getState();
+
+    if (!soundEnabled || !isRunning || ambientSoundId === 'none' || ambientSoundMode === 'off') {
+      this.stopAmbient();
+      return;
+    }
+
+    const shouldPlay =
+      ambientSoundMode === 'always' ||
+      (ambientSoundMode === 'work' && mode === 'work') ||
+      (ambientSoundMode === 'break' && (mode === 'shortBreak' || mode === 'longBreak'));
+
+    if (shouldPlay) {
+      this.startAmbient(ambientSoundId);
+    } else {
+      this.stopAmbient();
     }
   }
 }

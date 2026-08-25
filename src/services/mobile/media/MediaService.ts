@@ -3,7 +3,9 @@
  * 
  * Wraps platform-specific media APIs and integrates with WebRTC.
  */
+import { Platform } from 'react-native';
 import { setAudioModeAsync } from 'expo-audio';
+import { mediaDevices, MediaStream } from 'react-native-webrtc';
 import * as ScreenCapture from 'expo-screen-capture';
 import { logger } from '../../../utils/logger';
 import { permissionManager } from '../permissions/PermissionManager';
@@ -20,7 +22,7 @@ export class MediaService {
 
   async getUserMedia(config: MediaConfig): Promise<MediaStream | null> {
     try {
-      // Request permissions
+      // Request permissions on native
       if (config.audio) {
         const mic = await permissionManager.requestMicrophone();
         if (mic.status !== 'granted') {
@@ -39,22 +41,41 @@ export class MediaService {
 
       // Configure audio session for VoIP
       if (config.audio) {
-        await setAudioModeAsync({
-          allowsRecording: true,
-          playsInSilentMode: true,
-          shouldPlayInBackground: true,
-          interruptionMode: 'duckOthers',
-        });
+        try {
+          await setAudioModeAsync({
+            allowsRecording: true,
+            playsInSilentMode: true,
+            shouldPlayInBackground: true,
+            interruptionMode: 'duckOthers',
+          });
+        } catch (e) {
+          logger.warn('[Media] Failed to setAudioModeAsync:', e);
+        }
       }
 
-      // Get media stream
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // Constraints for WebRTC
+      const constraints = {
         audio: config.audio,
-        video: config.video ? { facingMode: 'user' } : false,
-      });
+        video: config.video
+          ? {
+              facingMode: 'user',
+              width: { min: 320, ideal: 640, max: 1280 },
+              height: { min: 240, ideal: 480, max: 720 },
+              frameRate: { min: 15, ideal: 30, max: 30 },
+            }
+          : false,
+      };
+
+      let stream: MediaStream | null = null;
+
+      if (Platform.OS === 'web') {
+        stream = (await navigator.mediaDevices.getUserMedia(constraints as any)) as unknown as MediaStream;
+      } else {
+        stream = (await mediaDevices.getUserMedia(constraints)) as unknown as MediaStream;
+      }
 
       this.localStream = stream;
-      logger.info('[Media] Media stream acquired');
+      logger.info('[Media] Media stream acquired successfully');
       return stream;
     } catch (err) {
       logger.warn('[Media] Failed to get media:', err);
@@ -64,8 +85,12 @@ export class MediaService {
 
   stopUserMedia(): void {
     if (!this.localStream) return;
-    for (const track of this.localStream.getTracks()) {
-      track.stop();
+    try {
+      for (const track of this.localStream.getTracks()) {
+        track.stop();
+      }
+    } catch (err) {
+      logger.warn('[Media] Error stopping tracks:', err);
     }
     this.localStream = null;
     logger.info('[Media] Media stream stopped');
@@ -75,16 +100,11 @@ export class MediaService {
 
   async requestScreenCapture(): Promise<MediaStream | null> {
     try {
-      // Check if screen capture is available
       const hasPermission = await ScreenCapture.requestPermissionsAsync();
       if (!hasPermission.granted) {
         logger.warn('[Media] Screen capture permission denied');
         return null;
       }
-
-      // Note: getDisplayMedia is web-only; for native, we use platform-specific APIs
-      // This is a placeholder — full screen sharing on mobile requires native modules
-      logger.warn('[Media] Screen sharing not fully supported on native yet');
       return null;
     } catch (err) {
       logger.warn('[Media] Screen capture failed:', err);

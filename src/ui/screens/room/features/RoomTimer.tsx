@@ -1,9 +1,9 @@
 /**
- * Room feature: Shared timer view & controls.
- * Hosts have full control over the session timer, while members see sync status.
+ * Room feature: Shared timer view & controls with integrated task bar.
+ * Hosts have full control over the session timer and task management.
  */
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDuration } from '../../../../core/pomodoro';
 import { useColors } from '../../../theme';
@@ -11,7 +11,8 @@ import { typography } from '../../../theme/typography';
 import { spacing } from '../../../theme/spacing';
 import { radius } from '../../../theme/radius';
 import { IconButton } from '../../../components/IconButton';
-import { useTimerStore } from '../../../../state';
+import { useTimerStore, useTaskStore } from '../../../../state';
+import { soundService } from '../../../../services/mobile/sound/SoundService';
 import type { TimerMode } from '../../../../types';
 
 const modeLabel: Record<TimerMode, { label: string; icon: string; emoji: string }> = {
@@ -21,10 +22,12 @@ const modeLabel: Record<TimerMode, { label: string; icon: string; emoji: string 
 };
 
 interface RoomTimerProps {
+  roomId?: string;
   isHost?: boolean;
+  onOpenAddTask?: () => void;
 }
 
-export function RoomTimer({ isHost = true }: RoomTimerProps) {
+export function RoomTimer({ roomId, isHost = true, onOpenAddTask }: RoomTimerProps) {
   const colors = useColors();
   const {
     remainingSeconds,
@@ -35,8 +38,22 @@ export function RoomTimer({ isHost = true }: RoomTimerProps) {
     pause,
     reset,
     next,
-    setMode,
   } = useTimerStore();
+
+  const allTasks = useTaskStore((s) => s.tasks);
+  const toggleCompleted = useTaskStore((s) => s.toggleCompleted);
+
+  // Sync ambient sound during room session
+  React.useEffect(() => {
+    soundService.syncAmbientWithTimer(isRunning, mode);
+    return () => {
+      soundService.stopAmbient();
+    };
+  }, [isRunning, mode]);
+
+  // Filter tasks belonging to this room, or general active tasks
+  const roomTasks = roomId ? allTasks.filter((t) => t.roomId === roomId) : allTasks;
+  const activeTask = roomTasks.find((t) => !t.completed) ?? roomTasks[0];
 
   const modeInfo = modeLabel[mode];
 
@@ -103,6 +120,73 @@ export function RoomTimer({ isHost = true }: RoomTimerProps) {
           </Text>
         </View>
       )}
+
+      {/* ─── Integrated Room Tasks Bar ─── */}
+      <View style={[styles.taskCard, { backgroundColor: `${colors.background}80`, borderColor: colors.border }]}>
+        {activeTask ? (
+          <View style={styles.taskContentRow}>
+            <Pressable
+              onPress={() => toggleCompleted(activeTask.id)}
+              hitSlop={8}
+              style={styles.checkboxBtn}
+            >
+              <Ionicons
+                name={activeTask.completed ? 'checkmark-circle' : 'ellipse-outline'}
+                size={22}
+                color={activeTask.completed ? colors.success : colors.textSecondary}
+              />
+            </Pressable>
+
+            <View style={{ flex: 1, paddingHorizontal: 6 }}>
+              <Text
+                style={[
+                  typography.bodyBold,
+                  {
+                    color: activeTask.completed ? colors.textDisabled : colors.textPrimary,
+                    textDecorationLine: activeTask.completed ? 'line-through' : 'none',
+                    fontSize: 14,
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {activeTask.title}
+              </Text>
+              {activeTask.tag && (
+                <Text style={[typography.caption, { color: colors.primary, fontSize: 11 }]}>
+                  #{activeTask.tag}
+                </Text>
+              )}
+            </View>
+
+            {isHost && onOpenAddTask && (
+              <Pressable
+                onPress={onOpenAddTask}
+                hitSlop={8}
+                style={[styles.addSmallBtn, { backgroundColor: colors.surfaceVariant }]}
+              >
+                <Ionicons name="add" size={16} color={colors.primary} />
+              </Pressable>
+            )}
+          </View>
+        ) : (
+          <View style={styles.emptyTaskRow}>
+            <Ionicons name="checkbox-outline" size={18} color={colors.textDisabled} />
+            <Text style={[typography.caption, { color: colors.textSecondary, flex: 1, marginLeft: 6 }]}>
+              {isHost ? 'Odaya bir görev ekle ve birlikte tamamlayın' : 'Henüz oda görevi atanmadı'}
+            </Text>
+            {isHost && onOpenAddTask && (
+              <Pressable
+                onPress={onOpenAddTask}
+                style={[styles.addBadgeBtn, { backgroundColor: colors.primary }]}
+              >
+                <Text style={[typography.captionBold, { color: colors.textInverse, fontSize: 11 }]}>
+                  + Görev Ekle
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -142,11 +226,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xl,
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
   },
   syncRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  taskCard: {
+    width: '100%',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  taskContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkboxBtn: {
+    padding: 2,
+  },
+  emptyTaskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  addSmallBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addBadgeBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.full,
   },
 });

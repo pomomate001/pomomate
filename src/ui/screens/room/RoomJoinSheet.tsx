@@ -27,34 +27,44 @@ export function RoomJoinSheet({ visible, onClose, onJoin }: RoomJoinSheetProps) 
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <View style={styles.header}>
-        <Text style={[typography.h3, { color: colors.textPrimary }]}>Odaya Katıl</Text>
-        <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-          Arkadaşının paylaştığı bağlantı kodunu girerek odaya katılabilirsin.
-        </Text>
-      </View>
-      
-      <Input
-        label="Oda Kodu"
-        value={code}
-        onChangeText={setCode}
-        placeholder="Örn: X7A-9P2"
-        autoCapitalize="characters"
-        autoFocus
-      />
-      
-      <View style={styles.footer}>
-        <Button 
-          title="Odaklanmaya Katıl" 
-          onPress={handleJoin} 
-          disabled={!code.trim()} 
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={[typography.h3, { color: colors.textPrimary }]}>Odaya Katıl</Text>
+          <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
+            Arkadaşının paylaştığı 6 haneli oda kodunu girerek oturuma katılabilirsin.
+          </Text>
+        </View>
+        
+        <Input
+          label="Oda Kodu"
+          value={code}
+          onChangeText={setCode}
+          placeholder="Örn: X7A9P2"
+          autoCapitalize="characters"
+          autoFocus
         />
+        
+        <View style={styles.footer}>
+          <Button 
+            title="Odaya Katıl" 
+            onPress={handleJoin} 
+            disabled={!code.trim()} 
+          />
+        </View>
       </View>
     </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { marginBottom: spacing.lg },
-  footer: { marginTop: spacing.xl },
+  container: {
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  header: {
+    marginBottom: spacing.lg,
+  },
+  footer: {
+    marginTop: spacing.xl,
+  },
 });

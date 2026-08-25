@@ -2,6 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, Share, Platform, Alert, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { MediaStream } from 'react-native-webrtc';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
@@ -12,8 +14,11 @@ import { RoomCameraGrid } from './features/RoomCameraGrid';
 import { RoomScreenPanel } from './features/RoomScreenPanel';
 import { RoomViewToggles } from './features/RoomViewToggles';
 import { RoomBottomBar } from './RoomBottomBar';
-import { useRoomStore, useSettingsStore, useUserStore } from '../../../state';
+import { AddTaskSheet } from '../tasks/AddTaskSheet';
+import { useRoomStore, useSettingsStore, useUserStore, useTaskStore } from '../../../state';
 import { mediaService } from '../../../services/mobile/media/MediaService';
+import { generateId } from '../../../utils/id';
+import { nowIso } from '../../../utils/datetime';
 
 interface RoomActiveScreenProps {
   roomId: string;
@@ -24,8 +29,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
   const [screenShareOn, setScreenShareOn] = useState(false);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [showAddTask, setShowAddTask] = useState(false);
+
+  const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { height: windowHeight } = useWindowDimensions();
 
   const room = useRoomStore((s) => s.currentRoom);
   const members = useRoomStore((s) => s.members);
@@ -35,6 +43,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const setSharedFile = useRoomStore((s) => s.setSharedFile);
   const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
   const user = useUserStore((s) => s.user);
+  const addTask = useTaskStore((s) => s.addTask);
 
   const isHost = !room?.hostId || room.hostId === (user?.id ?? 'host');
   const inviteCode = room?.inviteCode ?? roomId.slice(-6).toUpperCase();
@@ -45,12 +54,16 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       displayName: user?.displayName ?? 'Sen (Host)',
       avatarUrl: user?.avatarUrl ?? undefined,
       hasCamera: camOn,
+      stream: camOn ? localStream : null,
+      isLocal: true,
     },
     ...members.map((m) => ({
       userId: m.userId,
       displayName: m.userId.slice(0, 6),
       avatarUrl: undefined,
       hasCamera: false,
+      stream: null,
+      isLocal: false,
     })),
   ];
 
@@ -61,14 +74,17 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       const stream = await mediaService.getUserMedia({ audio: true, video: camOn });
       if (stream) {
         setMicOn(true);
+        if (camOn) setLocalStream(stream);
       } else {
         Alert.alert('Mikrofon İzni Gerekli', 'Sesli çalışma oturumu için mikrofon izni vermelisiniz.');
       }
     } else {
       if (camOn) {
-        await mediaService.getUserMedia({ audio: false, video: true });
+        const stream = await mediaService.getUserMedia({ audio: false, video: true });
+        if (stream) setLocalStream(stream);
       } else {
         mediaService.stopUserMedia();
+        setLocalStream(null);
       }
       setMicOn(false);
     }
@@ -79,6 +95,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       const stream = await mediaService.getUserMedia({ audio: micOn, video: true });
       if (stream) {
         setCamOn(true);
+        setLocalStream(stream);
+        // Auto-open cameras grid if closed
+        if (!viewToggles.cameras) {
+          toggleView('cameras');
+        }
       } else {
         Alert.alert('Kamera İzni Gerekli', 'Görüntülü çalışma oturumu için kamera izni vermelisiniz.');
       }
@@ -89,8 +110,9 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         mediaService.stopUserMedia();
       }
       setCamOn(false);
+      setLocalStream(null);
     }
-  }, [camOn, micOn]);
+  }, [camOn, micOn, viewToggles.cameras, toggleView]);
 
   const handleToggleScreen = useCallback(async () => {
     if (!screenShareOn) {
@@ -107,7 +129,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       } else {
         Alert.alert(
           'Ekran Paylaşımı',
-          'Mobilde ekran paylaşımı henüz desteklenmiyor. "Ekran" panelinden dosya/görsel paylaşabilirsiniz.',
+          'Mobilde ekran paylaşımı yerine "Ekran" paneline dokunarak görsel veya dosya sunumu yapabilirsiniz.',
         );
       }
     } else {
@@ -162,6 +184,23 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     setSharedFile(null);
   }, [setSharedFile]);
 
+  /* ─── Task Handler ─── */
+
+  const handleAddTask = (title: string, tag: string | null, recurrence: any) => {
+    addTask({
+      id: generateId(),
+      userId: user?.id ?? 'my-user',
+      roomId,
+      title,
+      tag,
+      recurrence: { type: recurrence },
+      targetDate: new Date().toISOString().split('T')[0],
+      completed: false,
+      pomodoroCount: 0,
+      createdAt: nowIso(),
+    });
+  };
+
   /* ─── Calculate active panel count for layout ─── */
   const activePanels = [viewToggles.timer, viewToggles.screen, viewToggles.cameras].filter(Boolean).length;
   const noPanelsActive = activePanels === 0;
@@ -170,8 +209,23 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <BackgroundEffect effectId={backgroundEffectId} />
 
+      {/* Task Creation Sheet for Room */}
+      <AddTaskSheet
+        visible={showAddTask}
+        onClose={() => setShowAddTask(false)}
+        onAdd={handleAddTask}
+      />
+
       {/* ─── Main Content Area ─── */}
-      <View style={styles.contentArea}>
+      <View
+        style={[
+          styles.contentArea,
+          {
+            paddingTop: insets.top + spacing.lg,
+            paddingBottom: 250, // Space for bottom bar
+          },
+        ]}
+      >
         {noPanelsActive && (
           <View style={styles.emptyContent}>
             <Ionicons name="eye-off-outline" size={48} color={colors.textDisabled} />
@@ -183,28 +237,37 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
         {/* Timer Panel */}
         {viewToggles.timer && (
-          <View style={[
-            styles.panel,
-            {
-              backgroundColor: `${colors.card}CC`,
-              borderColor: `${colors.border}50`,
-              flex: viewToggles.screen || viewToggles.cameras ? 0 : 1,
-            },
-          ]}>
-            <RoomTimer isHost={isHost} />
+          <View
+            style={[
+              styles.panel,
+              {
+                backgroundColor: `${colors.card}E6`,
+                borderColor: `${colors.border}80`,
+                flex: viewToggles.screen || viewToggles.cameras ? 0 : 1,
+                justifyContent: 'center',
+              },
+            ]}
+          >
+            <RoomTimer
+              roomId={roomId}
+              isHost={isHost}
+              onOpenAddTask={() => setShowAddTask(true)}
+            />
           </View>
         )}
 
         {/* Screen / File Share Panel */}
         {viewToggles.screen && (
-          <View style={[
-            styles.panel,
-            {
-              backgroundColor: `${colors.card}CC`,
-              borderColor: `${colors.border}50`,
-              flex: 1,
-            },
-          ]}>
+          <View
+            style={[
+              styles.panel,
+              {
+                backgroundColor: `${colors.card}E6`,
+                borderColor: `${colors.border}80`,
+                flex: 1,
+              },
+            ]}
+          >
             <RoomScreenPanel
               sharedFile={sharedFile}
               isScreenSharing={screenShareOn}
@@ -217,26 +280,28 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
         {/* Camera Grid Panel */}
         {viewToggles.cameras && (
-          <View style={[
-            styles.panel,
-            {
-              backgroundColor: `${colors.card}CC`,
-              borderColor: `${colors.border}50`,
-              flex: 1,
-            },
-          ]}>
+          <View
+            style={[
+              styles.panel,
+              {
+                backgroundColor: `${colors.card}E6`,
+                borderColor: `${colors.border}80`,
+                flex: 1,
+              },
+            ]}
+          >
             <RoomCameraGrid participants={participants} />
           </View>
         )}
       </View>
 
-      {/* ─── Right Side Toggle Buttons ─── */}
+      {/* ─── Right Side Floating Toggle Buttons ─── */}
       <RoomViewToggles
         viewToggles={viewToggles}
         onToggle={toggleView}
       />
 
-      {/* ─── Bottom Bar ─── */}
+      {/* ─── Collapsible Bottom Bar ─── */}
       <RoomBottomBar
         roomName={room?.name ?? 'Çalışma Odası'}
         inviteCode={inviteCode}
@@ -265,11 +330,9 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xxl + spacing.lg,
-    paddingBottom: spacing.sm,
-    paddingRight: spacing.xxxl + spacing.md, // Space for right-side toggle buttons
-    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    justifyContent: 'center',
+    gap: spacing.md,
   },
   emptyContent: {
     flex: 1,
@@ -281,6 +344,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     borderWidth: 1,
     overflow: 'hidden',
-    minHeight: 80,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 8,
   },
 });

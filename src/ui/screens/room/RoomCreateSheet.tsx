@@ -27,33 +27,43 @@ export function RoomCreateSheet({ visible, onClose, onCreate }: RoomCreateSheetP
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <View style={styles.header}>
-        <Text style={[typography.h3, { color: colors.textPrimary }]}>Yeni Çalışma Odası</Text>
-        <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-          Arkadaşlarınla odaklanmak için özel bir alan yarat
-        </Text>
-      </View>
-      
-      <Input
-        label="Oda Adı"
-        value={name}
-        onChangeText={setName}
-        placeholder="Örn: Hafta Sonu Maratonu"
-        autoFocus
-      />
-      
-      <View style={styles.footer}>
-        <Button 
-          title="Odayı Oluştur" 
-          onPress={handleCreate} 
-          disabled={!name.trim()} 
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={[typography.h3, { color: colors.textPrimary }]}>Yeni Çalışma Odası</Text>
+          <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
+            Arkadaşlarınla odaklanmak için özel bir alan yarat
+          </Text>
+        </View>
+        
+        <Input
+          label="Oda Adı"
+          value={name}
+          onChangeText={setName}
+          placeholder="Örn: Hafta Sonu Maratonu"
+          autoFocus
         />
+        
+        <View style={styles.footer}>
+          <Button 
+            title="Odayı Oluştur" 
+            onPress={handleCreate} 
+            disabled={!name.trim()} 
+          />
+        </View>
       </View>
     </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { marginBottom: spacing.lg },
-  footer: { marginTop: spacing.xl },
+  container: {
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  header: {
+    marginBottom: spacing.lg,
+  },
+  footer: {
+    marginTop: spacing.xl,
+  },
 });

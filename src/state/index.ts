@@ -5,7 +5,7 @@ export type { ViewToggles, SharedFile } from './roomStore';
 export { useUserStore } from './userStore';
 export { useChatStore } from './chatStore';
 export { useSettingsStore } from './settingsStore';
-export type { SettingsState } from './settingsStore';
+export type { SettingsState, AmbientSoundMode } from './settingsStore';
 export { useStatsStore } from './statsStore';
 export type { DailyStat, StatsState } from './statsStore';
 export { useFriendsStore } from './friendsStore';
