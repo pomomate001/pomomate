@@ -1,0 +1,317 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, Pressable, Alert, Share, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useColors } from '../../theme';
+import { typography } from '../../theme/typography';
+import { spacing } from '../../theme/spacing';
+import { radius } from '../../theme/radius';
+import { BottomSheet } from '../../components/BottomSheet';
+import { Button } from '../../components/Button';
+import { Avatar } from '../../components/Avatar';
+import { useUserStore, useFriendsStore } from '../../../state';
+import { friendService } from '../../../services/friends/FriendService';
+
+interface AddFriendSheetProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
+  const [friendIdInput, setFriendIdInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [activeTab, setActiveTab] = useState<'add' | 'requests'>('add');
+
+  const user = useUserStore((s) => s.user);
+  const incomingRequests = useFriendsStore((s) => s.incomingRequests);
+  const colors = useColors();
+
+  const myCode = user?.id ?? 'kullanici-id';
+
+  useEffect(() => {
+    if (visible && user?.id) {
+      friendService.fetchIncomingRequests(user.id);
+    }
+  }, [visible, user?.id]);
+
+  const handleShareMyCode = async () => {
+    try {
+      await Share.share({
+        message: `🍅 PomoMate'de birlikte odaklanalım! Beni arkadaş olarak ekle:\n\nArkadaşlık Kodu: ${myCode}\n\nPomoMate → İstatistikler → Arkadaşlarım → Arkadaş Ekle`,
+        title: 'PomoMate Arkadaşlık Kodu',
+      });
+    } catch {
+      // User cancelled
+    }
+  };
+
+  const handleCopyCode = () => {
+    Alert.alert('Arkadaşlık Kodun', `Kodun: ${myCode}\n\nBu kodu arkadaşına göndererek seni eklemesini sağlayabilirsin!`);
+  };
+
+  const handleSendRequest = async () => {
+    if (!friendIdInput.trim()) {
+      Alert.alert('Uyarı', 'Lütfen arkadaşının kullanıcı ID veya kodunu gir.');
+      return;
+    }
+
+    if (!user?.id) {
+      Alert.alert('Hata', 'Arkadaş eklemek için oturum açmalısınız.');
+      return;
+    }
+
+    setIsSending(true);
+    const result = await friendService.sendFriendRequest(user.id, friendIdInput.trim());
+    setIsSending(false);
+
+    if (result.success) {
+      Alert.alert('Başarılı', result.message);
+      setFriendIdInput('');
+      onClose();
+    } else {
+      Alert.alert('Hata', result.message);
+    }
+  };
+
+  const handleAccept = async (requestId: string, fromUserId: string) => {
+    if (!user?.id) return;
+    const ok = await friendService.acceptRequest(requestId, fromUserId, user.id);
+    if (ok) {
+      Alert.alert('Başarılı', 'Arkadaşlık isteği kabul edildi!');
+    } else {
+      Alert.alert('Hata', 'İstek kabul edilirken bir hata oluştu.');
+    }
+  };
+
+  const handleReject = async (requestId: string) => {
+    if (!user?.id) return;
+    await friendService.rejectRequest(requestId, user.id);
+  };
+
+  return (
+    <BottomSheet visible={visible} onClose={onClose}>
+      <View style={styles.container}>
+        {/* Header Tabs */}
+        <View style={styles.tabRow}>
+          <Pressable
+            onPress={() => setActiveTab('add')}
+            style={[
+              styles.tab,
+              activeTab === 'add' && { borderBottomColor: colors.primary, borderBottomWidth: 2 },
+            ]}
+          >
+            <Text
+              style={[
+                typography.bodyBold,
+                { color: activeTab === 'add' ? colors.primary : colors.textSecondary },
+              ]}
+            >
+              Arkadaş Ekle
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setActiveTab('requests')}
+            style={[
+              styles.tab,
+              activeTab === 'requests' && { borderBottomColor: colors.primary, borderBottomWidth: 2 },
+            ]}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text
+                style={[
+                  typography.bodyBold,
+                  { color: activeTab === 'requests' ? colors.primary : colors.textSecondary },
+                ]}
+              >
+                İstekler
+              </Text>
+              {incomingRequests.length > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.error }]}>
+                  <Text style={[typography.captionBold, { color: '#FFF', fontSize: 10 }]}>
+                    {incomingRequests.length}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </Pressable>
+        </View>
+
+        {activeTab === 'add' ? (
+          <View style={styles.tabContent}>
+            {/* My Share Code Card */}
+            <View style={[styles.shareCard, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Senin Arkadaşlık Kodun</Text>
+                <Text style={[typography.bodyBold, { color: colors.textPrimary, marginTop: 2 }]} numberOfLines={1}>
+                  {myCode.slice(0, 16)}...
+                </Text>
+              </View>
+              <View style={styles.shareActions}>
+                <Pressable onPress={handleCopyCode} style={[styles.actionBtn, { backgroundColor: colors.surface }]}>
+                  <Ionicons name="copy-outline" size={18} color={colors.primary} />
+                </Pressable>
+                <Pressable onPress={handleShareMyCode} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
+                  <Ionicons name="share-social" size={18} color="#FFF" />
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Input Form */}
+            <View style={styles.inputSection}>
+              <Text style={[typography.captionBold, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
+                Arkadaşının Kodunu Gir
+              </Text>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+                <Ionicons name="person-add-outline" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <TextInput
+                  style={[styles.input, { color: colors.textPrimary }]}
+                  placeholder="Kullanıcı ID veya Arkadaş Kodu"
+                  placeholderTextColor={colors.textDisabled}
+                  value={friendIdInput}
+                  onChangeText={setFriendIdInput}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                {friendIdInput.length > 0 && (
+                  <Pressable onPress={() => setFriendIdInput('')}>
+                    <Ionicons name="close-circle" size={18} color={colors.textDisabled} />
+                  </Pressable>
+                )}
+              </View>
+            </View>
+
+            <Button
+              title={isSending ? 'Gönderiliyor...' : 'Arkadaşlık İsteği Gönder'}
+              onPress={handleSendRequest}
+              disabled={isSending || !friendIdInput.trim()}
+              style={{ marginTop: spacing.md }}
+            />
+          </View>
+        ) : (
+          /* Incoming Requests Tab */
+          <View style={styles.tabContent}>
+            {incomingRequests.length === 0 ? (
+              <View style={styles.emptyRequests}>
+                <Ionicons name="mail-outline" size={40} color={colors.textDisabled} />
+                <Text style={[typography.body, { color: colors.textDisabled, marginTop: spacing.sm, textAlign: 'center' }]}>
+                  Bekleyen arkadaşlık isteğin yok.
+                </Text>
+              </View>
+            ) : (
+              incomingRequests.map((req) => (
+                <View
+                  key={req.id}
+                  style={[styles.requestItem, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}
+                >
+                  <Avatar uri={req.fromAvatarUrl} name={req.fromDisplayName} size={40} />
+                  <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                    <Text style={[typography.bodyBold, { color: colors.textPrimary }]} numberOfLines={1}>
+                      {req.fromDisplayName}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>İstek gönderdi</Text>
+                  </View>
+                  <View style={styles.requestActions}>
+                    <Pressable
+                      onPress={() => handleAccept(req.id, req.fromUserId)}
+                      style={[styles.reqBtn, { backgroundColor: colors.success }]}
+                    >
+                      <Ionicons name="checkmark" size={18} color="#FFF" />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => handleReject(req.id)}
+                      style={[styles.reqBtn, { backgroundColor: colors.error }]}
+                    >
+                      <Ionicons name="close" size={18} color="#FFF" />
+                    </Pressable>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        )}
+      </View>
+    </BottomSheet>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    paddingBottom: spacing.lg,
+  },
+  tabRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: spacing.md,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  badge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: radius.full,
+  },
+  tabContent: {
+    gap: spacing.md,
+  },
+  shareCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+  },
+  shareActions: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  actionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inputSection: {
+    marginTop: spacing.xs,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+  },
+  emptyRequests: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
+  },
+  requestItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    marginBottom: spacing.xs,
+  },
+  requestActions: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  reqBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

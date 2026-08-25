@@ -47,6 +47,8 @@ export interface Room {
   maxMembers: typeof MAX_ROOM_MEMBERS;
   isActive: boolean;
   createdAt: ISODateString;
+  /** Short invite code for room sharing (e.g. "X7A9P2"). */
+  inviteCode?: string;
 }
 
 export type RoomMemberRole = 'host' | 'member';

@@ -27,24 +27,62 @@ function formatHours(seconds: number): string {
   return h > 0 ? `${h}s ${m}d` : `${m}dk`;
 }
 
-// Mock chart data — replaced by real data in M03
-function mockChartData(period: Period) {
+// Calculate chart data from real recorded daily stats
+function computeRealChartData(period: Period, dailyStats: import('../../../state/statsStore').DailyStat[]) {
+  const dayLabels = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+  const monthLabels = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
   if (period === 'daily') {
-    return ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((label, i) => ({
-      label,
-      value: Math.floor(Math.random() * 8) + 1,
-    }));
+    const result: { label: string; value: number }[] = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayLabel = dayLabels[d.getDay()];
+      const match = dailyStats.find((s) => s.date === dateStr);
+      result.push({
+        label: dayLabel,
+        value: match ? match.pomodorosCompleted : 0,
+      });
+    }
+    return result;
   }
+
   if (period === 'weekly') {
-    return ['H1', 'H2', 'H3', 'H4'].map((label) => ({
-      label,
-      value: Math.floor(Math.random() * 30) + 5,
-    }));
+    const result: { label: string; value: number }[] = [];
+    for (let w = 3; w >= 0; w--) {
+      const label = `H${4 - w}`;
+      const now = new Date();
+      const start = new Date(now);
+      start.setDate(start.getDate() - (w + 1) * 7);
+      const end = new Date(now);
+      end.setDate(end.getDate() - w * 7);
+
+      const total = dailyStats
+        .filter((s) => {
+          const sd = new Date(s.date);
+          return sd >= start && sd <= end;
+        })
+        .reduce((sum, s) => sum + s.pomodorosCompleted, 0);
+
+      result.push({ label, value: total });
+    }
+    return result;
   }
-  return ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz'].map((label) => ({
-    label,
-    value: Math.floor(Math.random() * 100) + 10,
-  }));
+
+  const result: { label: string; value: number }[] = [];
+  const now = new Date();
+  for (let m = 5; m >= 0; m--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
+    const monthPrefix = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = monthLabels[d.getMonth()];
+    const total = dailyStats
+      .filter((s) => s.date.startsWith(monthPrefix))
+      .reduce((sum, s) => sum + s.pomodorosCompleted, 0);
+    result.push({ label, value: total });
+  }
+  return result;
 }
 
 export function StatsScreen() {
@@ -52,10 +90,10 @@ export function StatsScreen() {
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-  const { totalPomodoros, totalWorkSeconds, totalTasksCompleted, streak } = useStatsStore();
+  const { totalPomodoros, totalWorkSeconds, totalTasksCompleted, streak, daily } = useStatsStore();
   const tasks = useTaskStore((s) => s.tasks);
   const colors = useColors();
-  const chartData = mockChartData(period);
+  const chartData = computeRealChartData(period, daily);
 
   const periods: Period[] = ['daily', 'weekly', 'monthly'];
   

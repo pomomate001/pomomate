@@ -27,16 +27,28 @@ export const SOUND_PRESETS: SoundItem[] = [
     url: 'https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3',
   },
   {
-    id: 'chime',
-    label: 'Yumuşak Melodi',
-    description: 'Sakinleştirici nazik ses',
-    url: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
+    id: 'bird',
+    label: 'Kuş Cıvıltısı',
+    description: 'Huzur verici orman ve neşeli kuş cıvıltıları',
+    url: 'https://assets.mixkit.co/active_storage/sfx/2436/2436-preview.mp3',
   },
   {
-    id: 'bird',
-    label: 'Doğa & Kuş Sesi',
-    description: 'Tazeleyici orman esintisi',
-    url: 'https://assets.mixkit.co/active_storage/sfx/2436/2436-preview.mp3',
+    id: 'campfire',
+    label: 'Kamp Ateşi',
+    description: 'Çıtırdayan sıcak ve sakinleştirici kamp ateşi',
+    url: 'https://assets.mixkit.co/active_storage/sfx/1256/1256-preview.mp3',
+  },
+  {
+    id: 'rain',
+    label: 'Yağmur Sesi',
+    description: 'Odaklanmayı artıran pencereli dinlendirici yağmur',
+    url: 'https://assets.mixkit.co/active_storage/sfx/1251/1251-preview.mp3',
+  },
+  {
+    id: 'chime',
+    label: 'Yumuşak Melodi',
+    description: 'Sakinleştirici ve nazik bitiş melodisi',
+    url: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
   },
 ];
 

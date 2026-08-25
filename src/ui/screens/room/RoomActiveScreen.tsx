@@ -1,21 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, Pressable, StyleSheet, Share, Platform, Alert, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
-import { Card } from '../../components/Card';
 import { BackgroundEffect } from '../../animations/BackgroundEffect';
-import { ParticipantsBar } from './ParticipantsBar';
-import { RoomTimer, RoomTasks, RoomChat, RoomMedia, RoomFiles } from './features';
-import { useRoomStore, useSettingsStore, useTaskStore, useUserStore } from '../../../state';
-import { AddTaskSheet } from '../tasks/AddTaskSheet';
-import { generateId } from '../../../utils/id';
-import { nowIso } from '../../../utils/datetime';
-
-type RoomTab = 'tasks' | 'chat' | 'files';
+import { RoomTimer } from './features/RoomTimer';
+import { RoomCameraGrid } from './features/RoomCameraGrid';
+import { RoomScreenPanel } from './features/RoomScreenPanel';
+import { RoomViewToggles } from './features/RoomViewToggles';
+import { RoomBottomBar } from './RoomBottomBar';
+import { useRoomStore, useSettingsStore, useUserStore } from '../../../state';
+import { mediaService } from '../../../services/mobile/media/MediaService';
 
 interface RoomActiveScreenProps {
   roomId: string;
@@ -23,329 +21,266 @@ interface RoomActiveScreenProps {
 }
 
 export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
-  const [activeTab, setActiveTab] = useState<RoomTab>('tasks');
-  const [showAddTask, setShowAddTask] = useState(false);
+  const [micOn, setMicOn] = useState(false);
+  const [camOn, setCamOn] = useState(false);
+  const [screenShareOn, setScreenShareOn] = useState(false);
   const colors = useColors();
+  const { height: windowHeight } = useWindowDimensions();
 
   const room = useRoomStore((s) => s.currentRoom);
   const members = useRoomStore((s) => s.members);
+  const viewToggles = useRoomStore((s) => s.viewToggles);
+  const toggleView = useRoomStore((s) => s.toggleView);
+  const sharedFile = useRoomStore((s) => s.sharedFile);
+  const setSharedFile = useRoomStore((s) => s.setSharedFile);
   const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
   const user = useUserStore((s) => s.user);
 
-  const tasks = useTaskStore((s) => s.tasks);
-  const addTask = useTaskStore((s) => s.addTask);
-
-  const roomTasks = tasks.filter((t) => t.roomId === roomId);
   const isHost = !room?.hostId || room.hostId === (user?.id ?? 'host');
+  const inviteCode = room?.inviteCode ?? roomId.slice(-6).toUpperCase();
 
   const participants = [
     {
       userId: user?.id ?? 'my-user',
       displayName: user?.displayName ?? 'Sen (Host)',
       avatarUrl: user?.avatarUrl ?? undefined,
+      hasCamera: camOn,
     },
     ...members.map((m) => ({
       userId: m.userId,
       displayName: m.userId.slice(0, 6),
       avatarUrl: undefined,
+      hasCamera: false,
     })),
   ];
 
-  const handleAddTask = (title: string, tag: string | null, recurrence: any) => {
-    addTask({
-      id: generateId(),
-      userId: user?.id ?? 'my-user',
-      roomId,
-      title,
-      tag,
-      recurrence: { type: recurrence },
-      targetDate: new Date().toISOString().split('T')[0],
-      completed: false,
-      pomodoroCount: 0,
-      createdAt: nowIso(),
-    });
-  };
+  /* ─── Media Handlers ─── */
 
-  const handleShareCode = () => {
-    Alert.alert(
-      'Odaya Arkadaş Davet Et',
-      `Oda Kodu: ${roomId}\n\nArkadaşların bu kodu "Odaya Katıl" ekranına yazarak doğrudan bu oturuma bağlanabilir.`,
-      [{ text: 'Tamam' }],
-    );
-  };
+  const handleToggleMic = useCallback(async () => {
+    if (!micOn) {
+      const stream = await mediaService.getUserMedia({ audio: true, video: camOn });
+      if (stream) {
+        setMicOn(true);
+      } else {
+        Alert.alert('Mikrofon İzni Gerekli', 'Sesli çalışma oturumu için mikrofon izni vermelisiniz.');
+      }
+    } else {
+      if (camOn) {
+        await mediaService.getUserMedia({ audio: false, video: true });
+      } else {
+        mediaService.stopUserMedia();
+      }
+      setMicOn(false);
+    }
+  }, [micOn, camOn]);
+
+  const handleToggleCam = useCallback(async () => {
+    if (!camOn) {
+      const stream = await mediaService.getUserMedia({ audio: micOn, video: true });
+      if (stream) {
+        setCamOn(true);
+      } else {
+        Alert.alert('Kamera İzni Gerekli', 'Görüntülü çalışma oturumu için kamera izni vermelisiniz.');
+      }
+    } else {
+      if (micOn) {
+        await mediaService.getUserMedia({ audio: true, video: false });
+      } else {
+        mediaService.stopUserMedia();
+      }
+      setCamOn(false);
+    }
+  }, [camOn, micOn]);
+
+  const handleToggleScreen = useCallback(async () => {
+    if (!screenShareOn) {
+      if (Platform.OS === 'web') {
+        try {
+          const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+          setScreenShareOn(true);
+          stream.getVideoTracks()[0]?.addEventListener('ended', () => {
+            setScreenShareOn(false);
+          });
+        } catch {
+          Alert.alert('Ekran Paylaşımı', 'Ekran paylaşımı başlatılamadı.');
+        }
+      } else {
+        Alert.alert(
+          'Ekran Paylaşımı',
+          'Mobilde ekran paylaşımı henüz desteklenmiyor. "Ekran" panelinden dosya/görsel paylaşabilirsiniz.',
+        );
+      }
+    } else {
+      setScreenShareOn(false);
+    }
+  }, [screenShareOn]);
+
+  /* ─── Share Handler ─── */
+
+  const handleShare = useCallback(async () => {
+    try {
+      await Share.share({
+        message: `🍅 PomoMate ile birlikte çalışalım!\n\nOda: ${room?.name ?? 'Çalışma Odası'}\nOda Kodu: ${inviteCode}\n\nPomoMate uygulamasını aç → "Odaya Katıl" → Kodu yapıştır`,
+        title: 'PomoMate Çalışma Odası',
+      });
+    } catch {
+      // User cancelled share
+    }
+  }, [room?.name, inviteCode]);
+
+  /* ─── File Pick Handler ─── */
+
+  const handlePickFile = useCallback(async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const fileName = asset.fileName ?? asset.uri.split('/').pop() ?? 'file';
+        const fileType = asset.mimeType?.startsWith('image') ? 'image' : 'other';
+        setSharedFile({
+          uri: asset.uri,
+          fileName,
+          fileType,
+          sharedBy: user?.id ?? 'my-user',
+        });
+        // Auto-show screen panel when file is shared
+        if (!viewToggles.screen) {
+          toggleView('screen');
+        }
+      }
+    } catch {
+      Alert.alert('Dosya Seçimi', 'Dosya seçilemedi.');
+    }
+  }, [setSharedFile, user?.id, viewToggles.screen, toggleView]);
+
+  const handleRemoveFile = useCallback(() => {
+    setSharedFile(null);
+  }, [setSharedFile]);
+
+  /* ─── Calculate active panel count for layout ─── */
+  const activePanels = [viewToggles.timer, viewToggles.screen, viewToggles.cameras].filter(Boolean).length;
+  const noPanelsActive = activePanels === 0;
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <BackgroundEffect effectId={backgroundEffectId} />
 
-      <AddTaskSheet
-        visible={showAddTask}
-        onClose={() => setShowAddTask(false)}
-        onAdd={handleAddTask}
-      />
-
-      {/* Header */}
-      <View style={styles.headerWrap}>
-        <LinearGradient
-          colors={[colors.gradientStart, colors.gradientEnd]}
-          style={StyleSheet.absoluteFill}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
-        <View style={styles.headerContent}>
-          <Pressable onPress={onLeave} hitSlop={10} style={styles.iconBtn}>
-            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-          </Pressable>
-
-          <View style={styles.titleWrap}>
-            <Text style={[typography.bodyBold, { color: colors.textPrimary, fontSize: 17 }]} numberOfLines={1}>
-              {room?.name ?? 'Çalışma Odası'}
+      {/* ─── Main Content Area ─── */}
+      <View style={styles.contentArea}>
+        {noPanelsActive && (
+          <View style={styles.emptyContent}>
+            <Ionicons name="eye-off-outline" size={48} color={colors.textDisabled} />
+            <Text style={[typography.body, { color: colors.textDisabled, marginTop: spacing.md, textAlign: 'center' }]}>
+              Sağdaki butonları kullanarak{'\n'}sayaç, ekran veya kameraları gösterebilirsin
             </Text>
-            <View style={styles.badgeRow}>
-              <View style={[styles.liveBadge, { backgroundColor: colors.error }]}>
-                <View style={styles.liveDot} />
-                <Text style={[typography.overline, { color: '#FFFFFF', fontSize: 9 }]}>CANLI</Text>
-              </View>
-
-              <Pressable onPress={handleShareCode} style={[styles.codePill, { backgroundColor: colors.surfaceVariant }]}>
-                <Ionicons name="key-outline" size={11} color={colors.primary} style={{ marginRight: 3 }} />
-                <Text style={[typography.captionBold, { color: colors.primary, fontSize: 11 }]}>
-                  {roomId.slice(-6).toUpperCase()}
-                </Text>
-              </Pressable>
-            </View>
           </View>
+        )}
 
-          <Pressable onPress={handleShareCode} hitSlop={10} style={styles.iconBtn}>
-            <Ionicons name="share-social-outline" size={22} color={colors.textPrimary} />
-          </Pressable>
-        </View>
+        {/* Timer Panel */}
+        {viewToggles.timer && (
+          <View style={[
+            styles.panel,
+            {
+              backgroundColor: `${colors.card}CC`,
+              borderColor: `${colors.border}50`,
+              flex: viewToggles.screen || viewToggles.cameras ? 0 : 1,
+            },
+          ]}>
+            <RoomTimer isHost={isHost} />
+          </View>
+        )}
 
-        {/* Participants Avatars Bar */}
-        <View style={styles.participantsWrap}>
-          <ParticipantsBar participants={participants} />
-        </View>
+        {/* Screen / File Share Panel */}
+        {viewToggles.screen && (
+          <View style={[
+            styles.panel,
+            {
+              backgroundColor: `${colors.card}CC`,
+              borderColor: `${colors.border}50`,
+              flex: 1,
+            },
+          ]}>
+            <RoomScreenPanel
+              sharedFile={sharedFile}
+              isScreenSharing={screenShareOn}
+              isHost={isHost}
+              onPickFile={handlePickFile}
+              onRemoveFile={handleRemoveFile}
+            />
+          </View>
+        )}
+
+        {/* Camera Grid Panel */}
+        {viewToggles.cameras && (
+          <View style={[
+            styles.panel,
+            {
+              backgroundColor: `${colors.card}CC`,
+              borderColor: `${colors.border}50`,
+              flex: 1,
+            },
+          ]}>
+            <RoomCameraGrid participants={participants} />
+          </View>
+        )}
       </View>
 
-      {/* Content */}
-      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Main Session Card: Compact Timer & Media Controls */}
-        <Card variant="glass" style={styles.mainSessionCard}>
-          <RoomTimer isHost={isHost} />
-          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
-          <RoomMedia />
-        </Card>
+      {/* ─── Right Side Toggle Buttons ─── */}
+      <RoomViewToggles
+        viewToggles={viewToggles}
+        onToggle={toggleView}
+      />
 
-        {/* Tab Selector: Tasks vs Chat vs Files */}
-        <View style={[styles.tabBar, { backgroundColor: colors.surfaceVariant }]}>
-          <Pressable
-            onPress={() => setActiveTab('tasks')}
-            style={[
-              styles.tabBtn,
-              activeTab === 'tasks' && { backgroundColor: colors.primary },
-            ]}
-          >
-            <Ionicons
-              name="list"
-              size={16}
-              color={activeTab === 'tasks' ? colors.textInverse : colors.textSecondary}
-              style={{ marginRight: 4 }}
-            />
-            <Text
-              style={[
-                typography.captionBold,
-                { color: activeTab === 'tasks' ? colors.textInverse : colors.textSecondary },
-              ]}
-            >
-              Görevler ({roomTasks.length})
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => setActiveTab('chat')}
-            style={[
-              styles.tabBtn,
-              activeTab === 'chat' && { backgroundColor: colors.primary },
-            ]}
-          >
-            <Ionicons
-              name="chatbubble-ellipses"
-              size={16}
-              color={activeTab === 'chat' ? colors.textInverse : colors.textSecondary}
-              style={{ marginRight: 4 }}
-            />
-            <Text
-              style={[
-                typography.captionBold,
-                { color: activeTab === 'chat' ? colors.textInverse : colors.textSecondary },
-              ]}
-            >
-              Sohbet
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => setActiveTab('files')}
-            style={[
-              styles.tabBtn,
-              activeTab === 'files' && { backgroundColor: colors.primary },
-            ]}
-          >
-            <Ionicons
-              name="folder-open"
-              size={16}
-              color={activeTab === 'files' ? colors.textInverse : colors.textSecondary}
-              style={{ marginRight: 4 }}
-            />
-            <Text
-              style={[
-                typography.captionBold,
-                { color: activeTab === 'files' ? colors.textInverse : colors.textSecondary },
-              ]}
-            >
-              Dosyalar
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* Tab Content Card */}
-        <Card variant="glass" style={styles.tabContentCard}>
-          {activeTab === 'tasks' && (
-            <View>
-              <View style={styles.tasksHeader}>
-                <Text style={[typography.captionBold, { color: colors.textSecondary }]}>
-                  ORTAK ÇALIŞMA GÖREVLERİ
-                </Text>
-                <Pressable
-                  onPress={() => setShowAddTask(true)}
-                  style={[styles.addTaskMiniBtn, { backgroundColor: colors.primary }]}
-                >
-                  <Ionicons name="add" size={16} color={colors.textInverse} />
-                  <Text style={[typography.captionBold, { color: colors.textInverse, marginLeft: 2 }]}>
-                    Görev Ekle
-                  </Text>
-                </Pressable>
-              </View>
-
-              <RoomTasks tasks={roomTasks} onAddTask={() => setShowAddTask(true)} />
-            </View>
-          )}
-
-          {activeTab === 'chat' && <RoomChat roomId={roomId} />}
-
-          {activeTab === 'files' && <RoomFiles />}
-        </Card>
-
-        <View style={{ height: spacing.xxxl }} />
-      </ScrollView>
+      {/* ─── Bottom Bar ─── */}
+      <RoomBottomBar
+        roomName={room?.name ?? 'Çalışma Odası'}
+        inviteCode={inviteCode}
+        isLive={room?.isActive ?? true}
+        participants={participants.map((p) => ({
+          userId: p.userId,
+          displayName: p.displayName,
+          avatarUrl: p.avatarUrl,
+        }))}
+        micOn={micOn}
+        camOn={camOn}
+        screenShareOn={screenShareOn}
+        onToggleMic={handleToggleMic}
+        onToggleCam={handleToggleCam}
+        onToggleScreen={handleToggleScreen}
+        onShare={handleShare}
+        onLeave={onLeave}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  headerWrap: {
-    paddingTop: spacing.xxl,
+  screen: {
+    flex: 1,
+  },
+  contentArea: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xxl + spacing.lg,
     paddingBottom: spacing.sm,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    overflow: 'hidden',
+    paddingRight: spacing.xxxl + spacing.md, // Space for right-side toggle buttons
+    gap: spacing.sm,
   },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xs,
-  },
-  iconBtn: {
-    padding: spacing.xs,
-  },
-  titleWrap: {
-    alignItems: 'center',
+  emptyContent: {
     flex: 1,
-    paddingHorizontal: spacing.xs,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: 2,
-  },
-  liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-  },
-  liveDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#fff',
-    marginRight: 3,
-  },
-  codePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-  },
-  participantsWrap: {
-    marginTop: spacing.xs,
-  },
-  scrollContent: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-  },
-  mainSessionCard: {
-    borderRadius: radius.xl,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  divider: {
-    height: 1,
-    marginVertical: spacing.xs,
-    opacity: 0.5,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    borderRadius: radius.full,
-    padding: 3,
-    marginBottom: spacing.sm,
-  },
-  tabBtn: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: radius.full,
+    paddingHorizontal: spacing.xl,
   },
-  tabContentCard: {
+  panel: {
     borderRadius: radius.xl,
-    padding: spacing.md,
-    minHeight: 280,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  tasksHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  addTaskMiniBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.full,
+    overflow: 'hidden',
+    minHeight: 80,
   },
 });

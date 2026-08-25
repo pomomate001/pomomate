@@ -8,6 +8,8 @@ import React from 'react';
 import { TimerFaceMinimal } from './TimerFaceMinimal';
 import { TimerFaceCircle } from './TimerFaceCircle';
 import { TimerFaceDigital } from './TimerFaceDigital';
+import { TimerFaceArc } from './TimerFaceArc';
+import { TimerFaceNeon } from './TimerFaceNeon';
 import type { TimerMode } from '../../../types';
 
 interface TimerFaceProps {
@@ -24,6 +26,10 @@ export function TimerFace({ designId, ...rest }: TimerFaceProps) {
       return <TimerFaceCircle {...rest} />;
     case 'digital':
       return <TimerFaceDigital {...rest} />;
+    case 'arc':
+      return <TimerFaceArc {...rest} />;
+    case 'neon':
+      return <TimerFaceNeon {...rest} />;
     case 'minimal':
     default:
       return <TimerFaceMinimal {...rest} />;

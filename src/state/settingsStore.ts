@@ -42,7 +42,7 @@ interface SettingsActions {
 }
 
 const initialSettings: SettingsState = {
-  themeId: 'light',
+  themeId: 'dark',
   timerDesignId: 'circle',
   backgroundEffectId: 'none',
   soundEnabled: true,

@@ -1,51 +1,119 @@
 /**
  * Room feature: Camera / Microphone / Screen-share controls.
+ *
+ * Integrates with MediaService for real audio/video streams
+ * and provides platform-appropriate screen sharing behavior.
  */
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, Text, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../../theme';
 import { spacing } from '../../../theme/spacing';
 import { radius } from '../../../theme/radius';
 import { typography } from '../../../theme/typography';
 import { IconButton } from '../../../components/IconButton';
-import { permissionManager } from '../../../../services/mobile/permissions/PermissionManager';
+import { mediaService } from '../../../../services/mobile/media/MediaService';
 
-export function RoomMedia() {
+interface RoomMediaProps {
+  onStreamChange?: (stream: MediaStream | null) => void;
+}
+
+export function RoomMedia({ onStreamChange }: RoomMediaProps) {
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
   const [screenShare, setScreenShare] = useState(false);
   const colors = useColors();
 
-  const handleToggleMic = async () => {
+  const handleToggleMic = useCallback(async () => {
     if (!micOn) {
-      const res = await permissionManager.requestMicrophone();
-      if (res.status !== 'granted') {
-        Alert.alert('Mikrofon İzni Gerekli', 'Sesli çalışma oturumu için mikrofon izni vermelisiniz.');
-        return;
+      // Start audio stream
+      const stream = await mediaService.getUserMedia({ audio: true, video: camOn });
+      if (stream) {
+        setMicOn(true);
+        onStreamChange?.(stream);
+      } else {
+        Alert.alert(
+          'Mikrofon İzni Gerekli',
+          'Sesli çalışma oturumu için mikrofon izni vermelisiniz.',
+        );
       }
-      setMicOn(true);
     } else {
+      // If camera is still on, restart with just video
+      if (camOn) {
+        const stream = await mediaService.getUserMedia({ audio: false, video: true });
+        onStreamChange?.(stream);
+      } else {
+        mediaService.stopUserMedia();
+        onStreamChange?.(null);
+      }
       setMicOn(false);
     }
-  };
+  }, [micOn, camOn, onStreamChange]);
 
-  const handleToggleCam = async () => {
+  const handleToggleCam = useCallback(async () => {
     if (!camOn) {
-      const res = await permissionManager.requestCamera();
-      if (res.status !== 'granted') {
-        Alert.alert('Kamera İzni Gerekli', 'Görüntülü çalışma oturumu için kamera izni vermelisiniz.');
-        return;
+      // Start video stream (include audio if mic is already on)
+      const stream = await mediaService.getUserMedia({ audio: micOn, video: true });
+      if (stream) {
+        setCamOn(true);
+        onStreamChange?.(stream);
+      } else {
+        Alert.alert(
+          'Kamera İzni Gerekli',
+          'Görüntülü çalışma oturumu için kamera izni vermelisiniz.',
+        );
       }
-      setCamOn(true);
     } else {
+      // If mic is still on, restart with just audio
+      if (micOn) {
+        const stream = await mediaService.getUserMedia({ audio: true, video: false });
+        onStreamChange?.(stream);
+      } else {
+        mediaService.stopUserMedia();
+        onStreamChange?.(null);
+      }
       setCamOn(false);
     }
-  };
+  }, [camOn, micOn, onStreamChange]);
 
-  const handleToggleScreen = () => {
-    setScreenShare((v) => !v);
-  };
+  const handleToggleScreen = useCallback(async () => {
+    if (!screenShare) {
+      if (Platform.OS === 'web') {
+        // Web: use getDisplayMedia
+        try {
+          const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+          setScreenShare(true);
+          onStreamChange?.(stream);
+          // Listen for user stopping screen share via browser UI
+          stream.getVideoTracks()[0]?.addEventListener('ended', () => {
+            setScreenShare(false);
+            onStreamChange?.(null);
+          });
+        } catch {
+          Alert.alert('Ekran Paylaşımı', 'Ekran paylaşımı başlatılamadı.');
+        }
+      } else {
+        // Native: screen sharing requires react-native-webrtc native module
+        Alert.alert(
+          'Ekran Paylaşımı',
+          'Mobilde ekran paylaşımı henüz desteklenmiyor. Bunun yerine "Ekran" panelinden dosya/görsel paylaşabilirsiniz.',
+          [{ text: 'Tamam' }],
+        );
+      }
+    } else {
+      setScreenShare(false);
+      // Stop screen share tracks
+      const localStream = mediaService.getLocalStream();
+      if (localStream) {
+        localStream.getVideoTracks().forEach((track) => {
+          if (track.label.includes('screen') || track.label.includes('display')) {
+            track.stop();
+          }
+        });
+      }
+      onStreamChange?.(null);
+    }
+  }, [screenShare, onStreamChange]);
 
   return (
     <View style={styles.container}>

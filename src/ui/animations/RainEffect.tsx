@@ -1,28 +1,37 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useColors } from '../theme';
 
-export function RainEffect() {
+// Pre-computed fixed positions to avoid layout thrashing and Math.random during renders
+const RAIN_DROPS = Array.from({ length: 22 }, (_, i) => ({
+  id: i,
+  left: `${((i * 17) % 95) + 2}%`,
+  top: `${((i * 23) % 90) + 4}%`,
+  height: 12 + (i % 4) * 3,
+  opacity: 0.25 + (i % 3) * 0.1,
+}));
+
+export const RainEffect = React.memo(function RainEffect() {
   const colors = useColors();
-  
-  // A simple static preview for now. Can be animated with translationY later.
+
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {[...Array(20)].map((_, i) => (
+      {RAIN_DROPS.map((drop) => (
         <View
-          key={i}
+          key={drop.id}
           style={{
             position: 'absolute',
             width: 2,
-            height: 15,
-            backgroundColor: colors.info,
-            opacity: 0.4,
-            left: `${Math.random() * 100}%` as any,
-            top: `${Math.random() * 100}%` as any,
-            transform: [{ rotate: '15deg' }]
+            height: drop.height,
+            backgroundColor: colors.info || '#64B5F6',
+            opacity: drop.opacity,
+            left: drop.left as any,
+            top: drop.top as any,
+            borderRadius: 1,
+            transform: [{ rotate: '15deg' }],
           }}
         />
       ))}
     </View>
   );
-}
+});

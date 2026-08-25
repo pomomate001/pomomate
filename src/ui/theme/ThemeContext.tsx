@@ -5,7 +5,7 @@
  * a `setThemeId` function to switch themes at runtime.
  */
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { themes, lightTheme } from './themes';
+import { themes, darkTheme } from './themes';
 import type { AppTheme } from './themes';
 
 interface ThemeContextValue {
@@ -15,9 +15,9 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: lightTheme,
+  theme: darkTheme,
   setThemeId: () => {},
-  availableThemes: [lightTheme],
+  availableThemes: [darkTheme],
 });
 
 import { useSettingsStore } from '../../state';
@@ -33,7 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeIdState(storeThemeId);
   }, [storeThemeId]);
 
-  const theme = useMemo(() => themes.get(themeId) ?? lightTheme, [themeId]);
+  const theme = useMemo(() => themes.get(themeId) ?? darkTheme, [themeId]);
 
   const setThemeId = useCallback((id: string) => {
     if (themes.has(id)) {

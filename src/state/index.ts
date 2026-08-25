@@ -1,6 +1,7 @@
 export { useTimerStore } from './timerStore';
 export { useTaskStore } from './taskStore';
 export { useRoomStore } from './roomStore';
+export type { ViewToggles, SharedFile } from './roomStore';
 export { useUserStore } from './userStore';
 export { useChatStore } from './chatStore';
 export { useSettingsStore } from './settingsStore';

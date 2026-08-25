@@ -13,6 +13,7 @@ import { BackgroundEffect } from '../../animations';
 import { AdPlacement } from '../../ads';
 import { notificationService } from '../../../services/mobile';
 import { soundService } from '../../../services/mobile/sound/SoundService';
+import { adMobService } from '../../../services/monetization';
 import type { TimerMode, Task } from '../../../types';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
@@ -111,6 +112,12 @@ export function TimerScreen() {
           'Pomodoro Tamamlandı! 🍅',
           'Mola zamanı. İyi dinlenmeler!',
         );
+
+        // Show interstitial ad for free users
+        const isPremium = useSettingsStore.getState().isPremium;
+        if (!isPremium) {
+          adMobService.showInterstitial();
+        }
       } else {
         soundService.playCompletionSound();
         notificationService.scheduleTimerComplete(

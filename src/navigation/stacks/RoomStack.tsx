@@ -10,6 +10,16 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 const Stack = createNativeStackNavigator<RoomStackParamList>();
 
+/** Generate a 6-char invite code (excludes confusing chars like O/0/1/I). */
+function generateLocalInviteCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
 function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamList, 'RoomList'>) {
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
@@ -20,7 +30,8 @@ function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamLi
   const user = useUserStore((s) => s.user);
 
   const handleCreateRoom = (name: string) => {
-    const roomId = `room-${Date.now().toString().slice(-6)}`;
+    const inviteCode = generateLocalInviteCode();
+    const roomId = `room-${inviteCode}`;
     const newRoom: Room = {
       id: roomId,
       name,
@@ -28,6 +39,7 @@ function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamLi
       maxMembers: 8,
       isActive: true,
       createdAt: nowIso(),
+      inviteCode,
     };
     addRoom(newRoom);
     setCurrentRoom(newRoom);
@@ -37,23 +49,32 @@ function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamLi
 
   const handleJoinRoom = (code: string) => {
     setShowJoin(false);
-    // Find if already in rooms list or create a joined room representation
-    const existing = rooms.find((r) => r.id.toLowerCase() === code.toLowerCase());
+    const normalizedCode = code.trim().toUpperCase();
+
+    // Match by id, inviteCode, or last 6 chars of id
+    const existing = rooms.find(
+      (r) =>
+        r.id.toLowerCase() === code.toLowerCase() ||
+        r.inviteCode?.toUpperCase() === normalizedCode ||
+        r.id.slice(-6).toUpperCase() === normalizedCode,
+    );
+
     if (existing) {
       setCurrentRoom(existing);
       navigation.navigate('RoomActive', { roomId: existing.id });
     } else {
       const joinedRoom: Room = {
-        id: code,
-        name: `Oda ${code.toUpperCase()}`,
+        id: `room-${normalizedCode}`,
+        name: `Oda ${normalizedCode}`,
         hostId: 'remote-host',
         maxMembers: 8,
         isActive: true,
         createdAt: nowIso(),
+        inviteCode: normalizedCode,
       };
       addRoom(joinedRoom);
       setCurrentRoom(joinedRoom);
-      navigation.navigate('RoomActive', { roomId: code });
+      navigation.navigate('RoomActive', { roomId: joinedRoom.id });
     }
   };
 

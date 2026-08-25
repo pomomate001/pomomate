@@ -1,4 +1,9 @@
 import { registerRootComponent } from 'expo';
+import { RTCPeerConnection, RTCIceCandidate, RTCSessionDescription, RTCView, MediaStream, MediaStreamTrack, mediaDevices, registerGlobals } from 'react-native-webrtc';
+
+// Polyfill WebRTC globals for standard browser WebRTC code
+registerGlobals();
+
 
 import App from './App';
 

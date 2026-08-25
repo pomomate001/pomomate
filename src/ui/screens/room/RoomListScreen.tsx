@@ -33,7 +33,8 @@ function RoomCard({
   const colors = useColors();
 
   const handleCopyCode = () => {
-    Alert.alert('Oda Kodu', `Oda Kodu: ${room.id}\nArkadaşlarınla paylaşarak onları davet edebilirsin!`);
+    const code = room.inviteCode ?? room.id.slice(-6).toUpperCase();
+    Alert.alert('Oda Kodu', `Oda Kodu: ${code}\nArkadaşlarınla paylaşarak onları davet edebilirsin!`);
   };
 
   return (
@@ -91,7 +92,7 @@ function RoomCard({
 
           <Pressable onPress={handleCopyCode} style={styles.codeBadge}>
             <Ionicons name="copy-outline" size={12} color={colors.textSecondary} style={{ marginRight: 3 }} />
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Kod: {room.id.slice(-6).toUpperCase()}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>Kod: {room.inviteCode ?? room.id.slice(-6).toUpperCase()}</Text>
           </Pressable>
         </View>
       </View>

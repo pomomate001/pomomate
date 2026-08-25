@@ -1,22 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
-import { useFriendsStore } from '../../../state';
+import { radius } from '../../theme/radius';
+import { useFriendsStore, useUserStore } from '../../../state';
 import { EmptyState } from '../../components/EmptyState';
 import { Button } from '../../components/Button';
 import { Avatar } from '../../components/Avatar';
 import { FriendRow } from './FriendRow';
 import { FriendDetailSheet } from './FriendDetailSheet';
+import { AddFriendSheet } from './AddFriendSheet';
+import { friendService } from '../../../services/friends/FriendService';
 import type { FriendSummary } from '../../../state/friendsStore';
 
 export function FriendsSection() {
   const [expanded, setExpanded] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<FriendSummary | null>(null);
+  const [showAddFriend, setShowAddFriend] = useState(false);
+
   const friends = useFriendsStore((s) => s.friends);
+  const user = useUserStore((s) => s.user);
   const colors = useColors();
+
+  // Load friends from backend on mount
+  useEffect(() => {
+    if (user?.id) {
+      friendService.fetchFriends(user.id);
+    }
+  }, [user?.id]);
 
   return (
     <View style={styles.container}>
@@ -31,7 +44,7 @@ export function FriendsSection() {
             <View style={styles.avatarStack}>
               {friends.slice(0, 3).map((f, i) => (
                 <View key={f.userId} style={[styles.stackItem, { zIndex: 3 - i, borderColor: colors.surface }]}>
-                  <Avatar uri={f.avatarUrl} size={28} />
+                  <Avatar uri={f.avatarUrl} name={f.displayName} size={28} />
                 </View>
               ))}
               {friends.length > 3 && (
@@ -42,11 +55,25 @@ export function FriendsSection() {
             </View>
           )}
         </View>
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={24}
-          color={colors.textSecondary}
-        />
+
+        <View style={styles.headerRight}>
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              setShowAddFriend(true);
+            }}
+            hitSlop={10}
+            style={[styles.addIconBtn, { backgroundColor: colors.surfaceVariant }]}
+          >
+            <Ionicons name="person-add" size={16} color={colors.primary} />
+          </Pressable>
+
+          <Ionicons
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={24}
+            color={colors.textSecondary}
+          />
+        </View>
       </Pressable>
 
       {expanded && (
@@ -55,8 +82,14 @@ export function FriendsSection() {
             <EmptyState
               icon={<Ionicons name="people-outline" size={48} color={colors.textDisabled} />}
               title="Henüz arkadaş yok"
+              message="Arkadaşlarını davet et, birlikte odaklanın!"
               action={
-                <Button title="Arkadaş Ekle" variant="outline" size="sm" onPress={() => { alert('Arkadaş ekleme akışı yakında (M06)'); }} />
+                <Button
+                  title="Arkadaş Ekle"
+                  variant="outline"
+                  size="sm"
+                  onPress={() => setShowAddFriend(true)}
+                />
               }
             />
           ) : (
@@ -74,10 +107,17 @@ export function FriendsSection() {
         </View>
       )}
 
+      {/* Friend detail sheet */}
       <FriendDetailSheet
         friend={selectedFriend}
         visible={!!selectedFriend}
         onClose={() => setSelectedFriend(null)}
+      />
+
+      {/* Add friend sheet */}
+      <AddFriendSheet
+        visible={showAddFriend}
+        onClose={() => setShowAddFriend(false)}
       />
     </View>
   );
@@ -95,6 +135,19 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  addIconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
   },
   avatarStack: {
     flexDirection: 'row',
@@ -115,5 +168,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 0,
-  }
+  },
 });
