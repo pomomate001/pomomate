@@ -3,11 +3,6 @@
  *
  * Each definition declares an id and label. The actual rendering
  * component is resolved in BackgroundEffect.tsx via a switch.
- *
- * To add a new effect:
- *   1. Create a component (e.g. StarfieldEffect.tsx)
- *   2. Push a def here
- *   3. Add a case in BackgroundEffect.tsx
  */
 
 export interface BackgroundEffectDef {
@@ -21,6 +16,5 @@ export const backgroundEffects: BackgroundEffectDef[] = [
   { id: 'particles', label: 'Parçacıklar', free: true },
   { id: 'rain', label: 'Yağmur', free: false },
   { id: 'snow', label: 'Kar', free: false },
-  { id: 'aurora', label: 'Kutup Işıkları', free: false },
   { id: 'bubbles', label: 'Baloncuklar', free: false },
 ];

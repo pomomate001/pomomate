@@ -127,7 +127,6 @@ const darkColors: ThemeColors = {
 
   border: '#333333',
   divider: '#2A2A2A',
-
   timerWork: palette.primaryLight,
   timerShortBreak: '#66BB6A',
   timerLongBreak: '#42A5F5',
@@ -177,29 +176,6 @@ export const oceanTheme: AppTheme = {
   label: 'Okyanus',
   dark: false,
   colors: oceanColors,
-};
-
-const forestColors: ThemeColors = {
-  ...darkColors,
-  background: '#1B5E20',
-  surface: '#2E7D32',
-  surfaceVariant: '#388E3C',
-  card: '#2E7D32',
-  primary: '#81C784',
-  primaryLight: '#A5D6A7',
-  primaryDark: '#388E3C',
-  gradientStart: '#1B5E20',
-  gradientEnd: '#33691E',
-  timerWork: '#81C784',
-  timerShortBreak: '#FFB300',
-  timerLongBreak: '#4DD0E1',
-};
-
-export const forestTheme: AppTheme = {
-  id: 'forest',
-  label: 'Orman',
-  dark: true,
-  colors: forestColors,
 };
 
 const sunsetColors: ThemeColors = {
@@ -281,7 +257,6 @@ export const themes = new Map<string, AppTheme>([
   ['light', lightTheme],
   ['dark', darkTheme],
   ['ocean', oceanTheme],
-  ['forest', forestTheme],
   ['sunset', sunsetTheme],
   ['rose', roseTheme],
   ['neon', neonTheme],

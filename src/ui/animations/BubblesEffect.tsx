@@ -1,37 +1,79 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
 import { useColors } from '../theme';
 
-// Pre-computed fixed bubble positions
-const BUBBLES = Array.from({ length: 14 }, (_, i) => ({
+const { height: screenHeight } = Dimensions.get('window');
+const NUM_BUBBLES = 12;
+
+const BUBBLES = Array.from({ length: NUM_BUBBLES }, (_, i) => ({
   id: i,
-  size: 14 + (i % 5) * 6,
-  left: `${((i * 23) % 90) + 5}%`,
-  top: `${((i * 31) % 85) + 7}%`,
-  opacity: 0.15 + (i % 3) * 0.08,
+  left: `${((i * 29) % 88) + 6}%`,
+  size: 14 + (i % 4) * 8,
+  duration: 4500 + (i % 4) * 800,
+  delay: (i * 600) % 3600,
+  opacity: 0.25 + (i % 3) * 0.1,
 }));
+
+function Bubble({ bubble, color }: { bubble: typeof BUBBLES[0]; color: string }) {
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(bubble.delay),
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: bubble.duration,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [anim, bubble.delay, bubble.duration]);
+
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [screenHeight + 30, -50],
+  });
+
+  const translateX = anim.interpolate({
+    inputRange: [0, 0.33, 0.66, 1],
+    outputRange: [0, 14, -14, 0],
+  });
+
+  const scale = anim.interpolate({
+    inputRange: [0, 0.1, 0.8, 1],
+    outputRange: [0.6, 1, 1.05, 0.8],
+  });
+
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        width: bubble.size,
+        height: bubble.size,
+        borderRadius: bubble.size / 2,
+        borderWidth: 1.5,
+        borderColor: color,
+        backgroundColor: `${color}18`,
+        opacity: bubble.opacity,
+        left: bubble.left as any,
+        transform: [{ translateY }, { translateX }, { scale }],
+      }}
+    />
+  );
+}
 
 export const BubblesEffect = React.memo(function BubblesEffect() {
   const colors = useColors();
+  const bubbleColor = colors.primary || '#9C27B0';
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {BUBBLES.map((b) => (
-        <View
-          key={b.id}
-          style={{
-            position: 'absolute',
-            width: b.size,
-            height: b.size,
-            borderRadius: b.size / 2,
-            borderWidth: 1.5,
-            borderColor: colors.primaryLight,
-            backgroundColor: 'transparent',
-            opacity: b.opacity,
-            left: b.left as any,
-            top: b.top as any,
-          }}
-        />
+      {BUBBLES.map((bubble) => (
+        <Bubble key={bubble.id} bubble={bubble} color={bubbleColor} />
       ))}
     </View>
   );

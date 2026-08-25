@@ -1,32 +1,69 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
 
-// Pre-computed fixed snowflakes
-const SNOW_FLAKES = Array.from({ length: 20 }, (_, i) => ({
+const { height: screenHeight } = Dimensions.get('window');
+const NUM_FLAKES = 16;
+
+const FLAKES = Array.from({ length: NUM_FLAKES }, (_, i) => ({
   id: i,
-  size: 3 + (i % 4) * 1.5,
   left: `${((i * 19) % 94) + 3}%`,
-  top: `${((i * 29) % 92) + 4}%`,
+  size: 3 + (i % 4) * 1.5,
+  duration: 3200 + (i % 6) * 450,
+  delay: (i * 350) % 2500,
+  swayDistance: (i % 2 === 0 ? 1 : -1) * (10 + (i % 3) * 6),
   opacity: 0.3 + (i % 3) * 0.15,
 }));
+
+function Snowflake({ flake }: { flake: typeof FLAKES[0] }) {
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(flake.delay),
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: flake.duration,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [anim, flake.delay, flake.duration]);
+
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-30, screenHeight + 30],
+  });
+
+  const translateX = anim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [0, flake.swayDistance, 0, -flake.swayDistance, 0],
+  });
+
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        width: flake.size,
+        height: flake.size,
+        borderRadius: flake.size / 2,
+        backgroundColor: '#FFFFFF',
+        opacity: flake.opacity,
+        left: flake.left as any,
+        transform: [{ translateY }, { translateX }],
+      }}
+    />
+  );
+}
 
 export const SnowEffect = React.memo(function SnowEffect() {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {SNOW_FLAKES.map((flake) => (
-        <View
-          key={flake.id}
-          style={{
-            position: 'absolute',
-            width: flake.size,
-            height: flake.size,
-            borderRadius: flake.size / 2,
-            backgroundColor: '#FFFFFF',
-            opacity: flake.opacity,
-            left: flake.left as any,
-            top: flake.top as any,
-          }}
-        />
+      {FLAKES.map((flake) => (
+        <Snowflake key={flake.id} flake={flake} />
       ))}
     </View>
   );

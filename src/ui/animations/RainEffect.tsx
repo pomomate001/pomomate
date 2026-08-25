@@ -1,36 +1,73 @@
-import React, { useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
 import { useColors } from '../theme';
 
-// Pre-computed fixed positions to avoid layout thrashing and Math.random during renders
-const RAIN_DROPS = Array.from({ length: 22 }, (_, i) => ({
+const { height: screenHeight } = Dimensions.get('window');
+const NUM_DROPS = 18;
+
+// Deterministic properties — zero overhead on JS thread
+const DROPS = Array.from({ length: NUM_DROPS }, (_, i) => ({
   id: i,
-  left: `${((i * 17) % 95) + 2}%`,
-  top: `${((i * 23) % 90) + 4}%`,
-  height: 12 + (i % 4) * 3,
-  opacity: 0.25 + (i % 3) * 0.1,
+  left: `${((i * 23) % 94) + 3}%`,
+  height: 14 + (i % 4) * 4,
+  duration: 650 + (i % 5) * 80,
+  delay: (i * 120) % 900,
+  opacity: 0.25 + (i % 3) * 0.12,
 }));
+
+function RainDrop({ drop, color }: { drop: typeof DROPS[0]; color: string }) {
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(drop.delay),
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: drop.duration,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [anim, drop.delay, drop.duration]);
+
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-40, screenHeight + 40],
+  });
+
+  const translateX = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 40],
+  });
+
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        width: 2,
+        height: drop.height,
+        backgroundColor: color,
+        opacity: drop.opacity,
+        left: drop.left as any,
+        borderRadius: 1,
+        transform: [{ translateY }, { translateX }, { rotate: '12deg' }],
+      }}
+    />
+  );
+}
 
 export const RainEffect = React.memo(function RainEffect() {
   const colors = useColors();
+  const rainColor = colors.info || '#64B5F6';
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {RAIN_DROPS.map((drop) => (
-        <View
-          key={drop.id}
-          style={{
-            position: 'absolute',
-            width: 2,
-            height: drop.height,
-            backgroundColor: colors.info || '#64B5F6',
-            opacity: drop.opacity,
-            left: drop.left as any,
-            top: drop.top as any,
-            borderRadius: 1,
-            transform: [{ rotate: '15deg' }],
-          }}
-        />
+      {DROPS.map((drop) => (
+        <RainDrop key={drop.id} drop={drop} color={rainColor} />
       ))}
     </View>
   );
