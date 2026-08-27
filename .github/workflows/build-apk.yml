@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android (APK & AAB)
 
 on:
   workflow_dispatch:
@@ -50,20 +50,62 @@ jobs:
           EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK: '1'
         run: npx expo prebuild --platform android --clean
 
-      - name: 🔑 Configure signing for release APK
+      - name: 🔑 Configure Release Keystore (if secrets provided)
+        if: "${{ env.KEYSTORE_BASE64 != '' }}"
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          echo "Decoding release keystore..."
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          
+          # Inject signing config into app/build.gradle
+          cat << 'EOF' > android/app/signing.gradle
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file('release.keystore')
+                      storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                      keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                      keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }
+          EOF
+          echo "apply from: 'signing.gradle'" >> android/app/build.gradle
+
+      - name: 🔑 Fallback to debug signing for test APK (if no release keystore secret)
+        if: "${{ env.KEYSTORE_BASE64 == '' && github.event.inputs.build_type != 'aab' }}"
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "Using debug signature for test APK..."
           sed -i 's/signingConfig signingConfigs.release/signingConfig signingConfigs.debug/g' android/app/build.gradle || true
-          sed -i 's/signingConfigs.debug/signingConfigs.debug/g' android/app/build.gradle || true
 
       - name: 🔨 Build APK
         if: "${{ github.event.inputs.build_type != 'aab' }}"
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
 
-      - name: 🔨 Build AAB (App Bundle)
+      - name: 🔨 Build AAB (App Bundle for Play Store)
         if: "${{ github.event.inputs.build_type == 'aab' }}"
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           cd android
           chmod +x gradlew
@@ -81,6 +123,6 @@ jobs:
         if: "${{ github.event.inputs.build_type == 'aab' }}"
         uses: actions/upload-artifact@v4
         with:
-          name: PomoMate-Release-AAB
+          name: PomoMate-PlayStore-AAB
           path: android/app/build/outputs/bundle/release/*.aab
           retention-days: 30
