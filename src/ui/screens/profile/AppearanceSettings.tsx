@@ -12,13 +12,14 @@ import { SectionHeader } from '../../components/SectionHeader';
 import { useSettingsStore } from '../../../state';
 import { timerDesigns } from '../timer/timerDesigns';
 import { backgroundEffects } from '../../animations/backgroundEffects';
+import { focusAnimations } from '../../animations/focusAnimations';
 
 export function AppearanceSettings() {
   const colors = useColors();
   const { availableThemes, setThemeId } = useTheme();
   const {
-    themeId, timerDesignId, backgroundEffectId,
-    setThemeId: saveThemeId, setTimerDesignId, setBackgroundEffectId,
+    themeId, timerDesignId, backgroundEffectId, workAnimationId, breakAnimationId,
+    setThemeId: saveThemeId, setTimerDesignId, setBackgroundEffectId, setWorkAnimationId, setBreakAnimationId,
   } = useSettingsStore();
 
   const handleTheme = (id: string) => {
@@ -28,6 +29,50 @@ export function AppearanceSettings() {
 
   return (
     <ScrollView style={[styles.screen, { backgroundColor: colors.background }]}>
+      {/* Work Animation */}
+      <SectionHeader title="Çalışma Zamanı Animasyonu" />
+      <View style={styles.optionRow}>
+        {focusAnimations.map((a) => (
+          <Pressable
+            key={a.id}
+            onPress={() => setWorkAnimationId(a.id)}
+            style={[
+              styles.optionChip,
+              {
+                backgroundColor: workAnimationId === a.id ? colors.primary : colors.surfaceVariant,
+                borderColor: workAnimationId === a.id ? colors.primary : colors.border,
+              },
+            ]}
+          >
+            <Text style={[typography.captionBold, { color: workAnimationId === a.id ? colors.textInverse : colors.textPrimary }]}>
+              {a.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Break Animation */}
+      <SectionHeader title="Mola Zamanı Animasyonu" />
+      <View style={styles.optionRow}>
+        {focusAnimations.map((a) => (
+          <Pressable
+            key={a.id}
+            onPress={() => setBreakAnimationId(a.id)}
+            style={[
+              styles.optionChip,
+              {
+                backgroundColor: breakAnimationId === a.id ? colors.primary : colors.surfaceVariant,
+                borderColor: breakAnimationId === a.id ? colors.primary : colors.border,
+              },
+            ]}
+          >
+            <Text style={[typography.captionBold, { color: breakAnimationId === a.id ? colors.textInverse : colors.textPrimary }]}>
+              {a.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       {/* Theme */}
       <SectionHeader title="Tema" />
       <View style={styles.optionRow}>

@@ -14,6 +14,8 @@ export interface SettingsState {
   themeId: string;
   timerDesignId: string;
   backgroundEffectId: string;
+  workAnimationId: string;
+  breakAnimationId: string;
 
   // Sounds (Notification & Ambient)
   soundEnabled: boolean;
@@ -35,6 +37,8 @@ interface SettingsActions {
   setThemeId: (id: string) => void;
   setTimerDesignId: (id: string) => void;
   setBackgroundEffectId: (id: string) => void;
+  setWorkAnimationId: (id: string) => void;
+  setBreakAnimationId: (id: string) => void;
   setSoundEnabled: (enabled: boolean) => void;
   setSoundId: (id: string) => void;
   setAmbientSoundId: (id: string) => void;
@@ -51,6 +55,8 @@ const initialSettings: SettingsState = {
   themeId: 'dark',
   timerDesignId: 'circle',
   backgroundEffectId: 'none',
+  workAnimationId: 'cat_tail',
+  breakAnimationId: 'cat_table_right',
   soundEnabled: true,
   soundId: 'default',
   ambientSoundId: 'rain',
@@ -68,6 +74,8 @@ export const useSettingsStore = create<SettingsState & SettingsActions>((set) =>
   setThemeId: (themeId) => set({ themeId }),
   setTimerDesignId: (timerDesignId) => set({ timerDesignId }),
   setBackgroundEffectId: (backgroundEffectId) => set({ backgroundEffectId }),
+  setWorkAnimationId: (workAnimationId) => set({ workAnimationId }),
+  setBreakAnimationId: (breakAnimationId) => set({ breakAnimationId }),
   setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
   setSoundId: (soundId) => set({ soundId }),
   setAmbientSoundId: (ambientSoundId) => set({ ambientSoundId }),

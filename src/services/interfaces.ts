@@ -20,6 +20,7 @@ export interface AuthService {
   getCurrentUser(): Promise<User | null>;
   signInWithEmail(email: string, password: string): Promise<User>;
   signUpWithEmail(email: string, password: string): Promise<User>;
+  signInWithGoogle(): Promise<User>;
   signOut(): Promise<void>;
   /** Returns the current access token, or null if unauthenticated (M08). */
   getAccessToken(): Promise<string | null>;

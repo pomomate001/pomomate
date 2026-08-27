@@ -52,8 +52,20 @@ export function LoginScreen({ onGoToRegister }: LoginScreenProps) {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    setError('Google ile giriş yakında eklenecek.');
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      const user = await authService.signInWithGoogle();
+      setUser(user);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Google ile giriş sırasında hata oluştu.';
+      if (message !== 'Giriş iptal edildi.') {
+        setError(message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

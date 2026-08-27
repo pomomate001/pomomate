@@ -136,7 +136,8 @@
           "cameraPermission": "Görüntülü çalışma oturumu için kamera izni gerekiyor.",
           "microphonePermission": "Sesli görüşme için mikrofon izni gerekiyor."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {
