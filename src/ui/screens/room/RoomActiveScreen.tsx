@@ -9,7 +9,7 @@ import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { BackgroundEffect } from '../../animations/BackgroundEffect';
-import { RoomTimer } from './features/RoomTimer';
+import { RoomTimerBar } from './features/RoomTimerBar';
 import { RoomCameraGrid } from './features/RoomCameraGrid';
 import { RoomScreenPanel } from './features/RoomScreenPanel';
 import { RoomViewToggles } from './features/RoomViewToggles';
@@ -54,6 +54,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       displayName: user?.displayName ?? 'Sen (Host)',
       avatarUrl: user?.avatarUrl ?? undefined,
       hasCamera: camOn,
+      hasMic: micOn,
       stream: camOn ? localStream : null,
       isLocal: true,
     },
@@ -62,6 +63,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       displayName: m.userId.slice(0, 6),
       avatarUrl: undefined,
       hasCamera: false,
+      hasMic: false,
       stream: null,
       isLocal: false,
     })),
@@ -202,8 +204,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   };
 
   /* ─── Calculate active panel count for layout ─── */
-  const activePanels = [viewToggles.timer, viewToggles.screen, viewToggles.cameras].filter(Boolean).length;
-  const noPanelsActive = activePanels === 0;
+  const activePanels = [viewToggles.screen, viewToggles.cameras].filter(Boolean).length;
+  const noPanelsActive = activePanels === 0 && !viewToggles.timer;
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -216,13 +218,20 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         onAdd={handleAddTask}
       />
 
-      {/* ─── Main Content Area ─── */}
+      {/* ─── Dynamic Island Timer Bar (highest z-index) ─── */}
+      <RoomTimerBar
+        roomId={roomId}
+        isHost={isHost}
+        onOpenAddTask={() => setShowAddTask(true)}
+      />
+
+      {/* ─── Main Content Area (fills space between top and bottom bar) ─── */}
       <View
         style={[
           styles.contentArea,
           {
-            paddingTop: insets.top + spacing.lg,
-            paddingBottom: 250, // Space for bottom bar
+            paddingTop: insets.top + 64, // Space for timer bar
+            paddingBottom: 110, // Space for collapsed bottom bar
           },
         ]}
       >
@@ -230,41 +239,20 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           <View style={styles.emptyContent}>
             <Ionicons name="eye-off-outline" size={48} color={colors.textDisabled} />
             <Text style={[typography.body, { color: colors.textDisabled, marginTop: spacing.md, textAlign: 'center' }]}>
-              Sağdaki butonları kullanarak{'\n'}sayaç, ekran veya kameraları gösterebilirsin
+              Sağdaki butonları kullanarak{'\n'}ekran veya kameraları gösterebilirsin
             </Text>
           </View>
         )}
 
-        {/* Timer Panel */}
-        {viewToggles.timer && (
-          <View
-            style={[
-              styles.panel,
-              {
-                backgroundColor: `${colors.card}E6`,
-                borderColor: `${colors.border}80`,
-                flex: viewToggles.screen || viewToggles.cameras ? 0 : 1,
-                justifyContent: 'center',
-              },
-            ]}
-          >
-            <RoomTimer
-              roomId={roomId}
-              isHost={isHost}
-              onOpenAddTask={() => setShowAddTask(true)}
-            />
-          </View>
-        )}
-
-        {/* Screen / File Share Panel */}
+        {/* Screen / File Share Panel — fills available space */}
         {viewToggles.screen && (
           <View
             style={[
-              styles.panel,
+              styles.fullPanel,
               {
                 backgroundColor: `${colors.card}E6`,
                 borderColor: `${colors.border}80`,
-                flex: 1,
+                flex: viewToggles.cameras ? 1 : 1,
               },
             ]}
           >
@@ -278,11 +266,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           </View>
         )}
 
-        {/* Camera Grid Panel */}
+        {/* Camera Grid Panel — fills available space */}
         {viewToggles.cameras && (
           <View
             style={[
-              styles.panel,
+              styles.fullPanel,
               {
                 backgroundColor: `${colors.card}E6`,
                 borderColor: `${colors.border}80`,
@@ -301,8 +289,9 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         onToggle={toggleView}
       />
 
-      {/* ─── Collapsible Bottom Bar ─── */}
+      {/* ─── Collapsible Bottom Bar with Chat ─── */}
       <RoomBottomBar
+        roomId={roomId}
         roomName={room?.name ?? 'Çalışma Odası'}
         inviteCode={inviteCode}
         isLive={room?.isActive ?? true}
@@ -330,9 +319,9 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.sm,
     justifyContent: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   emptyContent: {
     flex: 1,
@@ -340,8 +329,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
   },
-  panel: {
-    borderRadius: radius.xl,
+  fullPanel: {
+    borderRadius: radius.lg,
     borderWidth: 1,
     overflow: 'hidden',
     shadowColor: '#000',

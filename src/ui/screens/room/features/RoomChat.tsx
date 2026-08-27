@@ -1,8 +1,8 @@
 /**
- * Room feature: Chat.
+ * Room feature: Chat with sender name, date, and message deletion.
  */
-import React, { useState, useRef } from 'react';
-import { View, Text, FlatList, TextInput, Pressable, StyleSheet } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { View, Text, FlatList, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useChatStore, useUserStore } from '../../../../state';
 import { useColors } from '../../../theme';
@@ -20,12 +20,13 @@ interface RoomChatProps {
 export function RoomChat({ roomId }: RoomChatProps) {
   const allMessages = useChatStore((s) => s.messages);
   const addMessage = useChatStore((s) => s.addMessage);
+  const deleteMessage = useChatStore((s) => s.deleteMessage);
   const user = useUserStore((s) => s.user);
   const [text, setText] = useState('');
   const listRef = useRef<FlatList<Message>>(null);
   const colors = useColors();
 
-  // Filter messages for current room (or general room messages)
+  // Filter messages for current room
   const roomMessages = allMessages.filter(
     (m) => !m.roomId || m.roomId === roomId,
   );
@@ -33,7 +34,7 @@ export function RoomChat({ roomId }: RoomChatProps) {
   const currentUserId = user?.id ?? 'my-user';
   const currentUserName = user?.displayName ?? 'Ben';
 
-  const handleSend = () => {
+  const handleSend = useCallback(() => {
     const trimmed = text.trim();
     if (!trimmed) return;
 
@@ -41,6 +42,7 @@ export function RoomChat({ roomId }: RoomChatProps) {
       id: generateId(),
       roomId,
       userId: currentUserId,
+      senderName: currentUserName,
       content: trimmed,
       timestamp: nowIso(),
     };
@@ -50,10 +52,64 @@ export function RoomChat({ roomId }: RoomChatProps) {
     setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: true });
     }, 100);
+  }, [text, roomId, currentUserId, currentUserName, addMessage]);
+
+  const handleDeleteMessage = useCallback(
+    (messageId: string, messageUserId: string) => {
+      // Only allow deleting own messages
+      if (messageUserId !== currentUserId && messageUserId !== 'my-user') return;
+
+      Alert.alert(
+        'Mesajı Sil',
+        'Bu mesajı silmek istediğinize emin misiniz?',
+        [
+          { text: 'İptal', style: 'cancel' },
+          {
+            text: 'Sil',
+            style: 'destructive',
+            onPress: () => deleteMessage(messageId),
+          },
+        ],
+      );
+    },
+    [currentUserId, deleteMessage],
+  );
+
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday =
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+
+    const time = date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    if (isToday) return time;
+
+    const day = date.toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'short',
+    });
+    return `${day} ${time}`;
   };
 
   return (
     <View style={styles.container}>
+      {/* Chat header */}
+      <View style={[styles.chatHeader, { borderBottomColor: colors.border }]}>
+        <Ionicons name="chatbubbles" size={16} color={colors.primary} />
+        <Text style={[typography.captionBold, { color: colors.textPrimary, marginLeft: 6 }]}>
+          Oda Sohbeti
+        </Text>
+        <Text style={[typography.caption, { color: colors.textDisabled, marginLeft: 'auto' }]}>
+          {roomMessages.length} mesaj
+        </Text>
+      </View>
+
       <FlatList
         ref={listRef}
         data={roomMessages}
@@ -63,17 +119,19 @@ export function RoomChat({ roomId }: RoomChatProps) {
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
           const isMe = item.userId === currentUserId || item.userId === 'my-user';
-          const timeFormatted = new Date(item.timestamp).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          });
+          const senderDisplayName = item.senderName ?? item.userId.slice(0, 8);
+          const timeFormatted = formatDate(item.timestamp);
 
           return (
-            <View style={[styles.bubbleWrap, isMe ? styles.bubbleRight : styles.bubbleLeft]}>
+            <Pressable
+              onLongPress={() => handleDeleteMessage(item.id, item.userId)}
+              delayLongPress={500}
+              style={[styles.bubbleWrap, isMe ? styles.bubbleRight : styles.bubbleLeft]}
+            >
               {!isMe && (
                 <View style={[styles.avatarMini, { backgroundColor: colors.surfaceVariant }]}>
                   <Text style={[typography.overline, { color: colors.textSecondary }]}>
-                    {item.userId.slice(0, 2).toUpperCase()}
+                    {senderDisplayName.slice(0, 2).toUpperCase()}
                   </Text>
                 </View>
               )}
@@ -87,9 +145,22 @@ export function RoomChat({ roomId }: RoomChatProps) {
                   },
                 ]}
               >
+                {/* Sender name (shown for others' messages) */}
+                {!isMe && (
+                  <Text
+                    style={[
+                      typography.captionBold,
+                      { color: colors.primary, fontSize: 11, marginBottom: 2 },
+                    ]}
+                  >
+                    {senderDisplayName}
+                  </Text>
+                )}
+
                 <Text style={[typography.body, { color: isMe ? colors.textInverse : colors.textPrimary }]}>
                   {item.content}
                 </Text>
+
                 <Text
                   style={[
                     typography.caption,
@@ -104,7 +175,7 @@ export function RoomChat({ roomId }: RoomChatProps) {
                   {timeFormatted}
                 </Text>
               </View>
-            </View>
+            </Pressable>
           );
         }}
         ListEmptyComponent={
@@ -118,7 +189,7 @@ export function RoomChat({ roomId }: RoomChatProps) {
       />
 
       {/* Input bar */}
-      <View style={[styles.inputRow, { backgroundColor: colors.surface, borderTopColor: colors.divider }]}>
+      <View style={[styles.inputRow, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <TextInput
           value={text}
           onChangeText={setText}
@@ -153,7 +224,14 @@ export function RoomChat({ roomId }: RoomChatProps) {
 
 const styles = StyleSheet.create({
   container: {
-    height: 280,
+    flex: 1,
+  },
+  chatHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
   },
   list: {
     flex: 1,

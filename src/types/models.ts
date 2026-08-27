@@ -116,6 +116,7 @@ export interface Message {
   id: ID;
   roomId: ID;
   userId: ID;
+  senderName?: string;
   content: string;
   timestamp: ISODateString;
 }

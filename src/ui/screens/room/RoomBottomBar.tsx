@@ -11,6 +11,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ParticipantsBar } from './ParticipantsBar';
+import { RoomChat } from './features/RoomChat';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
@@ -22,6 +23,7 @@ interface Participant {
 }
 
 interface RoomBottomBarProps {
+  roomId: string;
   roomName: string;
   inviteCode: string;
   isLive: boolean;
@@ -36,10 +38,12 @@ interface RoomBottomBarProps {
   onLeave: () => void;
 }
 
-const EXPANDED_HEIGHT = 240;
-const COLLAPSED_HEIGHT = 110;
+const COLLAPSED_HEIGHT = 100;
+const EXPANDED_HEIGHT = 190;
+const CHAT_HEIGHT = 520;
 
 export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
+  roomId,
   roomName,
   inviteCode,
   isLive,
@@ -58,48 +62,90 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
   const height = useSharedValue(EXPANDED_HEIGHT);
   const startHeight = useSharedValue(EXPANDED_HEIGHT);
 
+  // Snap to nearest level
+  const snapToNearest = (currentHeight: number, velocityY: number) => {
+    'worklet';
+    const levels = [COLLAPSED_HEIGHT, EXPANDED_HEIGHT, CHAT_HEIGHT];
+
+    // Strong velocity override
+    if (velocityY < -600 && currentHeight < CHAT_HEIGHT) {
+      // Fast swipe up → go to next level up
+      if (currentHeight < EXPANDED_HEIGHT) {
+        return EXPANDED_HEIGHT;
+      }
+      return CHAT_HEIGHT;
+    }
+    if (velocityY > 600 && currentHeight > COLLAPSED_HEIGHT) {
+      // Fast swipe down → go to next level down
+      if (currentHeight > EXPANDED_HEIGHT) {
+        return EXPANDED_HEIGHT;
+      }
+      return COLLAPSED_HEIGHT;
+    }
+
+    // Snap to nearest
+    let closest = levels[0];
+    let minDist = Math.abs(currentHeight - levels[0]);
+    for (let i = 1; i < levels.length; i++) {
+      const dist = Math.abs(currentHeight - levels[i]);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = levels[i];
+      }
+    }
+    return closest;
+  };
+
   const panGesture = Gesture.Pan()
     .onStart(() => {
       startHeight.value = height.value;
     })
     .onUpdate((event) => {
-      // Dragging down decreases height (collapse)
       const newHeight = startHeight.value - event.translationY;
-      if (newHeight >= COLLAPSED_HEIGHT && newHeight <= EXPANDED_HEIGHT) {
+      if (newHeight >= COLLAPSED_HEIGHT && newHeight <= CHAT_HEIGHT) {
         height.value = newHeight;
       }
     })
     .onEnd((event) => {
-      if (event.velocityY > 400 || height.value < (EXPANDED_HEIGHT + COLLAPSED_HEIGHT) / 2) {
-        height.value = withSpring(COLLAPSED_HEIGHT, { damping: 18, stiffness: 120 });
-      } else {
-        height.value = withSpring(EXPANDED_HEIGHT, { damping: 18, stiffness: 120 });
-      }
+      const target = snapToNearest(height.value, event.velocityY);
+      height.value = withSpring(target, { damping: 20, stiffness: 130 });
     });
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      height: height.value + insets.bottom,
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    height: height.value + insets.bottom,
+  }));
 
   const topSectionStyle = useAnimatedStyle(() => {
     const opacity = interpolate(
       height.value,
-      [COLLAPSED_HEIGHT, EXPANDED_HEIGHT - 30],
+      [COLLAPSED_HEIGHT, COLLAPSED_HEIGHT + 40],
       [0, 1],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     const translateY = interpolate(
       height.value,
       [COLLAPSED_HEIGHT, EXPANDED_HEIGHT],
-      [-15, 0],
-      Extrapolation.CLAMP
+      [-10, 0],
+      Extrapolation.CLAMP,
     );
     return {
       opacity,
       transform: [{ translateY }],
-      display: height.value <= COLLAPSED_HEIGHT + 15 ? 'none' : 'flex',
+      display: height.value <= COLLAPSED_HEIGHT + 10 ? 'none' : 'flex',
+    };
+  });
+
+  const chatSectionStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      height.value,
+      [EXPANDED_HEIGHT, EXPANDED_HEIGHT + 60],
+      [0, 1],
+      Extrapolation.CLAMP,
+    );
+    return {
+      opacity,
+      flex: 1,
+      display: height.value <= EXPANDED_HEIGHT + 20 ? 'none' : 'flex',
     };
   });
 
@@ -110,7 +156,7 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
           styles.container,
           animatedStyle,
           {
-            backgroundColor: colors.surface ? `${colors.surface}F0` : 'rgba(24, 24, 28, 0.95)',
+            backgroundColor: colors.surface ? `${colors.surface}F5` : 'rgba(24, 24, 28, 0.96)',
             borderColor: colors.border,
             paddingBottom: insets.bottom + spacing.xs,
           },
@@ -121,7 +167,7 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
           <View style={[styles.dragHandle, { backgroundColor: colors.border || 'rgba(255, 255, 255, 0.3)' }]} />
         </View>
 
-        {/* Room Header Info (Shown in Expanded) */}
+        {/* Room Header Info (shown when expanded) */}
         <Animated.View style={[styles.topSection, topSectionStyle]}>
           <View style={styles.headerRow}>
             {isLive && (
@@ -139,7 +185,7 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
           </View>
         </Animated.View>
 
-        {/* Participants Bar */}
+        {/* Compact Participants Row */}
         <View style={styles.participantsWrap}>
           <ParticipantsBar participants={participants} />
         </View>
@@ -181,6 +227,12 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
             <Ionicons name="call" size={22} color="#FFF" />
           </Pressable>
         </View>
+
+        {/* Chat Section (shown when swiped up past expanded) */}
+        <Animated.View style={[styles.chatSection, chatSectionStyle]}>
+          <View style={[styles.chatDivider, { backgroundColor: colors.border }]} />
+          <RoomChat roomId={roomId} />
+        </Animated.View>
       </Animated.View>
     </GestureDetector>
   );
@@ -192,8 +244,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderTopWidth: 1,
     paddingHorizontal: spacing.lg,
     overflow: 'hidden',
@@ -206,7 +258,7 @@ const styles = StyleSheet.create({
   dragHandleContainer: {
     width: '100%',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   dragHandle: {
     width: 38,
@@ -215,7 +267,7 @@ const styles = StyleSheet.create({
   },
   topSection: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   headerRow: {
     flexDirection: 'row',
@@ -244,37 +296,43 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   roomName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    maxWidth: 160,
+    maxWidth: 150,
   },
   invitePill: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: radius.full,
   },
   inviteText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
   },
   participantsWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 4,
   },
   controlsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 6,
     paddingHorizontal: spacing.sm,
   },
   controlButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  chatSection: {
+    marginTop: spacing.sm,
+  },
+  chatDivider: {
+    height: 1,
+    marginBottom: spacing.xs,
   },
 });

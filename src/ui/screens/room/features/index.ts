@@ -1,4 +1,5 @@
 export { RoomTimer } from './RoomTimer';
+export { RoomTimerBar } from './RoomTimerBar';
 export { RoomTasks } from './RoomTasks';
 export { RoomChat } from './RoomChat';
 export { RoomMedia } from './RoomMedia';

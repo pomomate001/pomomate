@@ -1,8 +1,8 @@
 /**
- * Participants bar — shows room member avatars.
+ * Participants bar — compact horizontal avatar list with stacked style.
  */
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
@@ -25,31 +25,60 @@ export function ParticipantsBar({ participants, maxDisplay = 8 }: ParticipantsBa
   const overflow = participants.length - maxDisplay;
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bar}>
-      {visible.map((p) => (
-        <View key={p.userId} style={styles.item}>
-          <Avatar uri={p.avatarUrl} name={p.displayName} size={32} />
-          <Text
-            style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}
-            numberOfLines={1}
+    <View style={styles.bar}>
+      {/* Stacked avatars */}
+      <View style={styles.stackedRow}>
+        {visible.map((p, index) => (
+          <View
+            key={p.userId}
+            style={[
+              styles.stackedItem,
+              { marginLeft: index === 0 ? 0 : -8, zIndex: visible.length - index },
+            ]}
           >
-            {p.displayName.split(' ')[0]}
-          </Text>
-        </View>
-      ))}
-      {overflow > 0 && (
-        <View style={styles.item}>
-          <View style={[styles.overflowBadge, { backgroundColor: colors.surfaceVariant }]}>
-            <Text style={[typography.captionBold, { color: colors.textSecondary }]}>+{overflow}</Text>
+            <Avatar uri={p.avatarUrl} name={p.displayName} size={26} />
           </View>
-        </View>
-      )}
-    </ScrollView>
+        ))}
+        {overflow > 0 && (
+          <View style={[styles.overflowBadge, { backgroundColor: colors.surfaceVariant, marginLeft: -8 }]}>
+            <Text style={[typography.captionBold, { color: colors.textSecondary, fontSize: 9 }]}>
+              +{overflow}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Participant count */}
+      <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: spacing.sm }]}>
+        {participants.length} kişi
+      </Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  item: { alignItems: 'center', marginRight: spacing.md, width: 48 },
-  overflowBadge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  stackedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stackedItem: {
+    borderWidth: 2,
+    borderColor: 'rgba(24, 24, 28, 0.95)',
+    borderRadius: 13,
+  },
+  overflowBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(24, 24, 28, 0.95)',
+  },
 });

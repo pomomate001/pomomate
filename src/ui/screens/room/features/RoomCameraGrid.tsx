@@ -10,6 +10,7 @@ interface Participant {
   displayName: string;
   avatarUrl?: string;
   hasCamera?: boolean;
+  hasMic?: boolean;
   stream?: MediaStream | null;
   isLocal?: boolean;
 }
@@ -48,8 +49,41 @@ export const RoomCameraGrid: React.FC<RoomCameraGridProps> = ({ participants }) 
                     name={p.displayName} 
                     size={64} 
                   />
-                  <View style={styles.noCameraBadge}>
-                    <Ionicons name="videocam-off" size={12} color="#FFF" />
+                  {/* Media status badges */}
+                  <View style={styles.badgeRow}>
+                    <View style={[styles.mediaBadge, { backgroundColor: '#E53935' }]}>
+                      <Ionicons name="videocam-off" size={10} color="#FFF" />
+                    </View>
+                    <View
+                      style={[
+                        styles.mediaBadge,
+                        { backgroundColor: p.hasMic ? '#4CAF50' : '#E53935' },
+                      ]}
+                    >
+                      <Ionicons
+                        name={p.hasMic ? 'mic' : 'mic-off'}
+                        size={10}
+                        color="#FFF"
+                      />
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* Camera-on media badges overlay */}
+              {(streamURL || p.hasCamera) && (
+                <View style={styles.mediaOverlayBadges}>
+                  <View
+                    style={[
+                      styles.mediaBadgeSmall,
+                      { backgroundColor: p.hasMic ? '#4CAF50' : '#E53935' },
+                    ]}
+                  >
+                    <Ionicons
+                      name={p.hasMic ? 'mic' : 'mic-off'}
+                      size={10}
+                      color="#FFF"
+                    />
                   </View>
                 </View>
               )}
@@ -99,19 +133,35 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'relative',
+    alignItems: 'center',
   },
-  noCameraBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#E53935',
+  badgeRow: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 6,
+  },
+  mediaBadge: {
     borderRadius: 10,
     width: 20,
     height: 20,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#222',
+    borderColor: 'rgba(30, 30, 30, 0.8)',
+  },
+  mediaOverlayBadges: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    flexDirection: 'row',
+    gap: 3,
+  },
+  mediaBadgeSmall: {
+    borderRadius: 8,
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   nameOverlay: {
     position: 'absolute',
