@@ -11,12 +11,6 @@ on:
         options:
           - apk
           - aab
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'README.md'
-      - '.gitignore'
 
 jobs:
   build-android:
