@@ -1,0 +1,86 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type (apk or aab)'
+        required: true
+        default: 'apk'
+        type: choice
+        options:
+          - apk
+          - aab
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - '.gitignore'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: ☕ Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🤖 Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: ⚙️ Generate Android Project (Expo Prebuild)
+        env:
+          EXPO_PUBLIC_ENV: prod
+          EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK: '1'
+        run: npx expo prebuild --platform android --clean
+
+      - name: 🔑 Configure signing for release APK
+        run: |
+          sed -i 's/signingConfig signingConfigs.release/signingConfig signingConfigs.debug/g' android/app/build.gradle || true
+          sed -i 's/signingConfigs.debug/signingConfigs.debug/g' android/app/build.gradle || true
+
+      - name: 🔨 Build APK
+        if: "${{ github.event.inputs.build_type != 'aab' }}"
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: 🔨 Build AAB (App Bundle)
+        if: "${{ github.event.inputs.build_type == 'aab' }}"
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon
+
+      - name: 📤 Upload APK Artifact
+        if: "${{ github.event.inputs.build_type != 'aab' }}"
+        uses: actions/upload-artifact@v4
+        with:
+          name: PomoMate-Release-APK
+          path: android/app/build/outputs/apk/release/*.apk
+          retention-days: 30
+
+      - name: 📤 Upload AAB Artifact
+        if: "${{ github.event.inputs.build_type == 'aab' }}"
+        uses: actions/upload-artifact@v4
+        with:
+          name: PomoMate-Release-AAB
+          path: android/app/build/outputs/bundle/release/*.aab
+          retention-days: 30
