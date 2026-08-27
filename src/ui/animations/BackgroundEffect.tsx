@@ -34,25 +34,31 @@ function FloatingParticle({
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.delay(p.delay),
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: p.duration,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim, {
-          toValue: 0,
-          duration: p.duration,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
+    let loop: Animated.CompositeAnimation;
+    const timer = setTimeout(() => {
+      loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: p.duration,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: p.duration,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      loop.start();
+    }, p.delay);
+
+    return () => {
+      clearTimeout(timer);
+      if (loop) loop.stop();
+    };
   }, [anim, p.delay, p.duration]);
 
   const translateY = anim.interpolate({

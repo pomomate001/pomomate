@@ -19,19 +19,23 @@ function RainDrop({ drop, color }: { drop: typeof DROPS[0]; color: string }) {
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.delay(drop.delay),
+    let loop: Animated.CompositeAnimation;
+    const timer = setTimeout(() => {
+      loop = Animated.loop(
         Animated.timing(anim, {
           toValue: 1,
           duration: drop.duration,
           easing: Easing.linear,
           useNativeDriver: true,
-        }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
+        })
+      );
+      loop.start();
+    }, drop.delay);
+
+    return () => {
+      clearTimeout(timer);
+      if (loop) loop.stop();
+    };
   }, [anim, drop.delay, drop.duration]);
 
   const translateY = anim.interpolate({

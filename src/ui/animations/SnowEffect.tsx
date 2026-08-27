@@ -18,19 +18,23 @@ function Snowflake({ flake }: { flake: typeof FLAKES[0] }) {
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.delay(flake.delay),
+    let loop: Animated.CompositeAnimation;
+    const timer = setTimeout(() => {
+      loop = Animated.loop(
         Animated.timing(anim, {
           toValue: 1,
           duration: flake.duration,
           easing: Easing.linear,
           useNativeDriver: true,
-        }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
+        })
+      );
+      loop.start();
+    }, flake.delay);
+
+    return () => {
+      clearTimeout(timer);
+      if (loop) loop.stop();
+    };
   }, [anim, flake.delay, flake.duration]);
 
   const translateY = anim.interpolate({

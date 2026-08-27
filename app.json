@@ -38,7 +38,7 @@
     },
     "android": {
       "package": "com.pomomate.app",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#1A73E8",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -118,7 +118,7 @@
       [
         "react-native-google-mobile-ads",
         {
-          "androidAppId": "ca-app-pub-1530810645169749~8885949301",
+          "androidAppId": "ca-app-pub-1530810645169749~1975999982",
           "iosAppId": "ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX",
           "userTrackingUsageDescription": "Bu tanımlayıcı, kişiselleştirilmiş reklamlar sunmak için kullanılır.",
           "skAdNetworkItems": []
