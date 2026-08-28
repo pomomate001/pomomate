@@ -61,12 +61,15 @@ jobs:
           echo "org.gradle.workers.max=2" >> android/gradle.properties
 
       - name: 🔑 Configure Release Keystore (if secrets provided)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          echo "Decoding release keystore..."
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Decoding release keystore..."
+            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          else
+            echo "No release keystore secret provided, default debug keystore will be used."
+          fi
 
       - name: 🔨 Build APK
         if: "${{ github.event.inputs.build_type != 'aab' }}"
