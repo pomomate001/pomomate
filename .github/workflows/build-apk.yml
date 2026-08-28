@@ -49,7 +49,7 @@ jobs:
           # "Bus error (core dumped)" veriyor. Bunu önlemek için derlenecek mimarileri sınırlandırıyoruz
           # ve Gradle'ın bellek tüketimini optimize ediyoruz.
           echo "reactNativeArchitectures=armeabi-v7a,arm64-v8a" >> android/gradle.properties
-          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g" >> android/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=1g" >> android/gradle.properties
           echo "org.gradle.parallel=false" >> android/gradle.properties
           echo "org.gradle.workers.max=2" >> android/gradle.properties
 
@@ -68,6 +68,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           cd android
           chmod +x gradlew
@@ -88,6 +89,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           cd android
           chmod +x gradlew
