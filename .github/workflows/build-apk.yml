@@ -20,6 +20,14 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
+      - name: 💾 Setup Swap Space (Prevents OOM during C++ compile)
+        run: |
+          sudo fallocate -l 4G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -42,19 +50,18 @@ jobs:
         env:
           EXPO_PUBLIC_ENV: prod
           EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK: '1'
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           npx expo prebuild --platform android --clean
           
-          # HATA ÇÖZÜMÜ: GitHub Actions sunucularının RAM'i (7GB) C++ derlemelerinde yetmediği için 
-          # "Bus error (core dumped)" veriyor. Bunu önlemek için derlenecek mimarileri sınırlandırıyoruz
-          # ve Gradle'ın bellek tüketimini optimize ediyoruz.
+          # C++ derlemelerinde bellek taşmasını önlemek için mimarileri ve Gradle bellek limitlerini optimize ediyoruz
           echo "reactNativeArchitectures=armeabi-v7a,arm64-v8a" >> android/gradle.properties
-          echo "org.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=1g" >> android/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g" >> android/gradle.properties
           echo "org.gradle.parallel=false" >> android/gradle.properties
           echo "org.gradle.workers.max=2" >> android/gradle.properties
 
       - name: 🔑 Configure Release Keystore (if secrets provided)
-        if: "${{ env.KEYSTORE_BASE64 != '' }}"
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
@@ -73,13 +80,13 @@ jobs:
           cd android
           chmod +x gradlew
           if [ -n "$KEYSTORE_BASE64" ]; then
-            ./gradlew assembleRelease --no-daemon \
+            ./gradlew assembleRelease --no-daemon --stacktrace \
               -Pandroid.injected.signing.store.file=$(pwd)/app/release.keystore \
               -Pandroid.injected.signing.store.password=$ANDROID_KEYSTORE_PASSWORD \
               -Pandroid.injected.signing.key.alias=$ANDROID_KEY_ALIAS \
               -Pandroid.injected.signing.key.password=$ANDROID_KEY_PASSWORD
           else
-            ./gradlew assembleRelease --no-daemon
+            ./gradlew assembleRelease --no-daemon --stacktrace
           fi
 
       - name: 🔨 Build AAB (App Bundle for Play Store)
@@ -94,13 +101,13 @@ jobs:
           cd android
           chmod +x gradlew
           if [ -n "$KEYSTORE_BASE64" ]; then
-            ./gradlew bundleRelease --no-daemon \
+            ./gradlew bundleRelease --no-daemon --stacktrace \
               -Pandroid.injected.signing.store.file=$(pwd)/app/release.keystore \
               -Pandroid.injected.signing.store.password=$ANDROID_KEYSTORE_PASSWORD \
               -Pandroid.injected.signing.key.alias=$ANDROID_KEY_ALIAS \
               -Pandroid.injected.signing.key.password=$ANDROID_KEY_PASSWORD
           else
-            ./gradlew bundleRelease --no-daemon
+            ./gradlew bundleRelease --no-daemon --stacktrace
           fi
 
       - name: 📤 Upload APK Artifact
@@ -118,3 +125,4 @@ jobs:
           name: PomoMate-PlayStore-AAB
           path: android/app/build/outputs/bundle/release/*.aab
           retention-days: 30
+

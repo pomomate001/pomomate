@@ -157,7 +157,10 @@
       "fallbackToCacheTimeout": 0,
       "url": "https://u.expo.dev/c9c3a47f-7c88-446d-af51-256026508e8a"
     },
-    "scheme": "pomomate",
-    "newArchEnabled": false
+    "scheme": "pomomate"
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-1530810645169749~1975999982",
+    "ios_app_id": "ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX"
   }
 }
