@@ -15,6 +15,9 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    env:
+      NODE_PATH: ${{ github.workspace }}/node_modules
+      NODE_OPTIONS: --max-old-space-size=4096
 
     steps:
       - name: 📥 Checkout repository
@@ -47,7 +50,6 @@ jobs:
         env:
           EXPO_PUBLIC_ENV: prod
           EXPO_ROUTER_DISABLE_RN_NAVIGATION_CHECK: '1'
-          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           npx expo prebuild --platform android --clean
           
@@ -75,8 +77,8 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          NODE_OPTIONS: --max-old-space-size=4096
         run: |
+          export NODE_PATH="$(pwd)/node_modules"
           cd android
           chmod +x gradlew
           if [ -n "$KEYSTORE_BASE64" ]; then
@@ -96,8 +98,8 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          NODE_OPTIONS: --max-old-space-size=4096
         run: |
+          export NODE_PATH="$(pwd)/node_modules"
           cd android
           chmod +x gradlew
           if [ -n "$KEYSTORE_BASE64" ]; then
