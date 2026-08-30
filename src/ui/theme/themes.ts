@@ -225,6 +225,52 @@ export const roseTheme: AppTheme = {
   colors: roseColors,
 };
 
+const darkRoseColors: ThemeColors = {
+  ...darkColors,
+  background: '#0F0C10',
+  surface: '#1A141D',
+  surfaceVariant: '#281E2C',
+  card: '#1A141D',
+
+  textPrimary: '#FCE4EC',
+  textSecondary: '#C4A5B3',
+  textDisabled: '#6E5562',
+  textInverse: '#0F0C10',
+
+  primary: '#F06292',
+  primaryLight: '#F8BBD0',
+  primaryDark: '#E91E63',
+  accent: '#FF4081',
+
+  success: '#81C784',
+  warning: '#FFD54F',
+  error: '#EF5350',
+  info: '#4FC3F7',
+
+  border: '#352538',
+  divider: '#251828',
+  timerWork: '#F06292',
+  timerShortBreak: '#81C784',
+  timerLongBreak: '#4FC3F7',
+
+  tabBarBackground: '#150F18',
+  tabBarActive: '#F06292',
+  tabBarInactive: '#7E6070',
+
+  overlay: 'rgba(15, 12, 16, 0.75)',
+
+  gradientStart: '#1A141D',
+  gradientMiddle: '#150F18',
+  gradientEnd: '#0F0C10',
+};
+
+export const darkRoseTheme: AppTheme = {
+  id: 'darkRose',
+  label: 'Gece Gülü',
+  dark: true,
+  colors: darkRoseColors,
+};
+
 const neonColors: ThemeColors = {
   ...darkColors,
   background: '#000000',
@@ -256,8 +302,9 @@ export const neonTheme: AppTheme = {
 export const themes = new Map<string, AppTheme>([
   ['light', lightTheme],
   ['dark', darkTheme],
+  ['darkRose', darkRoseTheme],
+  ['rose', roseTheme],
   ['ocean', oceanTheme],
   ['sunset', sunsetTheme],
-  ['rose', roseTheme],
   ['neon', neonTheme],
 ]);

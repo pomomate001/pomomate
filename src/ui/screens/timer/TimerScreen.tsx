@@ -259,26 +259,26 @@ export function TimerScreen() {
           {/* Controls */}
           <View style={styles.controls}>
             <IconButton
-              icon={<Ionicons name="refresh" size={18} color={colors.textSecondary} />}
+              icon={<Ionicons name="refresh" size={15} color={colors.textSecondary} />}
               onPress={reset}
-              size={38}
+              size={30}
             />
             <IconButton
               icon={
                 <Ionicons
                   name={isRunning ? 'pause' : 'play'}
-                  size={26}
+                  size={21}
                   color={colors.textInverse}
                 />
               }
               onPress={isRunning ? pause : start}
-              size={51}
-              style={{ backgroundColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 8 }}
+              size={42}
+              style={{ backgroundColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 6 }}
             />
             <IconButton
-              icon={<Ionicons name="play-skip-forward" size={18} color={colors.textSecondary} />}
+              icon={<Ionicons name="play-skip-forward" size={15} color={colors.textSecondary} />}
               onPress={next}
-              size={38}
+              size={30}
             />
           </View>
 
