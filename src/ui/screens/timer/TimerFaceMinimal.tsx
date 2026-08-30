@@ -46,7 +46,12 @@ export function TimerFaceMinimal({ remainingSeconds, mode }: TimerFaceProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xxl },
+  container: {
+    width: 280,
+    height: 280,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   labelBadge: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -32,25 +32,33 @@ export function TimerFaceDigital({ remainingSeconds, duration, mode, isRunning }
   const color = modeColor(mode, colors);
   
   return (
-    <View style={[styles.container, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }, shadows.md]}>
-      <View style={[styles.modeIndicator, { backgroundColor: color }]}>
-        <Text style={[typography.captionBold, { color: colors.background, letterSpacing: 1 }]}>
-          {modeLabel[mode]}
-        </Text>
-      </View>
-      <View style={styles.timeWrapper}>
-        <Text style={[styles.timeText, { color: colors.textPrimary }]}>
-          {formatDuration(remainingSeconds)}
-        </Text>
+    <View style={styles.outerContainer}>
+      <View style={[styles.container, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }, shadows.md]}>
+        <View style={[styles.modeIndicator, { backgroundColor: color }]}>
+          <Text style={[typography.captionBold, { color: colors.background, letterSpacing: 1 }]}>
+            {modeLabel[mode]}
+          </Text>
+        </View>
+        <View style={styles.timeWrapper}>
+          <Text style={[styles.timeText, { color: colors.textPrimary }]}>
+            {formatDuration(remainingSeconds)}
+          </Text>
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    width: 280,
+    height: 280,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   container: {
     width: 260,
-    height: 160,
+    height: 180,
     borderRadius: radius.lg,
     borderWidth: 1,
     alignItems: 'center',
