@@ -38,7 +38,7 @@ interface RoomBottomBarProps {
   onLeave: () => void;
 }
 
-const COLLAPSED_HEIGHT = 100;
+const COLLAPSED_HEIGHT = 80;
 const EXPANDED_HEIGHT = 190;
 const CHAT_HEIGHT = 520;
 

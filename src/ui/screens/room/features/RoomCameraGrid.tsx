@@ -17,19 +17,20 @@ interface Participant {
 
 interface RoomCameraGridProps {
   participants: Participant[];
+  isCompact?: boolean;
 }
 
-export const RoomCameraGrid: React.FC<RoomCameraGridProps> = ({ participants }) => {
+export const RoomCameraGrid: React.FC<RoomCameraGridProps> = ({ participants, isCompact = false }) => {
   const colors = useColors();
 
-  return (
-    <View style={styles.grid}>
+  const Content = () => (
+    <>
       {participants.map((p) => {
         // If we have a MediaStream with video tracks, use RTCView
         const streamURL = p.stream && p.stream.toURL ? p.stream.toURL() : null;
 
         return (
-          <View key={p.userId} style={styles.cellContainer}>
+          <View key={p.userId} style={[styles.cellContainer, isCompact && styles.compactCell]}>
             <View style={styles.cellContent}>
               {streamURL ? (
                 <RTCView
@@ -97,11 +98,39 @@ export const RoomCameraGrid: React.FC<RoomCameraGridProps> = ({ participants }) 
           </View>
         );
       })}
+    </>
+  );
+
+  if (isCompact) {
+    return (
+      <View style={styles.compactContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.compactScroll}>
+          <Content />
+        </ScrollView>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.grid}>
+      <Content />
     </View>
   );
 };
 
+import { ScrollView } from 'react-native';
+
 const styles = StyleSheet.create({
+  compactContainer: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
+  compactScroll: {
+    paddingHorizontal: 8,
+    gap: 8,
+  },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -117,6 +146,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  compactCell: {
+    width: 120,
+    marginBottom: 0,
   },
   cellContent: {
     flex: 1,

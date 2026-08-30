@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   container: {
-    borderRadius: radius.xl,
+    borderRadius: 32,
     borderWidth: 1,
     overflow: 'hidden',
     shadowColor: '#000',

@@ -219,19 +219,21 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       />
 
       {/* ─── Dynamic Island Timer Bar (highest z-index) ─── */}
-      <RoomTimerBar
-        roomId={roomId}
-        isHost={isHost}
-        onOpenAddTask={() => setShowAddTask(true)}
-      />
+      {viewToggles.timer && (
+        <RoomTimerBar
+          roomId={roomId}
+          isHost={isHost}
+          onOpenAddTask={() => setShowAddTask(true)}
+        />
+      )}
 
       {/* ─── Main Content Area (fills space between top and bottom bar) ─── */}
       <View
         style={[
           styles.contentArea,
           {
-            paddingTop: insets.top + 64, // Space for timer bar
-            paddingBottom: 110, // Space for collapsed bottom bar
+            paddingTop: insets.top + (viewToggles.timer ? 64 : 16), // Space for timer bar if active
+            paddingBottom: 90, // Space for collapsed bottom bar (reduced to 90)
           },
         ]}
       >
@@ -244,6 +246,13 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           </View>
         )}
 
+        {/* Camera Grid (Compact top row if screen is also active, else full screen) */}
+        {viewToggles.cameras && viewToggles.screen && (
+           <View style={{ marginBottom: spacing.sm, zIndex: 10 }}>
+             <RoomCameraGrid participants={participants} isCompact={true} />
+           </View>
+        )}
+
         {/* Screen / File Share Panel — fills available space */}
         {viewToggles.screen && (
           <View
@@ -252,7 +261,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
               {
                 backgroundColor: `${colors.card}E6`,
                 borderColor: `${colors.border}80`,
-                flex: viewToggles.cameras ? 1 : 1,
+                flex: 1, // Always takes all remaining space
               },
             ]}
           >
@@ -266,8 +275,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           </View>
         )}
 
-        {/* Camera Grid Panel — fills available space */}
-        {viewToggles.cameras && (
+        {/* Camera Grid Panel (Full Screen) — when only cameras are active */}
+        {viewToggles.cameras && !viewToggles.screen && (
           <View
             style={[
               styles.fullPanel,
