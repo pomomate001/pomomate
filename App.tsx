@@ -35,6 +35,7 @@ export default function App() {
         // The URL might have tokens in query params or fragment
         let accessToken = '';
         let refreshToken = '';
+        let type = '';
         
         if (url.includes('#')) {
           const fragment = url.split('#')[1];
@@ -43,6 +44,7 @@ export default function App() {
             const [k, v] = p.split('=');
             if (k === 'access_token') accessToken = v;
             if (k === 'refresh_token') refreshToken = v;
+            if (k === 'type') type = v;
           });
         }
         
@@ -50,6 +52,11 @@ export default function App() {
           const parsed = Linking.parse(url);
           accessToken = parsed.queryParams?.access_token as string;
           refreshToken = parsed.queryParams?.refresh_token as string;
+          type = parsed.queryParams?.type as string;
+        }
+
+        if (type === 'recovery') {
+          useUserStore.getState().setNeedsPasswordReset(true);
         }
         
         if (accessToken && refreshToken) {

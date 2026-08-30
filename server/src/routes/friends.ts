@@ -30,44 +30,53 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
     .select('id, display_name, avatar_url')
     .in('id', friendIds);
 
-  // Get friend stats (respecting sharing preferences)
-  const friends = await Promise.all(
-    (profiles ?? []).map(async (p: Record<string, unknown>) => {
-      // Check sharing prefs
-      const { data: prefs } = await sb
-        .from('statistics_preferences')
-        .select('*')
-        .eq('user_id', p.id as string)
-        .single();
+  // Get friend stats (respecting sharing preferences) using batched queries
+  const { data: allPrefs } = await sb
+    .from('statistics_preferences')
+    .select('user_id, share_with_friends')
+    .in('user_id', friendIds);
 
-      const shareOk = prefs?.share_with_friends !== false;
+  const { data: allSessions } = await sb
+    .from('pomodoro_sessions')
+    .select('user_id, duration_seconds')
+    .in('user_id', friendIds)
+    .eq('mode', 'work');
 
-      let totalWorkSeconds = 0;
-      let totalPomodoros = 0;
+  const sessionsByUserId: Record<string, { totalPomodoros: number, totalWorkSeconds: number }> = {};
+  for (const session of allSessions ?? []) {
+    if (!sessionsByUserId[session.user_id]) {
+      sessionsByUserId[session.user_id] = { totalPomodoros: 0, totalWorkSeconds: 0 };
+    }
+    sessionsByUserId[session.user_id].totalPomodoros += 1;
+    sessionsByUserId[session.user_id].totalWorkSeconds += session.duration_seconds;
+  }
+  
+  const prefsByUserId: Record<string, boolean> = {};
+  for (const pref of allPrefs ?? []) {
+    prefsByUserId[pref.user_id] = pref.share_with_friends;
+  }
 
-      if (shareOk) {
-        const { data: sessions } = await sb
-          .from('pomodoro_sessions')
-          .select('duration_seconds')
-          .eq('user_id', p.id as string)
-          .eq('mode', 'work');
+  const friends = (profiles ?? []).map((p: Record<string, unknown>) => {
+    const pId = p.id as string;
+    const shareOk = prefsByUserId[pId] !== false; // default true if no row
+    
+    let totalPomodoros = 0;
+    let totalWorkSeconds = 0;
+    
+    if (shareOk && sessionsByUserId[pId]) {
+      totalPomodoros = sessionsByUserId[pId].totalPomodoros;
+      totalWorkSeconds = sessionsByUserId[pId].totalWorkSeconds;
+    }
 
-        totalPomodoros = sessions?.length ?? 0;
-        totalWorkSeconds = sessions?.reduce(
-          (sum, s) => sum + (s.duration_seconds as number), 0,
-        ) ?? 0;
-      }
-
-      return {
-        userId: p.id,
-        displayName: p.display_name,
-        avatarUrl: p.avatar_url,
-        totalWorkSeconds: shareOk ? totalWorkSeconds : 0,
-        totalPomodoros: shareOk ? totalPomodoros : 0,
-        streak: 0, // Simplified; full streak calc can be added
-      };
-    }),
-  );
+    return {
+      userId: pId,
+      displayName: p.display_name,
+      avatarUrl: p.avatar_url,
+      totalWorkSeconds,
+      totalPomodoros,
+      streak: 0,
+    };
+  });
 
   res.json(friends);
 });
@@ -176,18 +185,31 @@ router.get('/stats-prefs', async (req: AuthenticatedRequest, res) => {
   res.json(data);
 });
 
+const UpdatePrefsSchema = z.object({
+  share_with_friends: z.boolean().optional(),
+}).strict();
+
 // PATCH /friends/stats-prefs — update sharing preferences
 router.patch('/stats-prefs', async (req: AuthenticatedRequest, res) => {
   const sb = createUserClient(req.accessToken!);
-  const { data, error } = await sb
-    .from('statistics_preferences')
-    .update(req.body)
-    .eq('user_id', req.userId!)
-    .select()
-    .single();
+  try {
+    const validatedData = UpdatePrefsSchema.parse(req.body);
+    const { data, error } = await sb
+      .from('statistics_preferences')
+      .update(validatedData)
+      .eq('user_id', req.userId!)
+      .select()
+      .single();
 
-  if (error) { res.status(400).json({ error: error.message }); return; }
-  res.json(data);
+    if (error) { res.status(400).json({ error: error.message }); return; }
+    res.json(data);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ error: err.errors });
+    } else {
+      res.status(500).json({ error: 'Internal error' });
+    }
+  }
 });
 
 export default router;

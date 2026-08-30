@@ -8,6 +8,13 @@ export interface FocusAnimationMeta {
 
 export const focusAnimations: FocusAnimationMeta[] = [
   {
+    id: 'none',
+    label: '🚫 Yok (Sadece Arka Plan)',
+    icon: 'close-circle',
+    free: true,
+    type: 'svg',
+  },
+  {
     id: 'cat_tail',
     label: '🐱 Uyanık Kedi',
     icon: 'paw',

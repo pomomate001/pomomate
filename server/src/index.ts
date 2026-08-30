@@ -21,12 +21,21 @@ import assetsRouter from './routes/assets.js';
 import messagesRouter from './routes/messages.js';
 import referralsRouter from './routes/referrals.js';
 
+import rateLimit from 'express-rate-limit';
+
 const app = express();
 
 // Global middleware
 app.use(helmet());
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
+
+// Global rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+app.use('/api', limiter);
 
 // Health check — no auth required
 app.get('/health', (_req, res) => {

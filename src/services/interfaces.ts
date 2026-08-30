@@ -21,6 +21,7 @@ export interface AuthService {
   signInWithEmail(email: string, password: string): Promise<User>;
   signUpWithEmail(email: string, password: string): Promise<User>;
   signInWithGoogle(): Promise<User>;
+  resetPassword(email: string): Promise<void>;
   signOut(): Promise<void>;
   /** Returns the current access token, or null if unauthenticated (M08). */
   getAccessToken(): Promise<string | null>;

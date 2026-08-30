@@ -16,9 +16,11 @@ export class RevenueCatService {
     if (this.initialized) return;
 
     try {
-      // RevenueCat API key should be in config
-      const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY
-        ?? 'goog_rVJqGtFlnIyDyMlcxRjpNdQEUHw';
+      const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
+      if (!apiKey) {
+        logger.warn('[RevenueCat] Missing API key, skipping initialization');
+        return;
+      }
 
       await Purchases.configure({ apiKey, appUserID: userId });
       this.initialized = true;

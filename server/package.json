@@ -8,12 +8,14 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.7.0",
     "helmet": "^8.1.0",
     "ws": "^8.18.2",
     "zod": "^3.25.67"
@@ -21,9 +23,15 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.16.3",
+    "@types/supertest": "^7.2.1",
     "@types/ws": "^8.18.1",
     "eslint": "^9.39.5",
+    "jest": "^30.5.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.12",
+    "ts-node": "^10.9.2",
     "tsx": "^4.20.3",
     "typescript": "~5.8.3"
   }

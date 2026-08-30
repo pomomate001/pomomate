@@ -162,6 +162,15 @@ export class SupabaseAuthService implements AuthService {
     return user;
   }
 
+  async resetPassword(email: string): Promise<void> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'pomomate://reset-password',
+    });
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
   async signOut(): Promise<void> {
     await supabase.auth.signOut();
     logger.info('[Auth] Signed out');

@@ -248,11 +248,15 @@ export function TimerScreen() {
         </View>
 
         {/* 2. ORTA BÖLÜM: 1x1 Animasyon Alanı (Pomocat tarzı boşluk) */}
-        <View style={styles.middleAnimationSection}>
-          <View style={styles.animationContainer1x1}>
-            <FocusAnimation animationId={activeAnimationId} size={220} />
+        {activeAnimationId !== 'none' ? (
+          <View style={styles.middleAnimationSection}>
+            <View style={styles.animationContainer1x1}>
+              <FocusAnimation animationId={activeAnimationId} size={220} />
+            </View>
           </View>
-        </View>
+        ) : (
+          <View style={{ flex: 1, minHeight: 40 }} />
+        )}
 
         {/* 3. ALT BÖLÜM: Butonlar ve Görevler */}
         <View style={styles.bottomSection}>

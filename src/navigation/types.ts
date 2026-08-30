@@ -36,6 +36,7 @@ export type ProfileStackParamList = {
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
+  ForgotPassword: undefined;
 };
 
 /* ─── Root tab param listesi ─── */

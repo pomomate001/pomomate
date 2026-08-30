@@ -15,6 +15,9 @@ export const FocusAnimation: React.FC<FocusAnimationProps> = ({
   size = 220,
 }) => {
   switch (animationId) {
+    case 'none':
+      return null;
+
     case 'cat_tail':
       return (
         <View style={[styles.container, { width: size, height: size }]}>
@@ -71,8 +74,10 @@ export const FocusAnimation: React.FC<FocusAnimationProps> = ({
       );
 
     case 'campfire_svg':
-    default:
       return <CampfireAnimation size={size} />;
+
+    default:
+      return null;
   }
 };
 

@@ -1,0 +1,22 @@
+appId: com.pomomate.app
+---
+- launchApp
+- assertVisible: "E-posta"
+- assertVisible: "Şifre"
+# Login
+- tapOn:
+    id: "mail-outline"
+- inputText: "test@pomomate.com"
+- tapOn:
+    id: "lock-closed-outline"
+- inputText: "123456"
+- tapOn: "Giriş Yap"
+# Verify login succeeded by checking bottom tabs or home screen
+- assertVisible: "Sayaç"
+- assertVisible: "İstatistik"
+- assertVisible: "Çalışma Odası"
+# Timer test
+- tapOn: "Başlat"
+- assertVisible: "Duraklat"
+- tapOn: "Duraklat"
+- assertVisible: "Devam Et"

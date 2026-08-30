@@ -33,8 +33,29 @@ const rooms = new Map<string, Set<WebSocket>>();
 export function setupSignaling(server: HttpServer): void {
   const wss = new WebSocketServer({ server, path: '/ws/signaling' });
 
-  wss.on('connection', (ws, req) => {
-    const client: ConnectedClient = { ws, userId: '', roomId: null };
+  wss.on('connection', async (ws, req) => {
+    const url = new URL(req.url!, `http://${req.headers.host || 'localhost'}`);
+    const token = url.searchParams.get('token');
+
+    if (!token) {
+      ws.close(4001, 'Unauthorized');
+      return;
+    }
+
+    let userId: string;
+    try {
+      const { data, error } = await adminClient.auth.getUser(token);
+      if (error || !data.user) {
+        ws.close(4001, 'Unauthorized');
+        return;
+      }
+      userId = data.user.id;
+    } catch {
+      ws.close(4001, 'Unauthorized');
+      return;
+    }
+
+    const client: ConnectedClient = { ws, userId, roomId: null };
     clients.set(ws, client);
 
     ws.on('message', async (raw) => {
@@ -60,8 +81,8 @@ async function handleMessage(
 ): Promise<void> {
   switch (msg.type) {
     case 'join': {
-      if (!msg.roomId || !msg.userId) {
-        sendTo(ws, { type: 'error', payload: 'roomId and userId required' });
+      if (!msg.roomId) {
+        sendTo(ws, { type: 'error', payload: 'roomId required' });
         return;
       }
 
@@ -70,7 +91,7 @@ async function handleMessage(
         .from('room_members')
         .select('id')
         .eq('room_id', msg.roomId)
-        .eq('user_id', msg.userId)
+        .eq('user_id', client.userId)
         .single();
 
       if (!data) {
@@ -78,7 +99,6 @@ async function handleMessage(
         return;
       }
 
-      client.userId = msg.userId;
       client.roomId = msg.roomId;
 
       // Add to room
@@ -89,7 +109,7 @@ async function handleMessage(
       broadcastToRoom(msg.roomId, ws, {
         type: 'join',
         roomId: msg.roomId,
-        userId: msg.userId,
+        userId: client.userId,
       });
 
       // Send presence of existing members

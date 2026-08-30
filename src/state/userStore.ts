@@ -12,11 +12,13 @@ interface UserStore {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  needsPasswordReset: boolean;
 
   setUser: (user: User | null) => void;
   updateUser: (patch: Partial<User>) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
+  setNeedsPasswordReset: (needsReset: boolean) => void;
   signOut: () => void;
 }
 
@@ -25,6 +27,7 @@ export const useUserStore = create<UserStore>((set) => ({
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  needsPasswordReset: false,
 
   setUser: (user) => set({ user, isAuthenticated: user !== null }),
 
@@ -35,7 +38,8 @@ export const useUserStore = create<UserStore>((set) => ({
 
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
+  setNeedsPasswordReset: (needsPasswordReset) => set({ needsPasswordReset }),
 
   signOut: () =>
-    set({ user: null, isAuthenticated: false, isLoading: false, error: null }),
+    set({ user: null, isAuthenticated: false, isLoading: false, error: null, needsPasswordReset: false }),
 }));

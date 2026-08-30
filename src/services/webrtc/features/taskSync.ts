@@ -3,7 +3,7 @@
  *
  * Host broadcasts room task list. Members update their local view.
  */
-import { useTaskStore } from '../../../state';
+import { useTaskStore, useRoomStore } from '../../../state';
 import type { RoomFeatureHandler, DataChannelMessage } from '../types';
 import type { Task } from '../../../types';
 
@@ -13,6 +13,11 @@ export function createTaskSyncHandler(isHost: boolean): RoomFeatureHandler {
 
     onMessage: (msg: DataChannelMessage) => {
       if (msg.type !== 'task-sync' || isHost) return;
+
+      const { currentRoom } = useRoomStore.getState();
+      if (!currentRoom || msg.senderId !== currentRoom.hostId) {
+        return; // Reject messages from non-hosts
+      }
 
       const tasks = msg.payload as Task[];
       useTaskStore.getState().setTasks(tasks);

@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../ui/theme';
 import { TimerStack, StatsStack, RoomStack, ProfileStack } from './stacks';
 import { AuthNavigator } from './AuthNavigator';
+import { UpdatePasswordModal } from '../ui/screens/auth';
 import type { RootTabParamList } from './types';
 import { useUserStore } from '../state';
 import { authService, supabase } from '../services/auth';
@@ -98,5 +99,10 @@ export function RootNavigator() {
     return <AuthNavigator />;
   }
 
-  return <MainTabs />;
+  return (
+    <>
+      <MainTabs />
+      <UpdatePasswordModal />
+    </>
+  );
 }

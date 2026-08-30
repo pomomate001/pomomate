@@ -20,9 +20,10 @@ import { useUserStore } from '../../../state';
 
 interface LoginScreenProps {
   onGoToRegister: () => void;
+  onGoToForgotPassword: () => void;
 }
 
-export function LoginScreen({ onGoToRegister }: LoginScreenProps) {
+export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScreenProps) {
   const colors = useColors();
   const setUser = useUserStore((state) => state.setUser);
 
@@ -117,6 +118,12 @@ export function LoginScreen({ onGoToRegister }: LoginScreenProps) {
             placeholder="••••••••"
             leftIcon="lock-closed-outline"
           />
+
+          <View style={{ alignItems: 'flex-end', marginBottom: spacing.lg, marginTop: -spacing.sm }}>
+            <Pressable onPress={onGoToForgotPassword} hitSlop={8}>
+              <Text style={[typography.caption, { color: colors.primary }]}>Şifremi Unuttum</Text>
+            </Pressable>
+          </View>
 
           {error && (
             <Text style={[typography.caption, { color: colors.error, marginBottom: spacing.sm }]}> 

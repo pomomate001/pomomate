@@ -4,7 +4,7 @@
  * Host broadcasts timer state to all peers.
  * Members apply received state to their local timerStore.
  */
-import { useTimerStore } from '../../../state';
+import { useTimerStore, useRoomStore } from '../../../state';
 import type { RoomFeatureHandler, DataChannelMessage } from '../types';
 import type { TimerMode } from '../../../types';
 
@@ -22,6 +22,11 @@ export function createTimerSyncHandler(isHost: boolean): RoomFeatureHandler {
 
     onMessage: (msg: DataChannelMessage) => {
       if (msg.type !== 'timer-sync' || isHost) return;
+
+      const { currentRoom } = useRoomStore.getState();
+      if (!currentRoom || msg.senderId !== currentRoom.hostId) {
+        return; // Reject messages from non-hosts
+      }
 
       // Members apply host's timer state
       const payload = msg.payload as TimerSyncPayload;

@@ -107,8 +107,8 @@ PomoMate is a productivity app that combines the Pomodoro Technique with real-ti
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/pomomate.git
-cd pomomate
+git clone https://github.com/pomomate/pomomate-app.git
+cd pomomate-app
 
 # Install dependencies
 npm install
@@ -185,7 +185,6 @@ npm run dev
 
 - **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)**: Production setup instructions
 - **[Integration Checklist](docs/INTEGRATION_CHECKLIST.md)**: QA & testing checklist
-- **[Module Specs](Uploads/)**: Detailed module specifications (M01-M09)
 
 ---
 
@@ -223,7 +222,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Website**: [pomomate.app](https://pomomate.app)
 - **Email**: dev@pomomate.app
-- **GitHub**: [github.com/your-org/pomomate](https://github.com/your-org/pomomate)
+- **GitHub**: [github.com/pomomate/pomomate-app](https://github.com/pomomate/pomomate-app)
 
 ---
 

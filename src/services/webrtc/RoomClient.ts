@@ -23,6 +23,7 @@ import type { Message } from '../../types';
 
 interface RoomClientOptions {
   signalingUrl: string;
+  token: string;
   roomId: string;
   userId: string;
   isHost: boolean;
@@ -43,7 +44,7 @@ export class RoomClient {
     this.isHost = options.isHost;
 
     // Signaling
-    this.signaling = new SignalingClient(options.signalingUrl);
+    this.signaling = new SignalingClient(options.signalingUrl, options.token);
 
     // Peer management
     this.peerManager = new PeerManager(
@@ -171,19 +172,38 @@ export class RoomClient {
     );
   }
 
+  private lastTimerStateStr: string = '';
+  private lastTaskStateStr: string = '';
+  private ticks: number = 0;
+
   /** Host broadcasts timer + task state to all peers. */
   private broadcastHostState(): void {
     if (!this.isHost) return;
+    this.ticks++;
 
-    this.peerManager.broadcast({
-      type: 'timer-sync',
-      payload: getTimerSyncPayload(),
-    });
+    const timerPayload = getTimerSyncPayload();
+    const taskPayload = getTaskSyncPayload();
 
-    this.peerManager.broadcast({
-      type: 'task-sync',
-      payload: getTaskSyncPayload(),
-    });
+    const timerStr = JSON.stringify(timerPayload);
+    const taskStr = JSON.stringify(taskPayload);
+
+    const isHeartbeat = this.ticks % 5 === 0; // Every 5 seconds
+
+    if (timerStr !== this.lastTimerStateStr || isHeartbeat) {
+      this.lastTimerStateStr = timerStr;
+      this.peerManager.broadcast({
+        type: 'timer-sync',
+        payload: timerPayload,
+      });
+    }
+
+    if (taskStr !== this.lastTaskStateStr || isHeartbeat) {
+      this.lastTaskStateStr = taskStr;
+      this.peerManager.broadcast({
+        type: 'task-sync',
+        payload: taskPayload,
+      });
+    }
   }
 
   private handlePeerStateChange(userId: string, state: ConnectionState): void {

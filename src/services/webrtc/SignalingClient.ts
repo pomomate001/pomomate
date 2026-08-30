@@ -16,8 +16,11 @@ export class SignalingClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private shouldReconnect = true;
 
-  constructor(url: string) {
-    this.url = url;
+  constructor(url: string, token: string) {
+    // Append token as query parameter
+    const urlObj = new URL(url);
+    urlObj.searchParams.set('token', token);
+    this.url = urlObj.toString();
   }
 
   connect(): void {
