@@ -96,18 +96,19 @@ export class MediaService {
     logger.info('[Media] Media stream stopped');
   }
 
-  /* ─── Screen Capture ─── */
-
-  async requestScreenCapture(): Promise<MediaStream | null> {
+  async getDisplayMedia(): Promise<MediaStream | null> {
     try {
-      const hasPermission = await ScreenCapture.requestPermissionsAsync();
-      if (!hasPermission.granted) {
-        logger.warn('[Media] Screen capture permission denied');
-        return null;
+      let stream: MediaStream | null = null;
+      if (Platform.OS === 'web') {
+        stream = (await navigator.mediaDevices.getDisplayMedia({ video: true })) as unknown as MediaStream;
+      } else {
+        // use react-native-webrtc getDisplayMedia for mobile
+        stream = (await mediaDevices.getDisplayMedia({ video: true } as any)) as unknown as MediaStream;
       }
-      return null;
+      logger.info('[Media] Screen display media acquired successfully');
+      return stream;
     } catch (err) {
-      logger.warn('[Media] Screen capture failed:', err);
+      logger.warn('[Media] Failed to get display media:', err);
       return null;
     }
   }

@@ -3,6 +3,9 @@ import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../../theme';
 
+import type { MediaStream } from 'react-native-webrtc';
+import { RTCView } from 'react-native-webrtc';
+
 interface SharedFile {
   uri: string;
   fileName: string;
@@ -13,6 +16,7 @@ interface SharedFile {
 interface RoomScreenPanelProps {
   sharedFile: SharedFile | null;
   isScreenSharing: boolean;
+  screenStream?: MediaStream | null;
   isHost: boolean;
   onPickFile: () => void;
   onRemoveFile: () => void;
@@ -21,6 +25,7 @@ interface RoomScreenPanelProps {
 export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   sharedFile,
   isScreenSharing,
+  screenStream,
   isHost,
   onPickFile,
   onRemoveFile,
@@ -28,6 +33,18 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   const colors = useColors();
 
   if (isScreenSharing) {
+    if (screenStream && screenStream.toURL) {
+      return (
+        <View style={[styles.container, { backgroundColor: '#000' }]}>
+          <RTCView
+            streamURL={screenStream.toURL()}
+            style={styles.imageContent}
+            objectFit="contain"
+            mirror={false}
+          />
+        </View>
+      );
+    }
     return (
       <View style={styles.container}>
         <Ionicons name="desktop-outline" size={48} color="rgba(255,255,255,0.5)" />

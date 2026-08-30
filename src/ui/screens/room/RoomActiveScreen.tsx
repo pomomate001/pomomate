@@ -29,6 +29,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
   const [screenShareOn, setScreenShareOn] = useState(false);
+  const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [showAddTask, setShowAddTask] = useState(false);
 
@@ -117,27 +118,39 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   }, [camOn, micOn, viewToggles.cameras, toggleView]);
 
   const handleToggleScreen = useCallback(async () => {
+    if (!isHost) {
+      Alert.alert('Yetkisiz İşlem', 'Sadece oda yöneticisi ekran paylaşımı yapabilir.');
+      return;
+    }
+
     if (!screenShareOn) {
-      if (Platform.OS === 'web') {
-        try {
-          const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      try {
+        const stream = await mediaService.getDisplayMedia();
+        if (stream) {
           setScreenShareOn(true);
-          stream.getVideoTracks()[0]?.addEventListener('ended', () => {
-            setScreenShareOn(false);
-          });
-        } catch {
-          Alert.alert('Ekran Paylaşımı', 'Ekran paylaşımı başlatılamadı.');
+          setScreenStream(stream);
+          
+          const videoTrack = stream.getVideoTracks()[0];
+          if (videoTrack) {
+            videoTrack.onended = () => {
+              setScreenShareOn(false);
+              setScreenStream(null);
+            };
+          }
+          if (!viewToggles.screen) {
+            toggleView('screen');
+          }
+        } else {
+          Alert.alert('Ekran Paylaşımı', 'Ekran paylaşımı başlatılamadı veya iptal edildi.');
         }
-      } else {
-        Alert.alert(
-          'Ekran Paylaşımı',
-          'Mobilde ekran paylaşımı yerine "Ekran" paneline dokunarak görsel veya dosya sunumu yapabilirsiniz.',
-        );
+      } catch (err) {
+        Alert.alert('Ekran Paylaşımı', 'Ekran paylaşımı başlatılamadı.');
       }
     } else {
       setScreenShareOn(false);
+      setScreenStream(null);
     }
-  }, [screenShareOn]);
+  }, [screenShareOn, isHost, viewToggles.screen, toggleView]);
 
   /* ─── Share Handler ─── */
 
@@ -259,6 +272,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
             <RoomScreenPanel
               sharedFile={sharedFile}
               isScreenSharing={screenShareOn}
+              screenStream={screenStream}
               isHost={isHost}
               onPickFile={handlePickFile}
               onRemoveFile={handleRemoveFile}
