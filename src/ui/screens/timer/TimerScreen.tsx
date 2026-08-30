@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimerStore, useSettingsStore, useStatsStore, useTaskStore } from '../../../state';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
@@ -32,6 +33,7 @@ const modeLabels: Record<TimerMode, string> = {
 };
 
 export function TimerScreen() {
+  const insets = useSafeAreaInsets();
   const {
     remainingSeconds,
     duration,
@@ -203,7 +205,13 @@ export function TimerScreen() {
          {/* Tam ekran arka plan animasyonları buraya */}
       </View>
 
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          { paddingTop: Math.max(insets.top, 16) + 12 }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* 1. ÜST BÖLÜM: Mod Seçici, Sayaç ve Döngü */}
         <View style={styles.topSection}>
           {/* Mode selector */}
