@@ -32,6 +32,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [isScreenShrunk, setIsScreenShrunk] = useState(false);
 
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -135,6 +136,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
             videoTrack.onended = () => {
               setScreenShareOn(false);
               setScreenStream(null);
+              setIsScreenShrunk(false); // Reset shrink when screen ends
             };
           }
           if (!viewToggles.screen) {
@@ -149,6 +151,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     } else {
       setScreenShareOn(false);
       setScreenStream(null);
+      setIsScreenShrunk(false);
     }
   }, [screenShareOn, isHost, viewToggles.screen, toggleView]);
 
@@ -197,6 +200,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const handleRemoveFile = useCallback(() => {
     setSharedFile(null);
+    setIsScreenShrunk(false);
   }, [setSharedFile]);
 
   /* ─── Task Handler ─── */
@@ -219,6 +223,9 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   /* ─── Calculate active panel count for layout ─── */
   const activePanels = [viewToggles.screen, viewToggles.cameras].filter(Boolean).length;
   const noPanelsActive = activePanels === 0 && !viewToggles.timer;
+  
+  // When both are active, show the shrink toggle
+  const showShrinkToggle = viewToggles.cameras && viewToggles.screen;
 
   return (
     <BackgroundEffect effectId={backgroundEffectId}>
@@ -257,6 +264,17 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           </View>
         )}
 
+        {/* Camera Grid (Compact PIP if screen is also active) */}
+        {viewToggles.cameras && viewToggles.screen && (
+           <View style={
+             isScreenShrunk 
+               ? { marginTop: viewToggles.timer ? 64 : 0, marginBottom: spacing.sm, zIndex: 10 } 
+               : [styles.floatingCamera, { top: insets.top + 80 }]
+           }>
+             <RoomCameraGrid participants={participants} isCompact={true} />
+           </View>
+        )}
+
         {/* Screen / File Share Panel — fills available space */}
         {viewToggles.screen && (
           <View
@@ -280,13 +298,6 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           </View>
         )}
 
-        {/* Camera Grid (Compact PIP if screen is also active) */}
-        {viewToggles.cameras && viewToggles.screen && (
-           <View style={[styles.floatingCamera, { top: insets.top + 80 }]}>
-             <RoomCameraGrid participants={participants} isCompact={true} />
-           </View>
-        )}
-
         {/* Camera Grid Panel (Full Screen) — when only cameras are active */}
         {viewToggles.cameras && !viewToggles.screen && (
           <View
@@ -308,6 +319,9 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       <RoomViewToggles
         viewToggles={viewToggles}
         onToggle={toggleView}
+        showShrinkToggle={showShrinkToggle}
+        isShrunk={isScreenShrunk}
+        onToggleShrink={() => setIsScreenShrunk(!isScreenShrunk)}
       />
 
       {/* ─── Collapsible Bottom Bar with Chat ─── */}

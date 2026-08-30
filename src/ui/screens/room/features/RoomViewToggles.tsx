@@ -12,6 +12,9 @@ interface RoomViewTogglesProps {
     cameras: boolean;
   };
   onToggle: (key: ToggleKey) => void;
+  showShrinkToggle?: boolean;
+  isShrunk?: boolean;
+  onToggleShrink?: () => void;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -65,7 +68,13 @@ const ToggleButton = ({
   );
 };
 
-export const RoomViewToggles: React.FC<RoomViewTogglesProps> = ({ viewToggles, onToggle }) => {
+export const RoomViewToggles: React.FC<RoomViewTogglesProps> = ({ 
+  viewToggles, 
+  onToggle,
+  showShrinkToggle = false,
+  isShrunk = false,
+  onToggleShrink
+}) => {
   return (
     <View style={styles.container}>
       <ToggleButton
@@ -89,6 +98,15 @@ export const RoomViewToggles: React.FC<RoomViewTogglesProps> = ({ viewToggles, o
         isActive={viewToggles.cameras}
         onPress={() => onToggle('cameras')}
       />
+      {showShrinkToggle && onToggleShrink && (
+        <ToggleButton
+          icon="expand"
+          iconOutline="contract"
+          color="#00BCD4"
+          isActive={isShrunk}
+          onPress={onToggleShrink}
+        />
+      )}
     </View>
   );
 };

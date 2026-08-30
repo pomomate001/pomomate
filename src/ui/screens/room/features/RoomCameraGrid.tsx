@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   compactCell: {
-    width: 120,
+    width: 100,
     marginBottom: 0,
   },
   cellContent: {
