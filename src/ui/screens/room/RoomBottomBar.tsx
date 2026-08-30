@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -11,7 +11,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ParticipantsBar } from './ParticipantsBar';
-import { RoomChat } from './features/RoomChat';
+import { RoomChat, RoomFilesBoard, RoomSettingsPanel } from './features';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
@@ -27,6 +27,7 @@ interface RoomBottomBarProps {
   roomName: string;
   inviteCode: string;
   isLive: boolean;
+  isHost: boolean;
   participants: Participant[];
   micOn: boolean;
   camOn: boolean;
@@ -47,6 +48,7 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
   roomName,
   inviteCode,
   isLive,
+  isHost,
   participants,
   micOn,
   camOn,
@@ -62,6 +64,8 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
   const height = useSharedValue(EXPANDED_HEIGHT);
   const startHeight = useSharedValue(EXPANDED_HEIGHT);
 
+  const [activeTab, setActiveTab] = useState<'chat' | 'files' | 'settings'>('chat');
+
   // Snap to nearest level
   const snapToNearest = (currentHeight: number, velocityY: number) => {
     'worklet';
@@ -69,21 +73,14 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
 
     // Strong velocity override
     if (velocityY < -600 && currentHeight < CHAT_HEIGHT) {
-      // Fast swipe up → go to next level up
-      if (currentHeight < EXPANDED_HEIGHT) {
-        return EXPANDED_HEIGHT;
-      }
+      if (currentHeight < EXPANDED_HEIGHT) return EXPANDED_HEIGHT;
       return CHAT_HEIGHT;
     }
     if (velocityY > 600 && currentHeight > COLLAPSED_HEIGHT) {
-      // Fast swipe down → go to next level down
-      if (currentHeight > EXPANDED_HEIGHT) {
-        return EXPANDED_HEIGHT;
-      }
+      if (currentHeight > EXPANDED_HEIGHT) return EXPANDED_HEIGHT;
       return COLLAPSED_HEIGHT;
     }
 
-    // Snap to nearest
     let closest = levels[0];
     let minDist = Math.abs(currentHeight - levels[0]);
     for (let i = 1; i < levels.length; i++) {
@@ -135,7 +132,7 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
     };
   });
 
-  const chatSectionStyle = useAnimatedStyle(() => {
+  const contentSectionStyle = useAnimatedStyle(() => {
     const opacity = interpolate(
       height.value,
       [EXPANDED_HEIGHT, EXPANDED_HEIGHT + 60],
@@ -228,10 +225,30 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
           </Pressable>
         </View>
 
-        {/* Chat Section (shown when swiped up past expanded) */}
-        <Animated.View style={[styles.chatSection, chatSectionStyle]}>
-          <View style={[styles.chatDivider, { backgroundColor: colors.border }]} />
-          <RoomChat roomId={roomId} />
+        {/* Content Section (Tabs: Chat, Files, Settings) */}
+        <Animated.View style={[styles.contentSection, contentSectionStyle]}>
+          <View style={[styles.tabHeader, { borderBottomColor: colors.border }]}>
+            <Pressable style={styles.tabBtn} onPress={() => setActiveTab('chat')}>
+              <Text style={[styles.tabText, { color: activeTab === 'chat' ? colors.primary : colors.textSecondary }]}>Sohbet</Text>
+              {activeTab === 'chat' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
+            </Pressable>
+            <Pressable style={styles.tabBtn} onPress={() => setActiveTab('files')}>
+              <Text style={[styles.tabText, { color: activeTab === 'files' ? colors.primary : colors.textSecondary }]}>Dosyalar</Text>
+              {activeTab === 'files' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
+            </Pressable>
+            {isHost && (
+              <Pressable style={styles.tabBtn} onPress={() => setActiveTab('settings')}>
+                <Text style={[styles.tabText, { color: activeTab === 'settings' ? colors.primary : colors.textSecondary }]}>Ayarlar</Text>
+                {activeTab === 'settings' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
+              </Pressable>
+            )}
+          </View>
+          
+          <View style={styles.tabContentArea}>
+            {activeTab === 'chat' && <RoomChat roomId={roomId} />}
+            {activeTab === 'files' && <RoomFilesBoard isHost={isHost} />}
+            {activeTab === 'settings' && isHost && <RoomSettingsPanel />}
+          </View>
         </Animated.View>
       </Animated.View>
     </GestureDetector>
@@ -328,11 +345,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  chatSection: {
+  contentSection: {
     marginTop: spacing.sm,
+    flex: 1,
   },
-  chatDivider: {
-    height: 1,
-    marginBottom: spacing.xs,
+  tabHeader: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    marginBottom: spacing.sm,
+  },
+  tabBtn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: -1,
+    left: '20%',
+    right: '20%',
+    height: 3,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+  },
+  tabContentArea: {
+    flex: 1,
   },
 });

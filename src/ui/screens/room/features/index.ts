@@ -7,3 +7,5 @@ export { RoomFiles } from './RoomFiles';
 export { RoomViewToggles } from './RoomViewToggles';
 export { RoomCameraGrid } from './RoomCameraGrid';
 export { RoomScreenPanel } from './RoomScreenPanel';
+export { RoomSettingsPanel } from './RoomSettingsPanel';
+export { RoomFilesBoard } from './RoomFilesBoard';

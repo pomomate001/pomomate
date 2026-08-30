@@ -41,8 +41,14 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const members = useRoomStore((s) => s.members);
   const viewToggles = useRoomStore((s) => s.viewToggles);
   const toggleView = useRoomStore((s) => s.toggleView);
-  const sharedFile = useRoomStore((s) => s.sharedFile);
-  const setSharedFile = useRoomStore((s) => s.setSharedFile);
+  
+  const sharedFiles = useRoomStore((s) => s.sharedFiles);
+  const activeSharedFileId = useRoomStore((s) => s.activeSharedFileId);
+  const addSharedFile = useRoomStore((s) => s.addSharedFile);
+  const removeSharedFile = useRoomStore((s) => s.removeSharedFile);
+  const setActiveSharedFileId = useRoomStore((s) => s.setActiveSharedFileId);
+  const roomSettings = useRoomStore((s) => s.roomSettings);
+  
   const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
   const user = useUserStore((s) => s.user);
   const addTask = useTaskStore((s) => s.addTask);
@@ -74,6 +80,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   /* ─── Media Handlers ─── */
 
   const handleToggleMic = useCallback(async () => {
+    if (!isHost && !roomSettings.allowMic) {
+      Alert.alert('Yetkiniz Yok', 'Yönetici mikrofon kullanımını kapattı.');
+      return;
+    }
+
     if (!micOn) {
       const stream = await mediaService.getUserMedia({ audio: true, video: camOn });
       if (stream) {
@@ -92,9 +103,14 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       }
       setMicOn(false);
     }
-  }, [micOn, camOn]);
+  }, [micOn, camOn, isHost, roomSettings.allowMic]);
 
   const handleToggleCam = useCallback(async () => {
+    if (!isHost && !roomSettings.allowCamera) {
+      Alert.alert('Yetkiniz Yok', 'Yönetici kamera kullanımını kapattı.');
+      return;
+    }
+
     if (!camOn) {
       const stream = await mediaService.getUserMedia({ audio: micOn, video: true });
       if (stream) {
@@ -116,7 +132,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       setCamOn(false);
       setLocalStream(null);
     }
-  }, [camOn, micOn, viewToggles.cameras, toggleView]);
+  }, [camOn, micOn, viewToggles.cameras, toggleView, isHost, roomSettings.allowCamera]);
 
   const handleToggleScreen = useCallback(async () => {
     if (!isHost) {
@@ -171,6 +187,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   /* ─── File Pick Handler ─── */
 
   const handlePickFile = useCallback(async () => {
+    if (!isHost && !roomSettings.allowFiles) {
+      Alert.alert('Yetkiniz Yok', 'Yönetici dosya paylaşımını kapattı.');
+      return;
+    }
+
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
@@ -182,12 +203,15 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         const asset = result.assets[0];
         const fileName = asset.fileName ?? asset.uri.split('/').pop() ?? 'file';
         const fileType = asset.mimeType?.startsWith('image') ? 'image' : 'other';
-        setSharedFile({
+        const newFileId = generateId();
+        addSharedFile({
+          id: newFileId,
           uri: asset.uri,
           fileName,
           fileType,
           sharedBy: user?.id ?? 'my-user',
         });
+        setActiveSharedFileId(newFileId);
         // Auto-show screen panel when file is shared
         if (!viewToggles.screen) {
           toggleView('screen');
@@ -196,12 +220,13 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     } catch {
       Alert.alert('Dosya Seçimi', 'Dosya seçilemedi.');
     }
-  }, [setSharedFile, user?.id, viewToggles.screen, toggleView]);
+  }, [addSharedFile, setActiveSharedFileId, user?.id, viewToggles.screen, toggleView, isHost, roomSettings.allowFiles]);
 
-  const handleRemoveFile = useCallback(() => {
-    setSharedFile(null);
-    setIsScreenShrunk(false);
-  }, [setSharedFile]);
+  const handleRemoveFile = useCallback((fileId: string) => {
+    removeSharedFile(fileId);
+    // If we removed the active file, shrink the screen to avoid empty space if desired
+    // Or we just let it show the dropzone
+  }, [removeSharedFile]);
 
   /* ─── Task Handler ─── */
 
@@ -226,6 +251,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   
   // When both are active, show the shrink toggle
   const showShrinkToggle = viewToggles.cameras && viewToggles.screen;
+
+  const activeSharedFile = sharedFiles.find(f => f.id === activeSharedFileId) || null;
 
   return (
     <BackgroundEffect effectId={backgroundEffectId}>
@@ -288,12 +315,15 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
             ]}
           >
             <RoomScreenPanel
-              sharedFile={sharedFile}
+              sharedFile={activeSharedFile}
               isScreenSharing={screenShareOn}
               screenStream={screenStream}
               isHost={isHost}
+              allowFiles={roomSettings.allowFiles}
               onPickFile={handlePickFile}
-              onRemoveFile={handleRemoveFile}
+              onRemoveFile={() => {
+                if (activeSharedFile) handleRemoveFile(activeSharedFile.id);
+              }}
             />
           </View>
         )}
@@ -327,14 +357,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       {/* ─── Collapsible Bottom Bar with Chat ─── */}
       <RoomBottomBar
         roomId={roomId}
-        roomName={room?.name ?? 'Çalışma Odası'}
-        inviteCode={inviteCode}
-        isLive={room?.isActive ?? true}
-        participants={participants.map((p) => ({
-          userId: p.userId,
-          displayName: p.displayName,
-          avatarUrl: p.avatarUrl,
-        }))}
+        roomName={room?.name || 'Çalışma Odası'}
+        inviteCode={room?.inviteCode || ''}
+        isLive={true}
+        isHost={isHost}
+        participants={participants}
         micOn={micOn}
         camOn={camOn}
         screenShareOn={screenShareOn}

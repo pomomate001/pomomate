@@ -13,8 +13,14 @@ export interface ViewToggles {
   cameras: boolean;
 }
 
-/** A file/image being shared on the room screen panel. */
+export interface RoomSettings {
+  allowCamera: boolean;
+  allowMic: boolean;
+  allowFiles: boolean;
+}
+
 export interface SharedFile {
+  id: string;
   uri: string;
   fileName: string;
   fileType: string; // 'image' | 'pdf' | 'other'
@@ -28,10 +34,11 @@ interface RoomStore {
   isJoining: boolean;
   error: string | null;
 
-  /** Which content panels are visible in the room. */
   viewToggles: ViewToggles;
-  /** Currently shared file on the screen panel. */
-  sharedFile: SharedFile | null;
+  roomSettings: RoomSettings;
+  
+  sharedFiles: SharedFile[];
+  activeSharedFileId: string | null;
 
   setRooms: (rooms: Room[]) => void;
   addRoom: (room: Room) => void;
@@ -47,7 +54,11 @@ interface RoomStore {
   leave: () => void;
 
   toggleView: (key: keyof ViewToggles) => void;
-  setSharedFile: (file: SharedFile | null) => void;
+  setRoomSettings: (settings: Partial<RoomSettings>) => void;
+  
+  addSharedFile: (file: SharedFile) => void;
+  removeSharedFile: (fileId: string) => void;
+  setActiveSharedFileId: (fileId: string | null) => void;
 }
 
 export const useRoomStore = create<RoomStore>((set) => ({
@@ -57,7 +68,9 @@ export const useRoomStore = create<RoomStore>((set) => ({
   isJoining: false,
   error: null,
   viewToggles: { timer: true, screen: false, cameras: false },
-  sharedFile: null,
+  roomSettings: { allowCamera: true, allowMic: true, allowFiles: true },
+  sharedFiles: [],
+  activeSharedFileId: null,
 
   setRooms: (rooms) => set({ rooms }),
 
@@ -151,7 +164,9 @@ export const useRoomStore = create<RoomStore>((set) => ({
           isJoining: false,
           error: null,
           viewToggles: { timer: true, screen: false, cameras: false },
-          sharedFile: null,
+          roomSettings: { allowCamera: true, allowMic: true, allowFiles: true },
+          sharedFiles: [],
+          activeSharedFileId: null,
         };
       }
       return {
@@ -160,7 +175,9 @@ export const useRoomStore = create<RoomStore>((set) => ({
         isJoining: false,
         error: null,
         viewToggles: { timer: true, screen: false, cameras: false },
-        sharedFile: null,
+        roomSettings: { allowCamera: true, allowMic: true, allowFiles: true },
+        sharedFiles: [],
+        activeSharedFileId: null,
       };
     }),
 
@@ -172,7 +189,26 @@ export const useRoomStore = create<RoomStore>((set) => ({
       },
     })),
 
-  setSharedFile: (sharedFile) => set({ sharedFile }),
+  setRoomSettings: (settings) =>
+    set((state) => ({
+      roomSettings: { ...state.roomSettings, ...settings },
+    })),
+    
+  addSharedFile: (file) =>
+    set((state) => ({
+      sharedFiles: [...state.sharedFiles, file],
+    })),
+    
+  removeSharedFile: (fileId) =>
+    set((state) => {
+      const newFiles = state.sharedFiles.filter((f) => f.id !== fileId);
+      return {
+        sharedFiles: newFiles,
+        activeSharedFileId: state.activeSharedFileId === fileId ? null : state.activeSharedFileId,
+      };
+    }),
+    
+  setActiveSharedFileId: (fileId) => set({ activeSharedFileId: fileId }),
 }));
 
 function patchActive(room: Room, isActive: boolean): Partial<Room> {
