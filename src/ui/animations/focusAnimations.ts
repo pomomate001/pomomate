@@ -19,14 +19,14 @@ export const focusAnimations: FocusAnimationMeta[] = [
     label: '😴 Uyuyan Kedi (Sağ)',
     icon: 'cafe',
     free: true,
-    type: 'image',
+    type: 'svg',
   },
   {
     id: 'cat_table_left',
     label: '😴 Uyuyan Kedi (Sol)',
     icon: 'laptop',
     free: true,
-    type: 'image',
+    type: 'svg',
   },
   {
     id: 'campfire_svg',
