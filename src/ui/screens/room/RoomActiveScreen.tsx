@@ -208,9 +208,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const noPanelsActive = activePanels === 0 && !viewToggles.timer;
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      <BackgroundEffect effectId={backgroundEffectId} />
-
+    <BackgroundEffect effectId={backgroundEffectId}>
       {/* Task Creation Sheet for Room */}
       <AddTaskSheet
         visible={showAddTask}
@@ -318,14 +316,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         onShare={handleShare}
         onLeave={onLeave}
       />
-    </View>
+    </BackgroundEffect>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
   contentArea: {
     flex: 1,
     paddingHorizontal: spacing.sm,
