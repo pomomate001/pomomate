@@ -251,26 +251,26 @@ export function TimerScreen() {
           {/* Controls */}
           <View style={styles.controls}>
             <IconButton
-              icon={<Ionicons name="refresh" size={22} color={colors.textSecondary} />}
+              icon={<Ionicons name="refresh" size={18} color={colors.textSecondary} />}
               onPress={reset}
-              size={48}
+              size={38}
             />
             <IconButton
               icon={
                 <Ionicons
                   name={isRunning ? 'pause' : 'play'}
-                  size={32}
+                  size={26}
                   color={colors.textInverse}
                 />
               }
               onPress={isRunning ? pause : start}
-              size={64}
+              size={51}
               style={{ backgroundColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 8 }}
             />
             <IconButton
-              icon={<Ionicons name="play-skip-forward" size={22} color={colors.textSecondary} />}
+              icon={<Ionicons name="play-skip-forward" size={18} color={colors.textSecondary} />}
               onPress={next}
-              size={48}
+              size={38}
             />
           </View>
 
@@ -297,7 +297,7 @@ export function TimerScreen() {
             
             {/* Active / Primary Task Card */}
             {todayTasks.length === 0 ? (
-              <View style={[styles.emptyCard, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+              <View style={[styles.emptyCard, { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.05)' }]}>
                 <Ionicons name="clipboard-outline" size={24} color={colors.textDisabled} />
                 <Text style={[typography.caption, { color: colors.textDisabled, textAlign: 'center', marginTop: spacing.xs }]}>
                   Henüz görev eklenmedi.
@@ -308,7 +308,7 @@ export function TimerScreen() {
                 {/* First (active) task */}
                 <View style={[
                   styles.activeTaskCard,
-                  { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: isRunning && mode === 'work' ? colors.primary : 'rgba(255,255,255,0.1)' }
+                  { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: isRunning && mode === 'work' ? colors.primary : 'rgba(255,255,255,0.08)' }
                 ]}>
                   {isRunning && mode === 'work' && (
                     <View style={[styles.workingIndicator, { backgroundColor: colors.primary }]}>
@@ -330,7 +330,7 @@ export function TimerScreen() {
                 {remainingTaskList.length > 0 && (
                   <Pressable 
                     onPress={toggleTaskList} 
-                    style={[styles.expandBtn, { backgroundColor: 'rgba(255,255,255,0.05)' }]}
+                    style={[styles.expandBtn, { backgroundColor: 'rgba(255,255,255,0.03)' }]}
                   >
                     <Text style={[typography.captionBold, { color: colors.textSecondary, fontSize: 11 }]}>
                       {isTaskListExpanded ? 'Görevleri Gizle' : `+${remainingTaskList.length} görev daha`}
@@ -343,7 +343,7 @@ export function TimerScreen() {
 
                 {/* Expanded task list */}
                 {isTaskListExpanded && (
-                  <View style={[styles.expandedList, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+                  <View style={[styles.expandedList, { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.05)' }]}>
                     {remainingTaskList.map((task) => (
                       <View key={task.id} style={{ transform: [{ scale: 0.95 }] }}>
                         <TaskItem
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.md, // Azaltıldı (öncesi xxl idi)
   },
   topSection: {
     width: '100%',
@@ -390,6 +390,7 @@ const styles = StyleSheet.create({
   },
   modeRow: {
     flexDirection: 'row',
+    marginTop: 10, // Biraz aşağı indirildi
     marginBottom: spacing.xs,
     gap: spacing.xs,
     backgroundColor: 'rgba(255,255,255,0.05)',
@@ -398,16 +399,16 @@ const styles = StyleSheet.create({
   },
   modeBtn: { minWidth: 76, borderRadius: 16 },
   timerWrap: {
-    marginVertical: spacing.xs,
+    marginVertical: -15, // Scale küçüldüğü için boşlukları daraltıyoruz
     alignItems: 'center',
     width: '100%',
-    transform: [{ scale: 0.82 }], // Sayacı kompakt tutuyoruz
+    transform: [{ scale: 0.74 }], // %10 daha küçük (0.82 -> 0.74)
   },
   cycleIndicator: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: 12,
-    marginTop: -spacing.xs,
+    marginTop: -spacing.sm,
     marginBottom: spacing.xs,
   },
   middleAnimationSection: {
@@ -415,7 +416,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 180,
-    marginVertical: spacing.xs,
+    marginVertical: 0, // Boşluk daraltıldı
   },
   animationContainer1x1: {
     width: 220,
@@ -426,24 +427,25 @@ const styles = StyleSheet.create({
   bottomSection: {
     width: '100%',
     alignItems: 'center',
+    marginTop: -10, // Boşluk daraltıldı
   },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xl,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm, // Boşluk daraltıldı
     width: '100%',
   },
   tasksSection: {
     width: '100%',
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
+    marginBottom: 0,
   },
   tasksHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs, // Boşluk daraltıldı
   },
   taskCountBadge: {
     marginLeft: spacing.sm,
@@ -476,12 +478,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.sm,
-    marginTop: spacing.sm,
+    marginTop: spacing.xs, // Boşluk daraltıldı
     borderRadius: radius.md,
     gap: spacing.xs,
   },
   expandedList: {
-    marginTop: spacing.sm,
+    marginTop: spacing.xs, // Boşluk daraltıldı
     borderRadius: radius.lg,
     borderWidth: 1,
     overflow: 'hidden',

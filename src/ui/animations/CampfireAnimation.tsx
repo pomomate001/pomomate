@@ -13,7 +13,7 @@ interface CampfireAnimationProps {
 
 export const CampfireAnimation: React.FC<CampfireAnimationProps> = ({ size = 220 }) => {
   const flameAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(110)).current;
+  const glowAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     // Alev titreme
@@ -32,10 +32,10 @@ export const CampfireAnimation: React.FC<CampfireAnimationProps> = ({ size = 220
     Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim, {
-          toValue: 118, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: false
+          toValue: 1.07, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: false
         }),
         Animated.timing(glowAnim, {
-          toValue: 110, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: false
+          toValue: 1, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: false
         }),
       ])
     ).start();
@@ -58,8 +58,8 @@ export const CampfireAnimation: React.FC<CampfireAnimationProps> = ({ size = 220
       <Ellipse cx="200" cy="335" rx="90" ry="14" fill="#000" opacity={0.15}/>
 
       {/* Outer glow */}
-      <AnimatedG>
-        <Circle cx="200" cy="280" r={glowAnim as any} fill="url(#glow)"/>
+      <AnimatedG style={{ transform: [{ scale: glowAnim }] }} origin="200, 280">
+        <Circle cx="200" cy="280" r="110" fill="url(#glow)"/>
       </AnimatedG>
 
       {/* Back logs */}
