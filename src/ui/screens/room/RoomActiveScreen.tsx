@@ -232,8 +232,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         style={[
           styles.contentArea,
           {
-            paddingTop: insets.top + (viewToggles.timer ? 64 : 16), // Space for timer bar if active
-            paddingBottom: 90, // Space for collapsed bottom bar (reduced to 90)
+            paddingTop: insets.top + 16, // Fixed padding, timer is absolute overlay
+            paddingBottom: 90, // Space for collapsed bottom bar
           },
         ]}
       >
@@ -244,13 +244,6 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
               Sağdaki butonları kullanarak{'\n'}ekran veya kameraları gösterebilirsin
             </Text>
           </View>
-        )}
-
-        {/* Camera Grid (Compact top row if screen is also active, else full screen) */}
-        {viewToggles.cameras && viewToggles.screen && (
-           <View style={{ marginBottom: spacing.sm, zIndex: 10 }}>
-             <RoomCameraGrid participants={participants} isCompact={true} />
-           </View>
         )}
 
         {/* Screen / File Share Panel — fills available space */}
@@ -273,6 +266,13 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
               onRemoveFile={handleRemoveFile}
             />
           </View>
+        )}
+
+        {/* Camera Grid (Compact PIP if screen is also active) */}
+        {viewToggles.cameras && viewToggles.screen && (
+           <View style={[styles.floatingCamera, { top: insets.top + 80 }]}>
+             <RoomCameraGrid participants={participants} isCompact={true} />
+           </View>
         )}
 
         {/* Camera Grid Panel (Full Screen) — when only cameras are active */}
@@ -348,4 +348,10 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
+  floatingCamera: {
+    position: 'absolute',
+    left: spacing.sm,
+    right: spacing.sm,
+    zIndex: 50,
+  }
 });
