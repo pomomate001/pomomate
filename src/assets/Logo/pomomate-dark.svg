@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="800" height="240">
+  <!-- Dış Beyaz Çerçeve -->
+  <rect x="2" y="2" width="396" height="116" rx="24" fill="#ffffff" stroke="#f0f0f0" stroke-width="2"/>
+  
+  <!-- Kırmızı İkon Arka Planı -->
+  <rect x="20" y="20" width="80" height="80" rx="20" fill="#ef4435"/>
+  
+  <!-- Sol Göz -->
+  <circle cx="44" cy="44" r="9" fill="#ffffff"/>
+  
+  <!-- Sağ Göz -->
+  <circle cx="76" cy="44" r="9" fill="#ffffff"/>
+  
+  <!-- Gülümseme (Yarım Daire) -->
+  <path d="M 32 58 A 28 28 0 0 0 88 58 Z" fill="#ffffff"/>
+  
+  <!-- Oynat (Play) Butonu -->
+  <polygon points="63,58 63,80 82,69" fill="#ef4435"/>
+  
+  <!-- Marka Metni -->
+  <text x="120" y="76" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="44" font-weight="600" fill="#1a1a1a">PomoMate</text>
+</svg>

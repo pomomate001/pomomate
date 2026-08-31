@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BottomSheet } from '../../components/BottomSheet';
+import { PomoMateIcon } from '../../components/logo';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
@@ -53,14 +54,7 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
       <View style={styles.container}>
         {/* App Logo & Header */}
         <View style={styles.header}>
-          <LinearGradient
-            colors={[colors.primary, colors.primaryDark || colors.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.logoWrap}
-          >
-            <Ionicons name="timer" size={40} color={colors.textInverse} />
-          </LinearGradient>
+          <PomoMateIcon size={72} />
 
           <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.sm }]}>
             PomoMate

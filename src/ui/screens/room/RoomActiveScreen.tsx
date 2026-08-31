@@ -370,6 +370,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         onToggleScreen={handleToggleScreen}
         onShare={handleShare}
         onLeave={onLeave}
+        onPickFile={handlePickFile}
       />
     </BackgroundEffect>
   );

@@ -50,9 +50,8 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
       scale.value = savedScale.value * e.scale;
     })
     .onEnd(() => {
-      // For simplicity, reset scale to 1 on end, or you can keep the scale
-      scale.value = withSpring(1);
-      savedScale.value = 1;
+      // Keep the zoomed scale
+      savedScale.value = scale.value;
     });
 
   const animatedImageStyle = useAnimatedStyle(() => {

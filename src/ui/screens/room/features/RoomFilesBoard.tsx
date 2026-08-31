@@ -7,7 +7,7 @@ import { spacing } from '../../../theme/spacing';
 import { radius } from '../../../theme/radius';
 import { useRoomStore } from '../../../../state';
 
-export function RoomFilesBoard({ isHost }: { isHost: boolean }) {
+export function RoomFilesBoard({ isHost, onPickFile }: { isHost: boolean; onPickFile: () => void }) {
   const colors = useColors();
   const sharedFiles = useRoomStore((s: any) => s.sharedFiles);
   const activeSharedFileId = useRoomStore((s: any) => s.activeSharedFileId);
@@ -15,69 +15,79 @@ export function RoomFilesBoard({ isHost }: { isHost: boolean }) {
   const removeSharedFile = useRoomStore((s: any) => s.removeSharedFile);
   const roomSettings = useRoomStore((s: any) => s.roomSettings);
   
-  if (sharedFiles.length === 0) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Ionicons name="folder-open-outline" size={48} color={colors.textDisabled} />
-        <Text style={[typography.body, { color: colors.textDisabled, marginTop: spacing.md, textAlign: 'center' }]}>
-          Henüz paylaşılan bir dosya yok.
-        </Text>
-      </View>
-    );
-  }
+  const canUpload = isHost || roomSettings.allowFiles;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {sharedFiles.map((file: any) => {
-        const isActive = file.id === activeSharedFileId;
-        const isImage = file.fileType.startsWith('image');
-        
-        return (
-          <Pressable 
-            key={file.id}
-            style={[
-              styles.fileCard, 
-              { 
-                backgroundColor: colors.surfaceVariant,
-                borderColor: isActive ? colors.primary : 'transparent',
-                borderWidth: 2,
-              }
-            ]}
-            onPress={() => setActiveSharedFileId(file.id)}
-          >
-            <View style={styles.previewContainer}>
-              {isImage ? (
-                <Image source={{ uri: file.uri }} style={styles.previewImage} />
-              ) : (
-                <Ionicons name="document-text" size={32} color={colors.textSecondary} />
-              )}
-            </View>
-            <View style={styles.infoContainer}>
-              <Text style={[typography.captionBold, { color: colors.textPrimary }]} numberOfLines={1}>
-                {file.fileName}
-              </Text>
-            </View>
+    <View style={styles.container}>
+      {sharedFiles.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="folder-open-outline" size={48} color={colors.textDisabled} />
+          <Text style={[typography.body, { color: colors.textDisabled, marginTop: spacing.md, textAlign: 'center' }]}>
+            Henüz paylaşılan bir dosya yok.
+          </Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+          {sharedFiles.map((file: any) => {
+            const isActive = file.id === activeSharedFileId;
+            const isImage = file.fileType.startsWith('image');
             
-            {/* Delete button logic: Admin can delete any file, others can delete if they have files permission (or we can just restrict to host) */}
-            {(isHost || roomSettings.allowFiles) && (
-              <Pressable
-                style={styles.deleteBtn}
-                onPress={() => removeSharedFile(file.id)}
-                hitSlop={12}
+            return (
+              <Pressable 
+                key={file.id}
+                style={[
+                  styles.fileCard, 
+                  { 
+                    backgroundColor: colors.surfaceVariant,
+                    borderColor: isActive ? colors.primary : 'transparent',
+                    borderWidth: 2,
+                  }
+                ]}
+                onPress={() => setActiveSharedFileId(file.id)}
               >
-                <Ionicons name="trash-outline" size={16} color={colors.error} />
+                <View style={styles.previewContainer}>
+                  {isImage ? (
+                    <Image source={{ uri: file.uri }} style={styles.previewImage} />
+                  ) : (
+                    <Ionicons name="document-text" size={32} color={colors.textSecondary} />
+                  )}
+                </View>
+                <View style={styles.infoContainer}>
+                  <Text style={[typography.captionBold, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {file.fileName}
+                  </Text>
+                </View>
+                
+                {(isHost || roomSettings.allowFiles) && (
+                  <Pressable
+                    style={styles.deleteBtn}
+                    onPress={() => removeSharedFile(file.id)}
+                    hitSlop={12}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={colors.error} />
+                  </Pressable>
+                )}
+                
+                {isActive && (
+                  <View style={[styles.activeBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={{ fontSize: 9, color: '#FFF', fontWeight: 'bold' }}>AÇIK</Text>
+                  </View>
+                )}
               </Pressable>
-            )}
-            
-            {isActive && (
-              <View style={[styles.activeBadge, { backgroundColor: colors.primary }]}>
-                <Text style={{ fontSize: 9, color: '#FFF', fontWeight: 'bold' }}>AÇIK</Text>
-              </View>
-            )}
-          </Pressable>
-        );
-      })}
-    </ScrollView>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      {canUpload && (
+        <Pressable
+          style={[styles.fab, { backgroundColor: colors.primary }]}
+          onPress={onPickFile}
+        >
+          <Ionicons name="add" size={28} color="#FFF" />
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -135,5 +145,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   }
 });

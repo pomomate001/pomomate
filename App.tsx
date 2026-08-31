@@ -13,6 +13,14 @@ import { adMobService, revenueCatService } from './src/services/monetization';
 import { authService } from './src/services/auth';
 import { useTimerStore, useUserStore, useSettingsStore, useTaskStore } from './src/state';
 import * as WebBrowser from 'expo-web-browser';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Keep the splash screen visible while services and auth initialize
+SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({
+  duration: 400,
+  fade: true,
+});
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -100,13 +108,19 @@ export default function App() {
 
     let urlSub: { remove: () => void } | null = null;
     
-    // Patch init to capture urlSub
+    // Patch init to capture urlSub and hide splash screen when ready
     const startInit = async () => {
-      urlSub = await init();
+      try {
+        urlSub = await init();
+      } catch (err) {
+        console.warn('Initialization error:', err);
+      } finally {
+        await SplashScreen.hideAsync();
+      }
     };
     
     startInit();
-    
+
     return () => {
       if (urlSub) urlSub.remove();
     };

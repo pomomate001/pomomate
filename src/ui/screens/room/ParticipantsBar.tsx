@@ -19,7 +19,7 @@ interface ParticipantsBarProps {
   maxDisplay?: number;
 }
 
-export function ParticipantsBar({ participants, maxDisplay = 8 }: ParticipantsBarProps) {
+export function ParticipantsBar({ participants, maxDisplay = 6 }: ParticipantsBarProps) {
   const colors = useColors();
   const visible = participants.slice(0, maxDisplay);
   const overflow = participants.length - maxDisplay;

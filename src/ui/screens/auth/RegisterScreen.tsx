@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Input, Button } from '../../components';
+import { Input, Button, PomoMateIcon } from '../../components';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -110,9 +110,7 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <View style={[styles.iconContainer, { backgroundColor: colors.surfaceVariant }]}>
-              <Ionicons name="person-add" size={32} color={colors.primary} />
-            </View>
+            <PomoMateIcon size={64} />
             <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>Yeni Hesap</Text>
             <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}> 
               PomoMate&apos;e katıl ve odaklanmaya başla.

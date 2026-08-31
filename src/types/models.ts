@@ -37,7 +37,7 @@ export interface User {
 /* -------------------------------------------------------------------------- */
 
 /** Hard cap on room capacity as defined by the master architecture. */
-export const MAX_ROOM_MEMBERS = 8 as const;
+export const MAX_ROOM_MEMBERS = 6 as const;
 
 export interface Room {
   id: ID;

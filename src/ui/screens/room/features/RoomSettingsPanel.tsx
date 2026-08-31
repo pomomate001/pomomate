@@ -75,6 +75,23 @@ export function RoomSettingsPanel() {
           trackColor={{ false: colors.border, true: colors.primary }}
         />
       </View>
+
+      <View style={styles.settingRow}>
+        <View style={styles.settingInfo}>
+          <View style={[styles.iconBox, { backgroundColor: colors.surfaceVariant }]}>
+            <Ionicons name="chatbubbles" size={20} color={colors.primary} />
+          </View>
+          <View>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>Sohbet Erişimi</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>Katılımcılar yazılı sohbet edebilsin</Text>
+          </View>
+        </View>
+        <Switch
+          value={roomSettings.allowChat}
+          onValueChange={() => toggleSetting('allowChat')}
+          trackColor={{ false: colors.border, true: colors.primary }}
+        />
+      </View>
     </View>
   );
 }

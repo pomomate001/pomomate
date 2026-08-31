@@ -11,3 +11,5 @@ export { Divider } from './Divider';
 export { SectionHeader } from './SectionHeader';
 export { ProgressBar } from './ProgressBar';
 export { BottomSheet } from './BottomSheet';
+export * from './logo';
+

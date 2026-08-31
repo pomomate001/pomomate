@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Input, Button } from '../../components';
+import { Input, Button, PomoMateIcon } from '../../components';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -68,9 +68,7 @@ export function ForgotPasswordScreen({ onGoBack }: ForgotPasswordScreenProps) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <View style={[styles.iconContainer, { backgroundColor: colors.surfaceVariant }]}>
-              <Ionicons name="lock-open" size={36} color={colors.primary} />
-            </View>
+            <PomoMateIcon size={64} />
             <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>Şifreni Sıfırla</Text>
             <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, textAlign: 'center' }]}> 
               E-posta adresini gir, sana şifre sıfırlama bağlantısı gönderelim.

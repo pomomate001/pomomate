@@ -17,6 +17,7 @@ export interface RoomSettings {
   allowCamera: boolean;
   allowMic: boolean;
   allowFiles: boolean;
+  allowChat: boolean;
 }
 
 export interface SharedFile {
@@ -68,7 +69,7 @@ export const useRoomStore = create<RoomStore>((set) => ({
   isJoining: false,
   error: null,
   viewToggles: { timer: true, screen: false, cameras: false },
-  roomSettings: { allowCamera: true, allowMic: true, allowFiles: true },
+  roomSettings: { allowCamera: true, allowMic: true, allowFiles: true, allowChat: true },
   sharedFiles: [],
   activeSharedFileId: null,
 
@@ -164,7 +165,7 @@ export const useRoomStore = create<RoomStore>((set) => ({
           isJoining: false,
           error: null,
           viewToggles: { timer: true, screen: false, cameras: false },
-          roomSettings: { allowCamera: true, allowMic: true, allowFiles: true },
+          roomSettings: { allowCamera: true, allowMic: true, allowFiles: true, allowChat: true },
           sharedFiles: [],
           activeSharedFileId: null,
         };
@@ -175,7 +176,7 @@ export const useRoomStore = create<RoomStore>((set) => ({
         isJoining: false,
         error: null,
         viewToggles: { timer: true, screen: false, cameras: false },
-        roomSettings: { allowCamera: true, allowMic: true, allowFiles: true },
+        roomSettings: { allowCamera: true, allowMic: true, allowFiles: true, allowChat: true },
         sharedFiles: [],
         activeSharedFileId: null,
       };

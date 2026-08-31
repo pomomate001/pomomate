@@ -4,7 +4,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useChatStore, useUserStore } from '../../../../state';
+import { useChatStore, useUserStore, useRoomStore } from '../../../../state';
 import { useColors } from '../../../theme';
 import { typography } from '../../../theme/typography';
 import { spacing } from '../../../theme/spacing';
@@ -15,13 +15,15 @@ import type { Message } from '../../../../types';
 
 interface RoomChatProps {
   roomId: string;
+  isHost: boolean;
 }
 
-export function RoomChat({ roomId }: RoomChatProps) {
+export function RoomChat({ roomId, isHost }: RoomChatProps) {
   const allMessages = useChatStore((s) => s.messages);
   const addMessage = useChatStore((s) => s.addMessage);
   const deleteMessage = useChatStore((s) => s.deleteMessage);
   const user = useUserStore((s) => s.user);
+  const roomSettings = useRoomStore((s) => s.roomSettings);
   const [text, setText] = useState('');
   const listRef = useRef<FlatList<Message>>(null);
   const colors = useColors();
@@ -188,28 +190,30 @@ export function RoomChat({ roomId }: RoomChatProps) {
         }
       />
 
-      {/* Input bar */}
+      {/* Input Area */}
       <View style={[styles.inputRow, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="Bir mesaj yazın…"
-          placeholderTextColor={colors.textDisabled}
-          onSubmitEditing={handleSend}
-          returnKeyType="send"
           style={[
-            typography.body,
             styles.input,
             { color: colors.textPrimary, backgroundColor: colors.surfaceVariant },
+            (!isHost && !roomSettings.allowChat) && { opacity: 0.5 }
           ]}
+          placeholder={(!isHost && !roomSettings.allowChat) ? "Sohbet yönetici tarafından kapatıldı" : "Mesaj yaz..."}
+          placeholderTextColor={colors.textSecondary}
+          value={text}
+          onChangeText={setText}
+          onSubmitEditing={handleSend}
+          returnKeyType="send"
+          editable={isHost || roomSettings.allowChat}
         />
         <Pressable
-          onPress={handleSend}
-          disabled={!text.trim()}
           style={[
-            styles.sendBtn,
-            { backgroundColor: text.trim() ? colors.primary : colors.surfaceVariant },
+            styles.sendBtn, 
+            { backgroundColor: text.trim() && (isHost || roomSettings.allowChat) ? colors.primary : colors.surfaceVariant },
+            (!isHost && !roomSettings.allowChat) && { opacity: 0.5 }
           ]}
+          onPress={handleSend}
+          disabled={!text.trim() || (!isHost && !roomSettings.allowChat)}
         >
           <Ionicons
             name="send"
