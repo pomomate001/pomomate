@@ -62,6 +62,14 @@ export const backgroundEffects: BackgroundEffectDef[] = [
     icon: 'image',
     description: 'Sıcak atmosferli piksel sanat duvar kağıdı',
   },
+  {
+    id: 'image_winter_village',
+    label: 'Karlı Dağ Kulübesi',
+    category: 'image',
+    free: true,
+    icon: 'image',
+    description: 'Huzurlu karlı dağ ve kulübe manzarası',
+  },
 
   // Parçacık Efektleri
   {

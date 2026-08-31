@@ -132,6 +132,9 @@ export function BackgroundEffect({ effectId, children }: BackgroundEffectProps) 
       {effectId === 'image_pixel_art' && (
         <ImageBackgroundView source={require('../../assets/picture/pixel_art.jpg')} />
       )}
+      {effectId === 'image_winter_village' && (
+        <ImageBackgroundView source={require('../../assets/picture/winter_village.jpg')} />
+      )}
 
       {/* Particle Overlay Effects */}
       {effectId === 'particles' && <ParticlesEffect />}
