@@ -162,13 +162,21 @@ CREATE POLICY "Participants can send emojis" ON buddy_emojis
     )
   );
 
+-- Helper function to avoid RLS infinite recursion when looking up country code
+CREATE OR REPLACE FUNCTION public.get_my_country_code()
+RETURNS TEXT
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT country_code FROM public.users WHERE id = auth.uid();
+$$;
+
 -- Users: allow same-country users to see basic profile for discovery
 CREATE POLICY "Same country users can view basic profile" ON users
   FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM users me
-      WHERE me.id = auth.uid()
-        AND me.country_code = users.country_code
-        AND me.country_code IS NOT NULL
-    )
+    country_code IS NOT NULL 
+    AND country_code = public.get_my_country_code()
   );
+
