@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Share, Alert } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, Share, Alert, AppState, Platform, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ import { RoomBottomBar } from './RoomBottomBar';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
 import { useRoomStore, useSettingsStore, useUserStore, useTaskStore } from '../../../state';
 import { mediaService } from '../../../services/mobile/media/MediaService';
+import { pipService } from '../../../services/mobile/pip/PiPService';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
 import { useTranslation } from '../../../i18n';
@@ -34,6 +35,31 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [showAddTask, setShowAddTask] = useState(false);
   const [isScreenShrunk, setIsScreenShrunk] = useState(false);
+  const [isInPiP, setIsInPiP] = useState(false);
+  const [pipSupported, setPipSupported] = useState(false);
+
+  // Check PiP support on mount
+  useEffect(() => {
+    pipService.isPiPSupported().then(setPipSupported);
+  }, []);
+
+  // Detect PiP mode changes via AppState
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = AppState.addEventListener('change', async () => {
+      const inPiP = await pipService.isInPiPMode();
+      setIsInPiP(inPiP);
+    });
+    return () => sub.remove();
+  }, []);
+
+  const handleEnterPiP = useCallback(async () => {
+    if (!pipSupported) {
+      Alert.alert('Desteklenmiyor', 'Cihazınız mini mod (PiP) özelliğini desteklemiyor.');
+      return;
+    }
+    await pipService.enterPiP();
+  }, [pipSupported]);
 
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -259,6 +285,35 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const activeSharedFile = sharedFiles.find(f => f.id === activeSharedFileId) || null;
 
+  /* ─── PiP Compact View ─── */
+  if (isInPiP) {
+    return (
+      <View style={styles.pipContainer}>
+        <Text style={styles.pipLabel}>PomoMate</Text>
+        <View style={styles.pipControls}>
+          <Pressable
+            style={[styles.pipButton, micOn && styles.pipButtonActive]}
+            onPress={handleToggleMic}
+          >
+            <Ionicons name={micOn ? 'mic' : 'mic-off'} size={20} color="#FFF" />
+          </Pressable>
+          <Pressable
+            style={[styles.pipButton, camOn && styles.pipButtonActive]}
+            onPress={handleToggleCam}
+          >
+            <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={20} color="#FFF" />
+          </Pressable>
+          <Pressable
+            style={[styles.pipButton, screenShareOn && { backgroundColor: '#ef4435' }]}
+            onPress={handleToggleScreen}
+          >
+            <Ionicons name={screenShareOn ? 'stop-circle' : 'desktop-outline'} size={20} color="#FFF" />
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <BackgroundEffect effectId={backgroundEffectId}>
       {/* Task Creation Sheet for Room */}
@@ -359,6 +414,17 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         onToggleShrink={() => setIsScreenShrunk(!isScreenShrunk)}
       />
 
+      {/* ─── Mini Mod (PiP) Floating Button — only when screen sharing ─── */}
+      {screenShareOn && pipSupported && (
+        <Pressable
+          style={styles.miniModButton}
+          onPress={handleEnterPiP}
+        >
+          <Ionicons name="contract-outline" size={18} color="#FFF" />
+          <Text style={styles.miniModText}>Mini Mod</Text>
+        </Pressable>
+      )}
+
       {/* ─── Collapsible Bottom Bar with Chat ─── */}
       <RoomBottomBar
         roomId={roomId}
@@ -409,5 +475,55 @@ const styles = StyleSheet.create({
     left: spacing.sm,
     right: spacing.sm,
     zIndex: 50,
-  }
+  },
+  /* ─── PiP compact view styles ─── */
+  pipContainer: {
+    flex: 1,
+    backgroundColor: '#1a1a2e',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  pipLabel: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 8,
+    opacity: 0.7,
+  },
+  pipControls: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  pipButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pipButtonActive: {
+    backgroundColor: '#22c55e',
+  },
+  /* ─── Mini Mod floating button ─── */
+  miniModButton: {
+    position: 'absolute',
+    left: 16,
+    top: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 100,
+  },
+  miniModText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
 });
+
