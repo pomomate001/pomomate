@@ -56,18 +56,10 @@ export const FocusAnimation: React.FC<FocusAnimationProps> = ({
       );
 
     case 'cat_table_right':
+    case 'cat_table_left': // Safe fallback for existing user state
       return (
         <SvgWebAnimation
           svgContent={getSleepingCatSvg('transparent')}
-          size={size}
-          backgroundColor="transparent"
-        />
-      );
-
-    case 'cat_table_left':
-      return (
-        <SvgWebAnimation
-          svgContent={getWalkingCatSvg('transparent')}
           size={size}
           backgroundColor="transparent"
         />

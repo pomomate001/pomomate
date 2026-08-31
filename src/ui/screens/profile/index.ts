@@ -5,3 +5,5 @@ export { SoundSettings } from './SoundSettings';
 export { PremiumReferralCard } from './PremiumReferralCard';
 export { AvatarPicker } from './AvatarPicker';
 export { PremiumPaywallSheet } from './PremiumPaywallSheet';
+export { AboutSheet } from './AboutSheet';
+export { AppearanceOptionCard } from './AppearanceOptionCard';

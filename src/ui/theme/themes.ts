@@ -62,6 +62,7 @@ export interface AppTheme {
   dark: boolean;
   colors: ThemeColors;
   isPremium?: boolean;
+  description?: string;
 }
 
 /* ─── built-in themes ─── */
@@ -146,13 +147,15 @@ export const lightTheme: AppTheme = {
   label: 'Açık',
   dark: false,
   colors: lightColors,
+  description: 'Aydınlık ve ferah görünüm',
 };
 
 export const darkTheme: AppTheme = {
   id: 'dark',
-  label: 'Koyu',
+  label: 'Koyu Gece',
   dark: true,
   colors: darkColors,
+  description: 'Göz yormayan gece modu',
 };
 
 const oceanColors: ThemeColors = {
@@ -176,6 +179,7 @@ export const oceanTheme: AppTheme = {
   label: 'Okyanus',
   dark: false,
   colors: oceanColors,
+  description: 'Ferahlatıcı mavi ve turkuaz tonları',
 };
 
 const sunsetColors: ThemeColors = {
@@ -200,6 +204,7 @@ export const sunsetTheme: AppTheme = {
   label: 'Gün Batımı',
   dark: false,
   colors: sunsetColors,
+  description: 'Sıcak turuncu ve amber tonları',
 };
 
 const roseColors: ThemeColors = {
@@ -220,9 +225,10 @@ const roseColors: ThemeColors = {
 
 export const roseTheme: AppTheme = {
   id: 'rose',
-  label: 'Gül',
+  label: 'Gül Bahçesi',
   dark: false,
   colors: roseColors,
+  description: 'Pastel pembe ve tatlı tonlar',
 };
 
 const darkRoseColors: ThemeColors = {
@@ -269,6 +275,7 @@ export const darkRoseTheme: AppTheme = {
   label: 'Gece Gülü',
   dark: true,
   colors: darkRoseColors,
+  description: 'Koyu zemin üzerinde rose pembe vurgular',
 };
 
 const neonColors: ThemeColors = {
@@ -290,10 +297,11 @@ const neonColors: ThemeColors = {
 
 export const neonTheme: AppTheme = {
   id: 'neon',
-  label: 'Neon',
+  label: 'Neon Cyber',
   dark: true,
   colors: neonColors,
   isPremium: true,
+  description: 'Derin siyah ve elektrik neon ışıkları',
 };
 
 /**

@@ -12,6 +12,7 @@ import { AvatarPicker } from './AvatarPicker';
 import { PremiumReferralCard } from './PremiumReferralCard';
 import { PremiumPaywallSheet } from './PremiumPaywallSheet';
 import { ReferralSheet } from './ReferralSheet';
+import { AboutSheet } from './AboutSheet';
 import * as ImagePicker from 'expo-image-picker';
 import { AdPlacement } from '../../ads';
 
@@ -54,6 +55,7 @@ export function ProfileScreen({
   const updateUser = useUserStore((s) => s.updateUser);
   const [showPaywall, setShowPaywall] = React.useState(false);
   const [showReferral, setShowReferral] = React.useState(false);
+  const [showAbout, setShowAbout] = React.useState(false);
 
   const handlePickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -112,7 +114,7 @@ export function ProfileScreen({
             <SettingRow icon="timer-outline" label="Çalışma / Mola Süreleri" onPress={onNavigateTimer} />
             <SettingRow icon="volume-high-outline" label="Sesler ve Bildirimler" onPress={onNavigateSounds} />
             <SettingRow icon="shield-checkmark-outline" label="Gizlilik ve Veriler" onPress={() => alert('PomoMate verilerinizi yerel ve güvenli Supabase veritabanında saklar.')} />
-            <SettingRow icon="information-circle-outline" label="Hakkında" onPress={() => alert('PomoMate v1.0.0 — Birlikte Çalış')} hideBorder />
+            <SettingRow icon="information-circle-outline" label="Hakkında" onPress={() => setShowAbout(true)} hideBorder />
           </View>
 
           {/* Sign out */}
@@ -143,6 +145,11 @@ export function ProfileScreen({
       <ReferralSheet
         visible={showReferral}
         onClose={() => setShowReferral(false)}
+      />
+
+      <AboutSheet
+        visible={showAbout}
+        onClose={() => setShowAbout(false)}
       />
     </>
   );

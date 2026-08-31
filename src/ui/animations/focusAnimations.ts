@@ -4,56 +4,56 @@ export interface FocusAnimationMeta {
   icon: string;
   free: boolean;
   type: 'svg' | 'lottie' | 'image';
+  description?: string;
 }
 
 export const focusAnimations: FocusAnimationMeta[] = [
   {
     id: 'none',
-    label: '🚫 Yok (Sadece Arka Plan)',
+    label: 'Animasyonsuz',
     icon: 'close-circle',
     free: true,
     type: 'svg',
+    description: 'Sadece sayaç ve arka plan',
   },
   {
     id: 'cat_tail',
-    label: '🐱 Uyanık Kedi',
+    label: 'Neşeli Kedi',
     icon: 'paw',
     free: true,
     type: 'lottie',
+    description: 'Kuyruk sallayan sevimli kedi',
   },
   {
     id: 'cat_table_right',
-    label: '😴 Uyuyan Kedi (Sağ)',
+    label: 'Huzurlu Kedi',
     icon: 'cafe',
     free: true,
     type: 'svg',
-  },
-  {
-    id: 'cat_table_left',
-    label: '😴 Uyuyan Kedi (Sol)',
-    icon: 'laptop',
-    free: true,
-    type: 'svg',
+    description: 'Masa başında uyuyan kedi',
   },
   {
     id: 'campfire_svg',
-    label: '🔥 Kamp Ateşi (SVG)',
+    label: 'Alev Dansı',
     icon: 'flame',
     free: true,
     type: 'svg',
+    description: 'Zarif dans eden kamp ateşi',
   },
   {
     id: 'campfire_lottie',
-    label: '⛺ Kamp & Ateş',
+    label: 'Gece Kampı',
     icon: 'bonfire',
     free: true,
     type: 'lottie',
+    description: 'Doğada yanan kamp ateşi',
   },
   {
     id: 'camping_marshmallow',
-    label: '🍢 Çadır & Marshmallow',
+    label: 'Kamp & Keyif',
     icon: 'trail-sign',
     free: true,
     type: 'lottie',
+    description: 'Çadır ve közde marshmallow',
   },
 ];

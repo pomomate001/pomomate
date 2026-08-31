@@ -10,12 +10,13 @@ export interface TimerDesignDef {
   label: string;
   /** Whether this design is available for free users. */
   free: boolean;
+  description?: string;
 }
 
 export const timerDesigns: TimerDesignDef[] = [
-  { id: 'minimal', label: 'Minimal', free: true },
-  { id: 'circle', label: 'Daire', free: true },
-  { id: 'digital', label: 'Dijital', free: true },
-  { id: 'arc', label: 'Yay', free: false },
-  { id: 'neon', label: 'Neon', free: false },
+  { id: 'minimal', label: 'Minimalist', free: true, description: 'Yalnızca süreye odaklanan sade görünüm' },
+  { id: 'circle', label: 'Klasik Daire', free: true, description: 'Tam dairesel dolum çemberi' },
+  { id: 'digital', label: 'Modern Dijital', free: true, description: 'LED dijital saat göstergesi' },
+  { id: 'arc', label: 'Kavisli Yay', free: false, description: 'Modern kavisli sayaç yayı' },
+  { id: 'neon', label: 'Neon Parıltı', free: false, description: 'Işıltılı çift halka neon gösterge' },
 ];

@@ -20,16 +20,17 @@ export const backgroundEffects: BackgroundEffectDef[] = [
   // Standart / Efekt Yok
   {
     id: 'none',
-    label: 'Yok',
+    label: 'Sade',
     category: 'none',
     free: true,
     icon: 'close-circle',
+    description: 'Düz ve dikkat dağıtmayan arka plan',
   },
 
   // Canlı Video Arka Planlar (AI Video Loops)
   {
     id: 'video_windmill',
-    label: '🌾 Yel Değirmeni (Canlı)',
+    label: 'Rüzgar Değirmeni',
     category: 'video',
     free: true,
     icon: 'videocam',
@@ -37,7 +38,7 @@ export const backgroundEffects: BackgroundEffectDef[] = [
   },
   {
     id: 'video_sky',
-    label: '☁️ Bulutlu Gökyüzü (Canlı)',
+    label: 'Süzülen Bulutlar',
     category: 'video',
     free: true,
     icon: 'videocam',
@@ -45,50 +46,54 @@ export const backgroundEffects: BackgroundEffectDef[] = [
   },
   {
     id: 'video_rain',
-    label: '🌧️ Yağmurlu Doğa (Canlı)',
+    label: 'Dingin Yağmur',
     category: 'video',
     free: true,
     icon: 'videocam',
-    description: 'Sakinleştirici yağmur manzarası',
+    description: 'Sakinleştirici doğa ve yağmur manzarası',
   },
 
   // Statik Görsel Arka Planlar
   {
     id: 'image_pixel_art',
-    label: '🎨 Pixel Art Manzara',
+    label: 'Retro Piksel Manzara',
     category: 'image',
     free: true,
     icon: 'image',
-    description: 'Retro pixel art duvar kağıdı',
+    description: 'Sıcak atmosferli piksel sanat duvar kağıdı',
   },
 
   // Parçacık Efektleri
   {
     id: 'particles',
-    label: '✨ Parçacıklar',
+    label: 'Işıltılı Parçacıklar',
     category: 'particle',
     free: true,
     icon: 'sparkles',
+    description: 'Yavaşça süzülen parıltılı ışık tozları',
   },
   {
     id: 'rain',
-    label: '💧 Yağmur Efekti',
+    label: 'Yağmur Damlaları',
     category: 'particle',
     free: false,
     icon: 'rainy',
+    description: 'Ekrana hafifçe düşen yağmur damlaları',
   },
   {
     id: 'snow',
-    label: '❄️ Kar Efekti',
+    label: 'Kar Yağışı',
     category: 'particle',
     free: false,
     icon: 'snow',
+    description: 'Huzur veren nazik kar taneleri',
   },
   {
     id: 'bubbles',
-    label: '🫧 Baloncuklar',
+    label: 'Uçuşan Baloncuklar',
     category: 'particle',
     free: false,
     icon: 'water',
+    description: 'Yukarı doğru süzülen şeffaf baloncuklar',
   },
 ];

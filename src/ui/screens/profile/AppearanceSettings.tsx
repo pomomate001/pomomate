@@ -1,18 +1,36 @@
 /**
- * Appearance settings — theme, timer design, background effect & live video pickers.
+ * Appearance settings — modern card-based theme, timer design,
+ * background effects, live videos and focus animation pickers.
  */
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { useColors, useTheme } from '../../theme';
-import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
-import { radius } from '../../theme/radius';
 import { SectionHeader } from '../../components/SectionHeader';
 import { useSettingsStore } from '../../../state';
 import { timerDesigns } from '../timer/timerDesigns';
 import { backgroundEffects } from '../../animations/backgroundEffects';
 import { focusAnimations } from '../../animations/focusAnimations';
+import { AppearanceOptionCard } from './AppearanceOptionCard';
+import {
+  VideoWindmillPreview,
+  VideoSkyPreview,
+  VideoRainPreview,
+  PixelArtPreview,
+  EffectNonePreview,
+  EffectParticlesPreview,
+  EffectRainPreview,
+  EffectSnowPreview,
+  EffectBubblesPreview,
+  FocusNonePreview,
+  FocusCatTailPreview,
+  FocusCatTableRightPreview,
+  FocusCampfireSvgPreview,
+  FocusCampfireLottiePreview,
+  FocusCampingMarshmallowPreview,
+  ThemeMockupPreview,
+  TimerDesignPreview,
+} from './AppearancePreviews';
 
 export function AppearanceSettings() {
   const colors = useColors();
@@ -41,255 +59,163 @@ export function AppearanceSettings() {
     (e) => e.category === 'particle' || e.category === 'none'
   );
 
+  const renderBackgroundPreview = (id: string) => {
+    switch (id) {
+      case 'video_windmill':
+        return <VideoWindmillPreview />;
+      case 'video_sky':
+        return <VideoSkyPreview />;
+      case 'video_rain':
+        return <VideoRainPreview />;
+      case 'image_pixel_art':
+        return <PixelArtPreview />;
+      case 'particles':
+        return <EffectParticlesPreview />;
+      case 'rain':
+        return <EffectRainPreview />;
+      case 'snow':
+        return <EffectSnowPreview />;
+      case 'bubbles':
+        return <EffectBubblesPreview />;
+      case 'none':
+      default:
+        return <EffectNonePreview />;
+    }
+  };
+
+  const renderFocusAnimationPreview = (id: string) => {
+    switch (id) {
+      case 'cat_tail':
+        return <FocusCatTailPreview />;
+      case 'cat_table_right':
+        return <FocusCatTableRightPreview />;
+      case 'campfire_svg':
+        return <FocusCampfireSvgPreview />;
+      case 'campfire_lottie':
+        return <FocusCampfireLottiePreview />;
+      case 'camping_marshmallow':
+        return <FocusCampingMarshmallowPreview />;
+      case 'none':
+      default:
+        return <FocusNonePreview />;
+    }
+  };
+
   return (
-    <ScrollView style={[styles.screen, { backgroundColor: colors.background }]}>
-      {/* Live Video Backgrounds */}
+    <ScrollView
+      style={[styles.screen, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* 1. Live Video Backgrounds */}
       <SectionHeader title="🎥 Canlı Video Arka Planlar" />
-      <View style={styles.optionRow}>
+      <View style={styles.gridContainer}>
         {videoBackgrounds.map((e) => (
-          <Pressable
+          <AppearanceOptionCard
             key={e.id}
+            title={e.label}
+            subtitle={e.description}
+            isSelected={backgroundEffectId === e.id}
+            isPremium={!e.free}
             onPress={() => setBackgroundEffectId(e.id)}
-            style={[
-              styles.optionChip,
-              {
-                backgroundColor:
-                  backgroundEffectId === e.id ? colors.primary : colors.surfaceVariant,
-                borderColor:
-                  backgroundEffectId === e.id ? colors.primary : colors.border,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                typography.captionBold,
-                {
-                  color:
-                    backgroundEffectId === e.id ? colors.textInverse : colors.textPrimary,
-                },
-              ]}
-            >
-              {e.label}
-            </Text>
-            {!e.free && (
-              <Ionicons
-                name="star"
-                size={10}
-                color={colors.warning}
-                style={{ marginLeft: 4 }}
-              />
-            )}
-          </Pressable>
+            renderPreview={() => renderBackgroundPreview(e.id)}
+          />
         ))}
       </View>
 
-      {/* Static Image Wallpapers */}
-      <SectionHeader title="🖼️ Statik Arka Plan Görselleri" />
-      <View style={styles.optionRow}>
+      {/* 2. Static Image Wallpapers */}
+      <SectionHeader title="🖼️ Duvar Kağıtları" />
+      <View style={styles.gridContainer}>
         {imageBackgrounds.map((e) => (
-          <Pressable
+          <AppearanceOptionCard
             key={e.id}
+            title={e.label}
+            subtitle={e.description}
+            isSelected={backgroundEffectId === e.id}
+            isPremium={!e.free}
             onPress={() => setBackgroundEffectId(e.id)}
-            style={[
-              styles.optionChip,
-              {
-                backgroundColor:
-                  backgroundEffectId === e.id ? colors.primary : colors.surfaceVariant,
-                borderColor:
-                  backgroundEffectId === e.id ? colors.primary : colors.border,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                typography.captionBold,
-                {
-                  color:
-                    backgroundEffectId === e.id ? colors.textInverse : colors.textPrimary,
-                },
-              ]}
-            >
-              {e.label}
-            </Text>
-            {!e.free && (
-              <Ionicons
-                name="star"
-                size={10}
-                color={colors.warning}
-                style={{ marginLeft: 4 }}
-              />
-            )}
-          </Pressable>
+            renderPreview={() => renderBackgroundPreview(e.id)}
+          />
         ))}
       </View>
 
-      {/* Particle & Default Effects */}
-      <SectionHeader title="✨ Parçacık Efektleri & Düz" />
-      <View style={styles.optionRow}>
+      {/* 3. Particle & Ambient Effects */}
+      <SectionHeader title="✨ Atmosfer & Parçacık Efektleri" />
+      <View style={styles.gridContainer}>
         {otherBackgrounds.map((e) => (
-          <Pressable
+          <AppearanceOptionCard
             key={e.id}
+            title={e.label}
+            subtitle={e.description}
+            isSelected={backgroundEffectId === e.id}
+            isPremium={!e.free}
             onPress={() => setBackgroundEffectId(e.id)}
-            style={[
-              styles.optionChip,
-              {
-                backgroundColor:
-                  backgroundEffectId === e.id ? colors.primary : colors.surfaceVariant,
-                borderColor:
-                  backgroundEffectId === e.id ? colors.primary : colors.border,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                typography.captionBold,
-                {
-                  color:
-                    backgroundEffectId === e.id ? colors.textInverse : colors.textPrimary,
-                },
-              ]}
-            >
-              {e.label}
-            </Text>
-            {!e.free && (
-              <Ionicons
-                name="star"
-                size={10}
-                color={colors.warning}
-                style={{ marginLeft: 4 }}
-              />
-            )}
-          </Pressable>
+            renderPreview={() => renderBackgroundPreview(e.id)}
+          />
         ))}
       </View>
 
-      {/* Work Animation */}
-      <SectionHeader title="🐱 Çalışma Zamanı Animasyonu (Ortada 1x1)" />
-      <View style={styles.optionRow}>
+      {/* 4. Focus Animation (Work) */}
+      <SectionHeader title="🐱 Çalışma Zamanı Animasyonu" />
+      <View style={styles.gridContainer}>
         {focusAnimations.map((a) => (
-          <Pressable
+          <AppearanceOptionCard
             key={a.id}
+            title={a.label}
+            subtitle={a.description}
+            isSelected={workAnimationId === a.id}
+            isPremium={!a.free}
             onPress={() => setWorkAnimationId(a.id)}
-            style={[
-              styles.optionChip,
-              {
-                backgroundColor:
-                  workAnimationId === a.id ? colors.primary : colors.surfaceVariant,
-                borderColor: workAnimationId === a.id ? colors.primary : colors.border,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                typography.captionBold,
-                {
-                  color:
-                    workAnimationId === a.id ? colors.textInverse : colors.textPrimary,
-                },
-              ]}
-            >
-              {a.label}
-            </Text>
-          </Pressable>
+            renderPreview={() => renderFocusAnimationPreview(a.id)}
+          />
         ))}
       </View>
 
-      {/* Break Animation */}
-      <SectionHeader title="☕ Mola Zamanı Animasyonu (Ortada 1x1)" />
-      <View style={styles.optionRow}>
+      {/* 5. Focus Animation (Break) */}
+      <SectionHeader title="☕ Mola Zamanı Animasyonu" />
+      <View style={styles.gridContainer}>
         {focusAnimations.map((a) => (
-          <Pressable
+          <AppearanceOptionCard
             key={a.id}
+            title={a.label}
+            subtitle={a.description}
+            isSelected={breakAnimationId === a.id}
+            isPremium={!a.free}
             onPress={() => setBreakAnimationId(a.id)}
-            style={[
-              styles.optionChip,
-              {
-                backgroundColor:
-                  breakAnimationId === a.id ? colors.primary : colors.surfaceVariant,
-                borderColor: breakAnimationId === a.id ? colors.primary : colors.border,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                typography.captionBold,
-                {
-                  color:
-                    breakAnimationId === a.id ? colors.textInverse : colors.textPrimary,
-                },
-              ]}
-            >
-              {a.label}
-            </Text>
-          </Pressable>
+            renderPreview={() => renderFocusAnimationPreview(a.id)}
+          />
         ))}
       </View>
 
-      {/* Theme */}
-      <SectionHeader title="🎨 Tema" />
-      <View style={styles.optionRow}>
+      {/* 6. Theme */}
+      <SectionHeader title="🎨 Renk Temaları" />
+      <View style={styles.gridContainer}>
         {availableThemes.map((t) => (
-          <Pressable
+          <AppearanceOptionCard
             key={t.id}
+            title={t.label}
+            subtitle={t.description}
+            isSelected={themeId === t.id}
+            isPremium={t.isPremium}
             onPress={() => handleTheme(t.id)}
-            style={[
-              styles.optionChip,
-              {
-                backgroundColor: themeId === t.id ? colors.primary : colors.surfaceVariant,
-                borderColor: themeId === t.id ? colors.primary : colors.border,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                typography.captionBold,
-                {
-                  color: themeId === t.id ? colors.textInverse : colors.textPrimary,
-                },
-              ]}
-            >
-              {t.label}
-            </Text>
-          </Pressable>
+            renderPreview={() => <ThemeMockupPreview theme={t} />}
+          />
         ))}
       </View>
 
-      {/* Timer design */}
+      {/* 7. Timer Design */}
       <SectionHeader title="⏱️ Sayaç Tasarımı" />
-      <View style={styles.optionRow}>
+      <View style={styles.gridContainer}>
         {timerDesigns.map((d) => (
-          <Pressable
+          <AppearanceOptionCard
             key={d.id}
+            title={d.label}
+            subtitle={d.description}
+            isSelected={timerDesignId === d.id}
+            isPremium={!d.free}
             onPress={() => setTimerDesignId(d.id)}
-            style={[
-              styles.optionChip,
-              {
-                backgroundColor:
-                  timerDesignId === d.id ? colors.primary : colors.surfaceVariant,
-                borderColor: timerDesignId === d.id ? colors.primary : colors.border,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                typography.captionBold,
-                {
-                  color:
-                    timerDesignId === d.id ? colors.textInverse : colors.textPrimary,
-                },
-              ]}
-            >
-              {d.label}
-            </Text>
-            {!d.free && (
-              <Ionicons
-                name="star"
-                size={10}
-                color={colors.warning}
-                style={{ marginLeft: 4 }}
-              />
-            )}
-          </Pressable>
+            renderPreview={() => <TimerDesignPreview designId={d.id} />}
+          />
         ))}
       </View>
 
@@ -299,20 +225,19 @@ export function AppearanceSettings() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, paddingTop: spacing.lg },
-  optionRow: {
+  screen: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+    marginTop: spacing.xs,
     marginBottom: spacing.xl,
-  },
-  optionChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    borderWidth: 1,
   },
 });
