@@ -17,6 +17,9 @@ import { LanguageSheet } from './LanguageSheet';
 import * as ImagePicker from 'expo-image-picker';
 import { AdPlacement } from '../../ads';
 import { useTranslation } from '../../../i18n';
+import { TagSelectionSheet } from './TagSelectionSheet';
+import { useTagStore } from '../../../state';
+import { tagService } from '../../../services/tags';
 
 interface ProfileScreenProps {
   onNavigateAppearance: () => void;
@@ -60,6 +63,16 @@ export function ProfileScreen({
   const [showReferral, setShowReferral] = React.useState(false);
   const [showAbout, setShowAbout] = React.useState(false);
   const [showLanguage, setShowLanguage] = React.useState(false);
+  const [showTagSelection, setShowTagSelection] = React.useState(false);
+  const userTags = useTagStore((s) => s.userTags);
+
+  // Load user tags
+  React.useEffect(() => {
+    if (user?.id) {
+      tagService.fetchAllTags();
+      tagService.fetchUserTags(user.id);
+    }
+  }, [user?.id]);
 
   const handlePickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -102,6 +115,26 @@ export function ProfileScreen({
             <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>
               {user?.email ?? ''}
             </Text>
+
+            {/* Tags */}
+            {userTags.length > 0 && (
+              <Pressable onPress={() => setShowTagSelection(true)} style={styles.tagsContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {userTags.map((tag) => (
+                    <View key={tag.id} style={[styles.profileTag, { backgroundColor: `${colors.primary}20`, borderColor: `${colors.primary}40` }]}>
+                      {tag.icon && <Text style={{ fontSize: 10, marginRight: 3 }}>{tag.icon}</Text>}
+                      <Text style={[typography.overline, { color: colors.primary, fontSize: 10 }]}>{tag.nameTr}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              </Pressable>
+            )}
+            {userTags.length === 0 && (
+              <Pressable onPress={() => setShowTagSelection(true)} style={[styles.addTagsBtn, { borderColor: colors.primary }]}>
+                <Ionicons name="pricetag-outline" size={14} color={colors.primary} />
+                <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 4 }]}>{t('tags.addTags')}</Text>
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -161,6 +194,11 @@ export function ProfileScreen({
         visible={showLanguage}
         onClose={() => setShowLanguage(false)}
       />
+
+      <TagSelectionSheet
+        visible={showTagSelection}
+        onClose={() => setShowTagSelection(false)}
+      />
     </>
   );
 }
@@ -176,6 +214,29 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     alignItems: 'center',
+  },
+  tagsContainer: {
+    marginTop: spacing.sm,
+    maxWidth: '100%',
+  },
+  profileTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginRight: 6,
+  },
+  addTagsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    marginTop: spacing.sm,
   },
   contentWrap: {
     paddingHorizontal: spacing.lg,

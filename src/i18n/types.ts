@@ -14,6 +14,7 @@ export interface TranslationSchema {
     search: string;
     copied: string;
     back: string;
+    saving: string;
   };
   tabs: {
     timer: string;
@@ -161,6 +162,17 @@ export interface TranslationSchema {
     sendRequestBtn: string;
     noIncomingRequests: string;
     sentRequest: string;
+    sendRequestShort: string;
+    discoverTab: string;
+    blockConfirmTitle: string;
+    blockConfirmMessage: string;
+    block: string;
+    findingPeople: string;
+    noSuggestions: string;
+    refreshSuggestions: string;
+    suggestedCount: string;
+    shuffle: string;
+    matchingTags: string;
   };
   rooms: {
     title: string;
@@ -361,6 +373,32 @@ export interface TranslationSchema {
     insufficientMessage: string;
     shareTitle: string;
     shareMessage: string;
+  };
+  tags: {
+    addTags: string;
+    selectTags: string;
+    save: string;
+    game: string;
+    music: string;
+    language: string;
+    subject: string;
+    tech: string;
+    creative: string;
+    sport: string;
+    entertainment: string;
+    lifestyle: string;
+    hobby: string;
+  };
+  buddy: {
+    inviteFriend: string;
+    activeSession: string;
+    endSession: string;
+    noFriends: string;
+    invite: string;
+    inviteMessage: string;
+    accept: string;
+    decline: string;
+    waiting: string;
   };
 }
 

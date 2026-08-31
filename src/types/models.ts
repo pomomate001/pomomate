@@ -27,6 +27,8 @@ export interface User {
   email: string;
   displayName: string;
   avatarUrl?: string | null;
+  countryCode?: string | null;
+  tags?: Tag[];
   subscriptionTier: SubscriptionTier;
   createdAt: ISODateString;
   updatedAt: ISODateString;
@@ -144,5 +146,62 @@ export interface Referral {
   referrerId: ID;
   referredId: ID;
   status: ReferralStatus;
+  createdAt: ISODateString;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tag                                                                        */
+/* -------------------------------------------------------------------------- */
+
+export type TagCategory = 'language' | 'hobby' | 'game' | 'music' | 'subject' |
+  'lifestyle' | 'tech' | 'creative' | 'sport' | 'entertainment';
+
+export interface Tag {
+  id: ID;
+  slug: string;
+  nameTr: string;
+  nameEn: string;
+  category: TagCategory;
+  icon?: string;
+  sortOrder?: number;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Buddy Session                                                              */
+/* -------------------------------------------------------------------------- */
+
+export type BuddySessionStatus = 'pending' | 'active' | 'ended';
+
+export type BuddyEmojiCode = 'wave' | 'start' | 'hello' | 'break' | 'focus' | 'cheer';
+
+export interface BuddySession {
+  id: ID;
+  hostId: ID;
+  guestId?: ID | null;
+  status: BuddySessionStatus;
+  timerMode: TimerMode;
+  timerRemainingSeconds: number;
+  timerIsRunning: boolean;
+  currentCycle: number;
+  activeTaskTitle?: string | null;
+  createdAt: ISODateString;
+  updatedAt?: ISODateString;
+}
+
+export interface BuddyEmoji {
+  id: ID;
+  sessionId: ID;
+  senderId: ID;
+  emojiCode: BuddyEmojiCode;
+  createdAt: ISODateString;
+}
+
+/* -------------------------------------------------------------------------- */
+/* User Block                                                                 */
+/* -------------------------------------------------------------------------- */
+
+export interface UserBlock {
+  blockerId: ID;
+  blockedId: ID;
   createdAt: ISODateString;
 }

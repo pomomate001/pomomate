@@ -10,3 +10,5 @@ export { useStatsStore } from './statsStore';
 export type { DailyStat, StatsState } from './statsStore';
 export { useFriendsStore } from './friendsStore';
 export type { FriendSummary, FriendRequest, FriendRequestStatus } from './friendsStore';
+export { useTagStore } from './tagStore';
+export { useBuddyStore } from './buddyStore';

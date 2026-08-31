@@ -1,0 +1,1 @@
+export { buddyService } from './BuddyService';

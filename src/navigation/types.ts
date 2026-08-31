@@ -31,6 +31,8 @@ export type ProfileStackParamList = {
   SettingsAppearance: undefined;
   SettingsTimer: undefined;
   SettingsSounds: undefined;
+  TagSelection: undefined;
+  UserProfile: { userId: string };
 };
 
 export type AuthStackParamList = {

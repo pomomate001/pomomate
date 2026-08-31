@@ -21,6 +21,12 @@ import { nowIso } from '../../../utils/datetime';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
 import { TaskItem } from '../tasks/TaskItem';
 import { useTranslation } from '../../../i18n';
+import { useBuddyStore, useUserStore } from '../../../state';
+import { buddyService } from '../../../services/buddy';
+import { BuddyInviteSheet } from './BuddyInviteSheet';
+import { BuddyAvatarBar } from './BuddyAvatarBar';
+import { BuddyInviteNotification } from './BuddyInviteNotification';
+import type { BuddyEmojiCode } from '../../../types';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -43,6 +49,13 @@ export function TimerScreen() {
     next,
     setMode,
   } = useTimerStore();
+
+  const user = useUserStore((s) => s.user);
+  const activeSession = useBuddyStore((s) => s.activeSession);
+  const buddyProfile = useBuddyStore((s) => s.buddyProfile);
+  const myRole = useBuddyStore((s) => s.myRole);
+  const pendingInvite = useBuddyStore((s) => s.pendingInvite);
+  const [showBuddyInvite, setShowBuddyInvite] = useState(false);
 
   const modeLabels: Record<TimerMode, string> = {
     work: t('timer.work'),
@@ -143,6 +156,58 @@ export function TimerScreen() {
     }
   }, [remainingSeconds, isRunning, mode, recordPomodoro, workDuration, t]);
 
+  // Listen for incoming buddy invites
+  useEffect(() => {
+    if (!user?.id) return;
+    buddyService.listenForInvites(user.id, (data) => {
+      useBuddyStore.getState().setPendingInvite({
+        sessionId: data.sessionId,
+        hostProfile: data.hostProfile,
+      });
+    });
+  }, [user?.id]);
+
+  // Sync timer with buddy session (for guest role)
+  useEffect(() => {
+    if (activeSession && myRole === 'guest') {
+      // Guest receives timer updates from host via realtime
+      // No need to manually sync here - BuddyService handles it
+    }
+  }, [activeSession, myRole]);
+
+  const handleSendEmoji = useCallback((code: BuddyEmojiCode) => {
+    if (activeSession && user?.id) {
+      buddyService.sendEmoji(activeSession.id, user.id, code);
+    }
+  }, [activeSession, user?.id]);
+
+  const handleLeaveBuddySession = useCallback(async () => {
+    if (activeSession) {
+      await buddyService.endSession(activeSession.id);
+    }
+  }, [activeSession]);
+
+  const handleAcceptInvite = useCallback(async () => {
+    const invite = useBuddyStore.getState().pendingInvite;
+    if (!invite || !user?.id) return;
+    
+    const session = await buddyService.acceptInvite(invite.sessionId, user.id);
+    if (session) {
+      useBuddyStore.getState().setBuddyProfile(invite.hostProfile);
+      // Subscribe to session
+      buddyService.subscribeToSession(session.id, user.id, {
+        onSessionEnded: () => useBuddyStore.getState().endSession(),
+      });
+    }
+  }, [user?.id]);
+
+  const handleDeclineInvite = useCallback(async () => {
+    const invite = useBuddyStore.getState().pendingInvite;
+    if (invite) {
+      await buddyService.declineInvite(invite.sessionId);
+    }
+  }, []);
+
   const [showAddTask, setShowAddTask] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
 
@@ -206,6 +271,12 @@ export function TimerScreen() {
          {/* Tam ekran arka plan animasyonları buraya */}
       </View>
 
+      {/* Buddy Invite Notification */}
+      <BuddyInviteNotification
+        onAccept={handleAcceptInvite}
+        onDecline={handleDeclineInvite}
+      />
+
       <ScrollView
         contentContainerStyle={[
           styles.container,
@@ -229,6 +300,14 @@ export function TimerScreen() {
             ))}
           </View>
 
+          {/* Buddy invite icon */}
+          <Pressable
+            onPress={() => setShowBuddyInvite(true)}
+            style={[styles.buddyInviteBtn, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)', borderWidth: 1 }]}
+          >
+            <Ionicons name="people-outline" size={16} color={colors.primary} />
+          </Pressable>
+
           {/* Timer face */}
           <View style={styles.timerWrap}>
             <TimerFace
@@ -246,6 +325,27 @@ export function TimerScreen() {
               {t('timer.cycle')} {currentCycle}
             </Text>
           </View>
+
+          {/* Buddy Avatar Bar */}
+          {activeSession && activeSession.status !== 'ended' && (
+            <BuddyAvatarBar
+              hostProfile={{
+                displayName: myRole === 'host' ? (user?.displayName ?? '') : (buddyProfile?.displayName ?? ''),
+                avatarUrl: myRole === 'host' ? (user?.avatarUrl ?? undefined) : buddyProfile?.avatarUrl,
+              }}
+              guestProfile={
+                activeSession.guestId && buddyProfile
+                  ? {
+                      displayName: myRole === 'guest' ? (user?.displayName ?? '') : (buddyProfile?.displayName ?? ''),
+                      avatarUrl: myRole === 'guest' ? (user?.avatarUrl ?? undefined) : buddyProfile?.avatarUrl,
+                    }
+                  : null
+              }
+              myRole={myRole ?? 'host'}
+              onSendEmoji={handleSendEmoji}
+              onLeave={handleLeaveBuddySession}
+            />
+          )}
         </View>
 
         {/* 2. ORTA BÖLÜM: 1x1 Animasyon Alanı (Pomocat tarzı boşluk) */}
@@ -387,6 +487,11 @@ export function TimerScreen() {
         onEdit={handleEditTask}
         initialTask={editingTask}
       />
+
+      <BuddyInviteSheet
+        visible={showBuddyInvite}
+        onClose={() => setShowBuddyInvite(false)}
+      />
     </BackgroundEffect>
   );
 }
@@ -402,6 +507,16 @@ const styles = StyleSheet.create({
   topSection: {
     width: '100%',
     alignItems: 'center',
+  },
+  buddyInviteBtn: {
+    position: 'absolute',
+    right: spacing.lg,
+    top: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modeRow: {
     flexDirection: 'row',
