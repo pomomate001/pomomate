@@ -7,7 +7,7 @@ import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { shadows } from '../../theme/shadows';
-import { useUserStore } from '../../../state';
+import { useUserStore, useTagStore } from '../../../state';
 import { AvatarPicker } from './AvatarPicker';
 import { PremiumReferralCard } from './PremiumReferralCard';
 import { PremiumPaywallSheet } from './PremiumPaywallSheet';
@@ -18,7 +18,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { AdPlacement } from '../../ads';
 import { useTranslation } from '../../../i18n';
 import { TagSelectionSheet } from './TagSelectionSheet';
-import { useTagStore } from '../../../state';
 import { tagService } from '../../../services/tags';
 
 interface ProfileScreenProps {

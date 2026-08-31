@@ -4,7 +4,7 @@
  * Slides down from the top when a buddy invite is received.
  * Shows host name and Accept/Decline buttons.
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,7 +26,7 @@ export function BuddyInviteNotification({ onAccept, onDecline }: BuddyInviteNoti
   const colors = useColors();
   const { t } = useTranslation();
   const pendingInvite = useBuddyStore((s) => s.pendingInvite);
-  const slideAnim = useRef(new Animated.Value(-200)).current;
+  const [slideAnim] = useState(() => new Animated.Value(-200));
 
   useEffect(() => {
     if (pendingInvite) {

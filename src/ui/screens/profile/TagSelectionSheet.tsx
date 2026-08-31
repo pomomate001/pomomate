@@ -4,13 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
-import { radius } from '../../theme/radius';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { useTagStore, useUserStore } from '../../../state';
 import { tagService } from '../../../services/tags';
 import { useTranslation } from '../../../i18n';
-import type { Tag, TagCategory } from '../../../types';
+import type { TagCategory } from '../../../types';
 
 interface TagSelectionSheetProps {
   visible: boolean;
@@ -38,24 +37,26 @@ export function TagSelectionSheet({ visible, onClose }: TagSelectionSheetProps) 
   const userTags = useTagStore((s) => s.userTags);
   const isLoading = useTagStore((s) => s.isLoading);
   
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(userTags.map((t) => t.id)));
+  const [prevUserTags, setPrevUserTags] = useState(userTags);
   const [activeCategory, setActiveCategory] = useState<TagCategory>('game');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Sync selectedIds when userTags change
+  if (userTags !== prevUserTags) {
+    setPrevUserTags(userTags);
+    setSelectedIds(new Set(userTags.map((t) => t.id)));
+  }
 
   // Load tags on mount
   useEffect(() => {
     if (visible) {
-      tagService.fetchAllTags();
+      void tagService.fetchAllTags();
       if (user?.id) {
-        tagService.fetchUserTags(user.id);
+        void tagService.fetchUserTags(user.id);
       }
     }
   }, [visible, user?.id]);
-
-  // Sync selectedIds with userTags
-  useEffect(() => {
-    setSelectedIds(new Set(userTags.map((t) => t.id)));
-  }, [userTags]);
 
   const filteredTags = useMemo(() => {
     return allTags.filter((t) => t.category === activeCategory);

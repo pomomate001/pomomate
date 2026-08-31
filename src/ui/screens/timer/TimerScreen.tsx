@@ -2,7 +2,14 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTimerStore, useSettingsStore, useStatsStore, useTaskStore } from '../../../state';
+import {
+  useTimerStore,
+  useSettingsStore,
+  useStatsStore,
+  useTaskStore,
+  useBuddyStore,
+  useUserStore,
+} from '../../../state';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
@@ -15,18 +22,16 @@ import { AdPlacement } from '../../ads';
 import { notificationService } from '../../../services/mobile';
 import { soundService } from '../../../services/mobile/sound/SoundService';
 import { adMobService } from '../../../services/monetization';
-import type { TimerMode, Task } from '../../../types';
+import type { TimerMode, Task, BuddyEmojiCode } from '../../../types';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
 import { TaskItem } from '../tasks/TaskItem';
 import { useTranslation } from '../../../i18n';
-import { useBuddyStore, useUserStore } from '../../../state';
 import { buddyService } from '../../../services/buddy';
 import { BuddyInviteSheet } from './BuddyInviteSheet';
 import { BuddyAvatarBar } from './BuddyAvatarBar';
 import { BuddyInviteNotification } from './BuddyInviteNotification';
-import type { BuddyEmojiCode } from '../../../types';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -54,7 +59,6 @@ export function TimerScreen() {
   const activeSession = useBuddyStore((s) => s.activeSession);
   const buddyProfile = useBuddyStore((s) => s.buddyProfile);
   const myRole = useBuddyStore((s) => s.myRole);
-  const pendingInvite = useBuddyStore((s) => s.pendingInvite);
   const [showBuddyInvite, setShowBuddyInvite] = useState(false);
 
   const modeLabels: Record<TimerMode, string> = {
@@ -179,7 +183,7 @@ export function TimerScreen() {
     if (activeSession && user?.id) {
       buddyService.sendEmoji(activeSession.id, user.id, code);
     }
-  }, [activeSession, user?.id]);
+  }, [activeSession, user]);
 
   const handleLeaveBuddySession = useCallback(async () => {
     if (activeSession) {
@@ -199,7 +203,7 @@ export function TimerScreen() {
         onSessionEnded: () => useBuddyStore.getState().endSession(),
       });
     }
-  }, [user?.id]);
+  }, [user]);
 
   const handleDeclineInvite = useCallback(async () => {
     const invite = useBuddyStore.getState().pendingInvite;

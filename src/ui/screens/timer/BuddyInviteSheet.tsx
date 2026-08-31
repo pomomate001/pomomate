@@ -4,8 +4,8 @@
  * Opens when the invite icon on the timer screen is tapped.
  * Shows friend list with "Invite" button for each friend.
  */
-import React, { useEffect } from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
@@ -31,7 +31,7 @@ export function BuddyInviteSheet({ visible, onClose }: BuddyInviteSheetProps) {
   const friends = useFriendsStore((s) => s.friends);
   const activeSession = useBuddyStore((s) => s.activeSession);
   const isConnecting = useBuddyStore((s) => s.isConnecting);
-  const [invitingId, setInvitingId] = React.useState<string | null>(null);
+  const [invitingId, setInvitingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible && user?.id) {

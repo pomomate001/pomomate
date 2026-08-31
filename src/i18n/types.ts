@@ -403,7 +403,7 @@ export interface TranslationSchema {
 }
 
 export type NestedKeyOf<T> = {
-  [K in keyof T & (string | number)]: T[K] extends Array<any>
+  [K in keyof T & (string | number)]: T[K] extends any[]
     ? `${K}`
     : T[K] extends object
     ? `${K}` | `${K}.${NestedKeyOf<T[K]>}`

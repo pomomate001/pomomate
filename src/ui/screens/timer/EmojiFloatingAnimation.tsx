@@ -4,7 +4,7 @@
  * When an emoji is received, it appears at the avatar position
  * and floats upward while fading out.
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Animated, Text, StyleSheet } from 'react-native';
 import type { BuddyEmojiCode } from '../../../types';
 
@@ -24,9 +24,9 @@ const EMOJI_MAP: Record<BuddyEmojiCode, string> = {
 };
 
 export function EmojiFloatingAnimation({ emojiCode, animationKey }: EmojiFloatingAnimationProps) {
-  const translateY = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(0.5)).current;
+  const [translateY] = useState(() => new Animated.Value(0));
+  const [opacity] = useState(() => new Animated.Value(0));
+  const [scale] = useState(() => new Animated.Value(0.5));
 
   useEffect(() => {
     if (!emojiCode) return;
@@ -58,7 +58,7 @@ export function EmojiFloatingAnimation({ emojiCode, animationKey }: EmojiFloatin
         }),
       ]),
     ]).start();
-  }, [animationKey, emojiCode]);
+  }, [animationKey, emojiCode, opacity, scale, translateY]);
 
   if (!emojiCode) return null;
 

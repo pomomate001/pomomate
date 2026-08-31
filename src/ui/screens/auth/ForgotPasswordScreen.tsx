@@ -10,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { Input, Button, PomoMateIcon } from '../../components';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';

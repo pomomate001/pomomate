@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
-import { radius } from '../../theme/radius';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Avatar } from '../../components/Avatar';
 import { Button } from '../../components/Button';
@@ -36,17 +35,24 @@ export function UserProfileSheet({
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    if (visible && userId) {
-      loadProfile();
-    }
-  }, [visible, userId]);
+    if (!visible || !userId) return;
+    let isMounted = true;
+    tagService
+      .fetchUserTags(userId)
+      .then((userTags) => {
+        if (isMounted) {
+          setTags(userTags);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setLoading(false);
+      });
 
-  const loadProfile = async () => {
-    setLoading(true);
-    const userTags = await tagService.fetchUserTags(userId);
-    setTags(userTags);
-    setLoading(false);
-  };
+    return () => {
+      isMounted = false;
+    };
+  }, [visible, userId]);
 
   const handleAddFriend = async () => {
     if (!currentUser?.id) return;

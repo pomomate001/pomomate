@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BottomSheet } from '../../components/BottomSheet';
 import { PomoMateIcon } from '../../components/logo';
 import { useColors } from '../../theme';
@@ -15,8 +14,8 @@ interface AboutSheetProps {
   onClose: () => void;
 }
 
-const APP_VERSION = 'v1.0.6';
-const BUILD_NUMBER = '6';
+const APP_VERSION = 'v1.1.0';
+const BUILD_NUMBER = '7';
 
 export function AboutSheet({ visible, onClose }: AboutSheetProps) {
   const colors = useColors();

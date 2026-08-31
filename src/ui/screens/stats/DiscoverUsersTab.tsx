@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../theme';
@@ -20,15 +20,30 @@ export function DiscoverUsersTab() {
   const [isLoading, setIsLoading] = useState(false);
   const [sendingTo, setSendingTo] = useState<string | null>(null);
 
-  const loadSuggestions = async () => {
+  const loadSuggestions = useCallback(async () => {
     if (!user?.id) return;
     setIsLoading(true);
-    await friendService.discoverUsers(user.id);
-    setIsLoading(false);
-  };
+    try {
+      await friendService.discoverUsers(user.id);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
-    loadSuggestions();
+    if (!user?.id) return;
+    let isMounted = true;
+    friendService
+      .discoverUsers(user.id)
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [user?.id]);
 
   const handleSendRequest = async (targetUser: SuggestedUser) => {
