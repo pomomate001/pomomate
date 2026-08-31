@@ -14,8 +14,8 @@ interface AboutSheetProps {
   onClose: () => void;
 }
 
-const APP_VERSION = 'v1.1.0';
-const BUILD_NUMBER = '7';
+const APP_VERSION = 'v1.2.0';
+const BUILD_NUMBER = '8';
 
 export function AboutSheet({ visible, onClose }: AboutSheetProps) {
   const colors = useColors();
