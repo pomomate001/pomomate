@@ -1,11 +1,9 @@
 import { registerRootComponent } from 'expo';
-import { RTCPeerConnection, RTCIceCandidate, RTCSessionDescription, RTCView, MediaStream, MediaStreamTrack, mediaDevices, registerGlobals } from 'react-native-webrtc';
+import { registerGlobals } from 'react-native-webrtc';
+import App from './App';
 
 // Polyfill WebRTC globals for standard browser WebRTC code
 registerGlobals();
-
-
-import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,

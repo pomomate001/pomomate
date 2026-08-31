@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, Share, Platform, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Share, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -161,7 +161,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         } else {
           Alert.alert('Ekran Paylaşımı', 'Ekran paylaşımı başlatılamadı veya iptal edildi.');
         }
-      } catch (err) {
+      } catch {
         Alert.alert('Ekran Paylaşımı', 'Ekran paylaşımı başlatılamadı.');
       }
     } else {
@@ -182,7 +182,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     } catch {
       // User cancelled share
     }
-  }, [room?.name, inviteCode]);
+  }, [room, inviteCode]);
 
   /* ─── File Pick Handler ─── */
 
@@ -220,7 +220,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     } catch {
       Alert.alert('Dosya Seçimi', 'Dosya seçilemedi.');
     }
-  }, [addSharedFile, setActiveSharedFileId, user?.id, viewToggles.screen, toggleView, isHost, roomSettings.allowFiles]);
+  }, [addSharedFile, setActiveSharedFileId, user, viewToggles.screen, toggleView, isHost, roomSettings.allowFiles]);
 
   const handleRemoveFile = useCallback((fileId: string) => {
     removeSharedFile(fileId);

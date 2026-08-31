@@ -18,7 +18,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDuration } from '../../../../core/pomodoro';
-import { useColors } from '../../../theme';
 import { typography } from '../../../theme/typography';
 import { spacing } from '../../../theme/spacing';
 import { radius } from '../../../theme/radius';
@@ -49,7 +48,6 @@ interface RoomTimerBarProps {
 
 export function RoomTimerBar({ roomId, isHost = true, onOpenAddTask }: RoomTimerBarProps) {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
   const expanded = useSharedValue(0); // 0 = collapsed, 1 = expanded
 
   const {

@@ -29,22 +29,33 @@ export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetPro
   const [selectedPackage, setSelectedPackage] = useState<PurchasesPackage | null>(null);
   const [loading, setLoading] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+  const [prevVisible, setPrevVisible] = useState(false);
+
+  if (visible !== prevVisible) {
+    setPrevVisible(visible);
+    if (visible) {
+      setLoading(true);
+    }
+  }
 
   useEffect(() => {
+    let isMounted = true;
     if (visible) {
-      loadOfferings();
+      revenueCatService.getOfferings().then((pkgs) => {
+        if (!isMounted) return;
+        setPackages(pkgs);
+        if (pkgs.length > 0) {
+          setSelectedPackage(pkgs[0]);
+        }
+        setLoading(false);
+      }).catch(() => {
+        if (isMounted) setLoading(false);
+      });
     }
+    return () => {
+      isMounted = false;
+    };
   }, [visible]);
-
-  const loadOfferings = async () => {
-    setLoading(true);
-    const pkgs = await revenueCatService.getOfferings();
-    setPackages(pkgs);
-    if (pkgs.length > 0) {
-      setSelectedPackage(pkgs[0]); // Select first by default
-    }
-    setLoading(false);
-  };
 
   const handlePurchase = async () => {
     if (!selectedPackage) return;

@@ -66,7 +66,7 @@ export function TimerScreen() {
 
   // Expandable task list
   const [isTaskListExpanded, setIsTaskListExpanded] = useState(false);
-  const chevronAnim = useRef(new Animated.Value(0)).current;
+  const [chevronAnim] = useState(() => new Animated.Value(0));
 
   const toggleTaskList = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -192,7 +192,6 @@ export function TimerScreen() {
   const todayStr = new Date().toISOString().split('T')[0];
   const todayTasks = tasks.filter(t => !t.targetDate || t.targetDate === todayStr);
   const uncompletedTasks = todayTasks.filter(t => !t.completed);
-  const activeTask = uncompletedTasks[0];
   const remainingTaskList = todayTasks.slice(1); // all tasks except the first one
 
   return (

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
 
 const { height: screenHeight } = Dimensions.get('window');
@@ -15,7 +15,7 @@ const FLAKES = Array.from({ length: NUM_FLAKES }, (_, i) => ({
 }));
 
 function Snowflake({ flake }: { flake: typeof FLAKES[0] }) {
-  const anim = useRef(new Animated.Value(0)).current;
+  const [anim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     let loop: Animated.CompositeAnimation;

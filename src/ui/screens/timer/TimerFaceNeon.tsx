@@ -1,9 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { formatDuration } from '../../../core/pomodoro';
-import { useColors } from '../../theme';
-import { typography } from '../../theme/typography';
 import type { TimerMode } from '../../../types';
 
 interface TimerFaceProps {
@@ -31,13 +29,12 @@ const modeLabel: Record<TimerMode, string> = {
 };
 
 export function TimerFaceNeon({ remainingSeconds, duration, mode, isRunning }: TimerFaceProps) {
-  const colors = useColors();
   const neon = NEON_COLORS[mode];
   const progress = duration > 0 ? remainingSeconds / duration : 0;
   const offset = CIRCUMFERENCE * (1 - progress);
 
   // Gentle neon pulse animation
-  const pulseAnim = useRef(new Animated.Value(0.85)).current;
+  const [pulseAnim] = useState(() => new Animated.Value(0.85));
 
   useEffect(() => {
     if (isRunning) {

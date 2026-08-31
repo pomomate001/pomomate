@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors } from '../../../theme';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
@@ -39,8 +38,6 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   onPickFile,
   onRemoveFile,
 }) => {
-  const colors = useColors();
-
   // Rotation logic
   const [rotationMultiplier, setRotationMultiplier] = useState(0);
 

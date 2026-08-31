@@ -6,7 +6,6 @@
 import { Platform } from 'react-native';
 import { setAudioModeAsync } from 'expo-audio';
 import { mediaDevices, MediaStream } from 'react-native-webrtc';
-import * as ScreenCapture from 'expo-screen-capture';
 import { logger } from '../../../utils/logger';
 import { permissionManager } from '../permissions/PermissionManager';
 

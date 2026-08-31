@@ -5,7 +5,7 @@
  * - Static full-screen wallpapers (JPG/PNG)
  * - Native GPU-driven particle overlay effects (Particles, Rain, Snow, Bubbles)
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { useColors } from '../theme';
 import { RainEffect } from './RainEffect';
@@ -36,7 +36,7 @@ function FloatingParticle({
   p: typeof STATIC_PARTICLES[0];
   color: string;
 }) {
-  const anim = useRef(new Animated.Value(0)).current;
+  const [anim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     let loop: Animated.CompositeAnimation;

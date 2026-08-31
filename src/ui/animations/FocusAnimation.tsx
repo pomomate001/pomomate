@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { CampfireAnimation } from './CampfireAnimation';
 import { SvgWebAnimation } from './SvgWebAnimation';
-import { getSleepingCatSvg, getWalkingCatSvg } from './catSvgData';
+import { getSleepingCatSvg } from './catSvgData';
 
 interface FocusAnimationProps {
   animationId: string;

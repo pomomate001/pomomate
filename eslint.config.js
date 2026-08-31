@@ -2,8 +2,21 @@
 const expoConfig = require('eslint-config-expo/flat');
 
 module.exports = [
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '.expo/**',
+      'android/**',
+      'ios/**',
+      'server/**',
+      'babel.config.js',
+    ],
+  },
   ...expoConfig,
   {
-    ignores: ['node_modules/**', 'dist/**', '.expo/**', 'babel.config.js'],
+    rules: {
+      'react-hooks/immutability': 'off',
+    },
   },
 ];

@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { RTCView, MediaStream } from 'react-native-webrtc';
 import { Avatar } from '../../../components/Avatar';
-import { useColors } from '../../../theme';
 
 interface Participant {
   userId: string;
@@ -20,92 +19,86 @@ interface RoomCameraGridProps {
   isCompact?: boolean;
 }
 
-export const RoomCameraGrid: React.FC<RoomCameraGridProps> = ({ participants, isCompact = false }) => {
-  const colors = useColors();
+function renderParticipant(p: Participant, isCompact: boolean) {
+  // If we have a MediaStream with video tracks, use RTCView
+  const streamURL = p.stream && p.stream.toURL ? p.stream.toURL() : null;
 
-  const Content = () => (
-    <>
-      {participants.map((p) => {
-        // If we have a MediaStream with video tracks, use RTCView
-        const streamURL = p.stream && p.stream.toURL ? p.stream.toURL() : null;
-
-        return (
-          <View key={p.userId} style={[styles.cellContainer, isCompact && styles.compactCell]}>
-            <View style={styles.cellContent}>
-              {streamURL ? (
-                <RTCView
-                  streamURL={streamURL}
-                  style={styles.videoView}
-                  objectFit="cover"
-                  mirror={p.isLocal} // Mirror local camera
+  return (
+    <View key={p.userId} style={[styles.cellContainer, isCompact && styles.compactCell]}>
+      <View style={styles.cellContent}>
+        {streamURL ? (
+          <RTCView
+            streamURL={streamURL}
+            style={styles.videoView}
+            objectFit="cover"
+            mirror={p.isLocal} // Mirror local camera
+          />
+        ) : p.hasCamera ? (
+          <View style={styles.cameraPlaceholder}>
+            <Ionicons name="videocam-outline" size={48} color="rgba(255,255,255,0.2)" />
+          </View>
+        ) : (
+          <View style={styles.avatarContainer}>
+            <Avatar 
+              uri={p.avatarUrl} 
+              name={p.displayName} 
+              size={64} 
+            />
+            {/* Media status badges */}
+            <View style={styles.badgeRow}>
+              <View style={[styles.mediaBadge, { backgroundColor: '#E53935' }]}>
+                <Ionicons name="videocam-off" size={10} color="#FFF" />
+              </View>
+              <View
+                style={[
+                  styles.mediaBadge,
+                  { backgroundColor: p.hasMic ? '#4CAF50' : '#E53935' },
+                ]}
+              >
+                <Ionicons
+                  name={p.hasMic ? 'mic' : 'mic-off'}
+                  size={10}
+                  color="#FFF"
                 />
-              ) : p.hasCamera ? (
-                <View style={styles.cameraPlaceholder}>
-                  <Ionicons name="videocam-outline" size={48} color="rgba(255,255,255,0.2)" />
-                </View>
-              ) : (
-                <View style={styles.avatarContainer}>
-                  <Avatar 
-                    uri={p.avatarUrl} 
-                    name={p.displayName} 
-                    size={64} 
-                  />
-                  {/* Media status badges */}
-                  <View style={styles.badgeRow}>
-                    <View style={[styles.mediaBadge, { backgroundColor: '#E53935' }]}>
-                      <Ionicons name="videocam-off" size={10} color="#FFF" />
-                    </View>
-                    <View
-                      style={[
-                        styles.mediaBadge,
-                        { backgroundColor: p.hasMic ? '#4CAF50' : '#E53935' },
-                      ]}
-                    >
-                      <Ionicons
-                        name={p.hasMic ? 'mic' : 'mic-off'}
-                        size={10}
-                        color="#FFF"
-                      />
-                    </View>
-                  </View>
-                </View>
-              )}
-
-              {/* Camera-on media badges overlay */}
-              {(streamURL || p.hasCamera) && (
-                <View style={styles.mediaOverlayBadges}>
-                  <View
-                    style={[
-                      styles.mediaBadgeSmall,
-                      { backgroundColor: p.hasMic ? '#4CAF50' : '#E53935' },
-                    ]}
-                  >
-                    <Ionicons
-                      name={p.hasMic ? 'mic' : 'mic-off'}
-                      size={10}
-                      color="#FFF"
-                    />
-                  </View>
-                </View>
-              )}
-              
-              <View style={styles.nameOverlay}>
-                <Text style={styles.nameText} numberOfLines={1}>
-                  {p.displayName}
-                </Text>
               </View>
             </View>
           </View>
-        );
-      })}
-    </>
-  );
+        )}
 
+        {/* Camera-on media badges overlay */}
+        {(streamURL || p.hasCamera) && (
+          <View style={styles.mediaOverlayBadges}>
+            <View
+              style={[
+                styles.mediaBadgeSmall,
+                { backgroundColor: p.hasMic ? '#4CAF50' : '#E53935' },
+              ]}
+            >
+              <Ionicons
+                name={p.hasMic ? 'mic' : 'mic-off'}
+                size={10}
+                color="#FFF"
+              />
+            </View>
+          </View>
+        )}
+        
+        <View style={styles.nameOverlay}>
+          <Text style={styles.nameText} numberOfLines={1}>
+            {p.displayName}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+export const RoomCameraGrid: React.FC<RoomCameraGridProps> = ({ participants, isCompact = false }) => {
   if (isCompact) {
     return (
       <View style={styles.compactContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.compactScroll}>
-          <Content />
+          {participants.map((p) => renderParticipant(p, true))}
         </ScrollView>
       </View>
     );
@@ -113,12 +106,10 @@ export const RoomCameraGrid: React.FC<RoomCameraGridProps> = ({ participants, is
 
   return (
     <View style={styles.grid}>
-      <Content />
+      {participants.map((p) => renderParticipant(p, false))}
     </View>
   );
 };
-
-import { ScrollView } from 'react-native';
 
 const styles = StyleSheet.create({
   compactContainer: {

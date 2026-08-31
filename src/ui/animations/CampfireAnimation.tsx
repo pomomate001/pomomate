@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Animated, Easing } from 'react-native';
 import Svg, {
   Path, Circle, Ellipse, G, Defs, RadialGradient, Stop,
@@ -12,8 +12,8 @@ interface CampfireAnimationProps {
 }
 
 export const CampfireAnimation: React.FC<CampfireAnimationProps> = ({ size = 220 }) => {
-  const flameAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(1)).current;
+  const [flameAnim] = useState(() => new Animated.Value(1));
+  const [glowAnim] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     // Alev titreme

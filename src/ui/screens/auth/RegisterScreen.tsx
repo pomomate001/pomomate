@@ -16,7 +16,6 @@ import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { authService } from '../../../services/auth';
-import { useUserStore } from '../../../state';
 
 interface RegisterScreenProps {
   onGoToLogin: () => void;
@@ -116,7 +115,7 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
             </View>
             <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>Yeni Hesap</Text>
             <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}> 
-              PomoMate'e katıl ve odaklanmaya başla.
+              PomoMate&apos;e katıl ve odaklanmaya başla.
             </Text>
           </View>
 

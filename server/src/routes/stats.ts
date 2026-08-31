@@ -110,7 +110,7 @@ router.get('/daily', async (req: AuthenticatedRequest, res) => {
   res.json(result);
 });
 
-function calculateStreak(sessions: Array<{ completed_at: unknown }>): number {
+function calculateStreak(sessions: { completed_at: unknown }[]): number {
   if (sessions.length === 0) return 0;
 
   const dates = new Set(sessions.map((s) => (s.completed_at as string).slice(0, 10)));

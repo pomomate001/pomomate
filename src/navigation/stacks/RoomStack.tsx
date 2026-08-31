@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RoomListScreen, RoomActiveScreen, RoomCreateSheet, RoomJoinSheet } from '../../ui/screens/room';
 import { useRoomStore, useUserStore } from '../../state';
-import { generateId } from '../../utils/id';
 import { nowIso } from '../../utils/datetime';
 import type { Room } from '../../types';
 import type { RoomStackParamList } from '../types';

@@ -4,9 +4,10 @@
  * Provides the active theme to the entire component tree and exposes
  * a `setThemeId` function to switch themes at runtime.
  */
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo } from 'react';
 import { themes, darkTheme } from './themes';
 import type { AppTheme } from './themes';
+import { useSettingsStore } from '../../state';
 
 interface ThemeContextValue {
   theme: AppTheme;
@@ -20,24 +21,14 @@ const ThemeContext = createContext<ThemeContextValue>({
   availableThemes: [darkTheme],
 });
 
-import { useSettingsStore } from '../../state';
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const storeThemeId = useSettingsStore((s) => s.themeId);
+  const themeId = useSettingsStore((s) => s.themeId);
   const saveThemeId = useSettingsStore((s) => s.setThemeId);
-
-  // Sync internal state with store on mount or store change
-  const [themeId, setThemeIdState] = useState(storeThemeId);
-
-  React.useEffect(() => {
-    setThemeIdState(storeThemeId);
-  }, [storeThemeId]);
 
   const theme = useMemo(() => themes.get(themeId) ?? darkTheme, [themeId]);
 
   const setThemeId = useCallback((id: string) => {
     if (themes.has(id)) {
-      setThemeIdState(id);
       saveThemeId(id); // Persist to store immediately
     }
   }, [saveThemeId]);

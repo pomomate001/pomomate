@@ -11,7 +11,6 @@ import { typography } from '../../theme/typography';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
-import { shadows } from '../../theme/shadows';
 import { useUserStore, useSettingsStore } from '../../../state';
 import { referralService, ReferralReward } from '../../../services/monetization/ReferralService';
 
@@ -36,15 +35,18 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
   const referralLink = `https://pomomate.app/join?ref=${referralCode}`;
 
   useEffect(() => {
+    let isMounted = true;
     if (visible) {
-      loadRewardStatus();
+      referralService.checkRewardEligibility().then((status) => {
+        if (isMounted) {
+          setRewardStatus(status);
+        }
+      });
     }
+    return () => {
+      isMounted = false;
+    };
   }, [visible]);
-
-  const loadRewardStatus = async () => {
-    const status = await referralService.checkRewardEligibility();
-    setRewardStatus(status);
-  };
 
   const handleShare = async () => {
     try {
@@ -52,7 +54,7 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
         title: 'PomoMate — Birlikte Çalışalım!',
         message: `PomoMate ile birlikte odaklanalım! Benim davet kodumla kaydol ve çalışma odalarında buluşalım: ${referralLink}\n\nDavet Kodu: ${referralCode}`,
       });
-    } catch (err) {
+    } catch {
       Alert.alert('Hata', 'Paylaşım başlatılamadı.');
     }
   };
@@ -94,7 +96,7 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
           Bedava Pro Kazan
         </Text>
         <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
-          3 arkadaşını PomoMate'e davet et, 1 ay boyunca tüm Pro özelliklerini ücretsiz kullan!
+          3 arkadaşını PomoMate&apos;e davet et, 1 ay boyunca tüm Pro özelliklerini ücretsiz kullan!
         </Text>
       </View>
 

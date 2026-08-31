@@ -13,7 +13,7 @@ export class SupabaseAuthService implements AuthService {
       if (authError || !authUser) return null;
 
       // Fetch full user profile from database
-      let { data: profile, error: profileError } = await supabase
+      let { data: profile } = await supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id)

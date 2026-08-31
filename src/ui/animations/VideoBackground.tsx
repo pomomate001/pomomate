@@ -16,11 +16,9 @@ export function VideoBackground({ source, overlayOpacity = 0.35 }: VideoBackgrou
 
   useEffect(() => {
     if (player) {
-      player.loop = true;
-      player.muted = true;
       player.play();
     }
-  }, [player, source]);
+  }, [player]);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">

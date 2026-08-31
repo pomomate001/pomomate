@@ -31,20 +31,18 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
   const [title, setTitle] = useState('');
   const [tag, setTag] = useState('');
   const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
+  const [prevTask, setPrevTask] = useState<Task | undefined>(undefined);
+  const [prevVisible, setPrevVisible] = useState(false);
 
-  React.useEffect(() => {
+  if (visible !== prevVisible || initialTask !== prevTask) {
+    setPrevVisible(visible);
+    setPrevTask(initialTask);
     if (visible) {
-      if (initialTask) {
-        setTitle(initialTask.title);
-        setTag(initialTask.tag || '');
-        setRecurrence(initialTask.recurrence?.type || 'none');
-      } else {
-        setTitle('');
-        setTag('');
-        setRecurrence('none');
-      }
+      setTitle(initialTask?.title || '');
+      setTag(initialTask?.tag || '');
+      setRecurrence(initialTask?.recurrence?.type || 'none');
     }
-  }, [visible, initialTask]);
+  }
 
   const handleSave = () => {
     const trimmedTitle = title.trim();

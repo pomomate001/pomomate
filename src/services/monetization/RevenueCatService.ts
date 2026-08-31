@@ -5,7 +5,6 @@
  */
 import Purchases, { PurchasesPackage, CustomerInfo } from 'react-native-purchases';
 import { logger } from '../../utils/logger';
-import { config } from '../../config';
 
 export type SubscriptionTier = 'free' | 'premium';
 

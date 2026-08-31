@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
 import { useColors } from '../theme';
 
@@ -16,7 +16,7 @@ const DROPS = Array.from({ length: NUM_DROPS }, (_, i) => ({
 }));
 
 function RainDrop({ drop, color }: { drop: typeof DROPS[0]; color: string }) {
-  const anim = useRef(new Animated.Value(0)).current;
+  const [anim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     let loop: Animated.CompositeAnimation;

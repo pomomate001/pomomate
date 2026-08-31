@@ -1,7 +1,7 @@
 import { jest, describe, it, beforeAll, afterAll, afterEach, expect } from '@jest/globals';
 
-const mockGetUser = jest.fn();
-const mockFrom = jest.fn();
+const mockGetUser: any = jest.fn();
+const mockFrom: any = jest.fn();
 
 jest.unstable_mockModule('../../supabase.js', () => ({
   adminClient: {
@@ -16,7 +16,6 @@ jest.unstable_mockModule('../../supabase.js', () => ({
 let setupSignaling: any;
 let createServer: any;
 let WebSocket: any;
-let adminClient: any;
 
 describe('Signaling Server', () => {
   let server: any;
@@ -30,9 +29,6 @@ describe('Signaling Server', () => {
     
     const signalingModule = await import('../signaling.js');
     setupSignaling = signalingModule.setupSignaling;
-
-    const supabaseModule = await import('../../supabase.js');
-    adminClient = supabaseModule.adminClient;
   });
 
   beforeAll((done) => {
@@ -74,9 +70,9 @@ describe('Signaling Server', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     
     // Mock room members check
-    const mockEq2 = jest.fn().mockReturnValue({ single: jest.fn().mockResolvedValue({ data: { id: 'rm-1' } }) });
-    const mockEq1 = jest.fn().mockReturnValue({ eq: mockEq2 });
-    const mockSelect = jest.fn().mockReturnValue({ eq: mockEq1 });
+    const mockEq2: any = jest.fn().mockReturnValue({ single: (jest.fn() as any).mockResolvedValue({ data: { id: 'rm-1' } }) });
+    const mockEq1: any = jest.fn().mockReturnValue({ eq: mockEq2 });
+    const mockSelect: any = jest.fn().mockReturnValue({ eq: mockEq1 });
     mockFrom.mockReturnValue({ select: mockSelect });
 
     const ws1 = new WebSocket(`ws://localhost:${port}/ws/signaling?token=valid-token-1`);

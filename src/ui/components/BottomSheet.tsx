@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Modal,
@@ -47,18 +47,20 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
   }, []);
 
   // PanResponder to handle swipe-down to dismiss
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy > 10,
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 50 || gestureState.vy > 0.5) {
-          Keyboard.dismiss();
-          onClose();
-        }
-      },
-    }),
-  ).current;
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy > 10,
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dy > 50 || gestureState.vy > 0.5) {
+            Keyboard.dismiss();
+            onClose();
+          }
+        },
+      }),
+    [onClose],
+  );
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>

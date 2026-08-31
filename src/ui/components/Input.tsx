@@ -88,6 +88,9 @@ export const Input = React.forwardRef<TextInput, InputProps>(
     </View>
   );
 });
+
+Input.displayName = 'Input';
+
 const styles = StyleSheet.create({
   container: { marginBottom: spacing.md },
   inputContainer: {
