@@ -10,7 +10,7 @@ import { shadows } from '../../theme/shadows';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { AdPlacement } from '../../ads';
-import { useRoomStore, useUserStore } from '../../../state';
+import { useRoomStore, useUserStore, useSettingsStore } from '../../../state';
 import type { Room } from '../../../types';
 import { useTranslation } from '../../../i18n';
 
@@ -128,6 +128,7 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
   const rooms = useRoomStore((s) => s.rooms);
   const deleteRoom = useRoomStore((s) => s.deleteRoom);
   const user = useUserStore((s) => s.user);
+  const isPremium = useSettingsStore((s) => s.isPremium);
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -149,12 +150,18 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
 
       {/* Actions */}
       <View style={styles.actions}>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, position: 'relative' }}>
           <Button
             title={t('rooms.createRoom')}
             onPress={onCreateRoom}
             icon={<Ionicons name="add-circle-outline" size={20} color={colors.textInverse} />}
           />
+          {!isPremium && (
+            <View style={[styles.proBadge, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+              <Ionicons name="star" size={10} color={colors.warning} />
+              <Text style={[styles.proBadgeText, { color: colors.warning }]}>PRO</Text>
+            </View>
+          )}
         </View>
         <View style={{ width: spacing.md }} />
         <View style={{ flex: 1 }}>
@@ -210,6 +217,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
+  },
+  proBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    gap: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
+    zIndex: 10,
+  },
+  proBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl },
   emptyContainer: { flex: 1, justifyContent: 'center' },

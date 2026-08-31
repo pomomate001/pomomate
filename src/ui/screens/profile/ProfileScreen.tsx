@@ -118,14 +118,17 @@ export function ProfileScreen({
             {/* Tags */}
             {userTags.length > 0 && (
               <Pressable onPress={() => setShowTagSelection(true)} style={styles.tagsContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.tagsRow}>
                   {userTags.map((tag) => (
                     <View key={tag.id} style={[styles.profileTag, { backgroundColor: `${colors.primary}20`, borderColor: `${colors.primary}40` }]}>
                       {tag.icon && <Text style={{ fontSize: 10, marginRight: 3 }}>{tag.icon}</Text>}
                       <Text style={[typography.overline, { color: colors.primary, fontSize: 10 }]}>{tag.nameTr}</Text>
                     </View>
                   ))}
-                </ScrollView>
+                  <View style={[styles.profileTagEdit, { borderColor: `${colors.primary}40` }]}>
+                    <Ionicons name="pencil" size={10} color={colors.primary} />
+                  </View>
+                </View>
               </Pressable>
             )}
             {userTags.length === 0 && (
@@ -216,7 +219,15 @@ const styles = StyleSheet.create({
   },
   tagsContainer: {
     marginTop: spacing.sm,
-    maxWidth: '100%',
+    maxWidth: '90%',
+    alignItems: 'center',
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
   },
   profileTag: {
     flexDirection: 'row',
@@ -225,7 +236,16 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 10,
     borderWidth: 1,
-    marginRight: 6,
+    alignSelf: 'flex-start',
+  },
+  profileTagEdit: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   addTagsBtn: {
     flexDirection: 'row',

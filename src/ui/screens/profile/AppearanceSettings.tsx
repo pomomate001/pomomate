@@ -61,6 +61,37 @@ export function AppearanceSettings() {
     (e) => e.category === 'particle' || e.category === 'none'
   );
 
+  const isVisualWallpaperActive =
+    videoBackgrounds.some((v) => v.id === backgroundEffectId) ||
+    imageBackgrounds.some((img) => img.id === backgroundEffectId);
+
+  const handleSelectVideoOrImageBackground = (id: string) => {
+    setBackgroundEffectId(id);
+    // When a video or image wallpaper is selected, disable/clear focus animations
+    setWorkAnimationId('none');
+    setBreakAnimationId('none');
+  };
+
+  const handleSelectParticleEffect = (id: string) => {
+    setBackgroundEffectId(id);
+  };
+
+  const handleSelectWorkAnimation = (id: string) => {
+    if (id !== 'none' && isVisualWallpaperActive) {
+      // If user chooses an animation, clear any active wallpaper so they don't clash
+      setBackgroundEffectId('none');
+    }
+    setWorkAnimationId(id);
+  };
+
+  const handleSelectBreakAnimation = (id: string) => {
+    if (id !== 'none' && isVisualWallpaperActive) {
+      // If user chooses an animation, clear any active wallpaper so they don't clash
+      setBackgroundEffectId('none');
+    }
+    setBreakAnimationId(id);
+  };
+
   const renderBackgroundPreview = (id: string) => {
     switch (id) {
       case 'video_windmill':
@@ -119,7 +150,7 @@ export function AppearanceSettings() {
             subtitle={e.description}
             isSelected={backgroundEffectId === e.id}
             isPremium={!e.free}
-            onPress={() => setBackgroundEffectId(e.id)}
+            onPress={() => handleSelectVideoOrImageBackground(e.id)}
             renderPreview={() => renderBackgroundPreview(e.id)}
           />
         ))}
@@ -135,7 +166,7 @@ export function AppearanceSettings() {
             subtitle={e.description}
             isSelected={backgroundEffectId === e.id}
             isPremium={!e.free}
-            onPress={() => setBackgroundEffectId(e.id)}
+            onPress={() => handleSelectVideoOrImageBackground(e.id)}
             renderPreview={() => renderBackgroundPreview(e.id)}
           />
         ))}
@@ -151,7 +182,7 @@ export function AppearanceSettings() {
             subtitle={e.description}
             isSelected={backgroundEffectId === e.id}
             isPremium={!e.free}
-            onPress={() => setBackgroundEffectId(e.id)}
+            onPress={() => handleSelectParticleEffect(e.id)}
             renderPreview={() => renderBackgroundPreview(e.id)}
           />
         ))}
@@ -167,7 +198,7 @@ export function AppearanceSettings() {
             subtitle={a.description}
             isSelected={workAnimationId === a.id}
             isPremium={!a.free}
-            onPress={() => setWorkAnimationId(a.id)}
+            onPress={() => handleSelectWorkAnimation(a.id)}
             renderPreview={() => renderFocusAnimationPreview(a.id)}
           />
         ))}
@@ -183,7 +214,7 @@ export function AppearanceSettings() {
             subtitle={a.description}
             isSelected={breakAnimationId === a.id}
             isPremium={!a.free}
-            onPress={() => setBreakAnimationId(a.id)}
+            onPress={() => handleSelectBreakAnimation(a.id)}
             renderPreview={() => renderFocusAnimationPreview(a.id)}
           />
         ))}

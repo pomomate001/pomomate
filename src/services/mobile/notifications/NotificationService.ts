@@ -58,6 +58,30 @@ export class NotificationService {
     }
   }
 
+  async scheduleTimerCompleteIn(seconds: number, title: string, body: string): Promise<string | null> {
+    if (seconds <= 0) return null;
+    try {
+      await this.cancelAllScheduled();
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          sound: true,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: Math.max(1, Math.round(seconds)),
+        },
+      });
+      logger.info(`[Notifications] Timer complete scheduled in ${seconds}s (id: ${id})`);
+      return id;
+    } catch (err) {
+      logger.warn('[Notifications] Failed to schedule future notification:', err);
+      return null;
+    }
+  }
+
   async cancelAllScheduled(): Promise<void> {
     await Notifications.cancelAllScheduledNotificationsAsync();
   }

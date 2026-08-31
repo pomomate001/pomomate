@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Animated, LayoutAnimation, Platform, UIManager, AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -71,7 +71,11 @@ export function TimerScreen() {
   const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
   const workAnimationId = useSettingsStore((s) => s.workAnimationId);
   const breakAnimationId = useSettingsStore((s) => s.breakAnimationId);
-  const activeAnimationId = mode === 'work' ? workAnimationId : breakAnimationId;
+  const isVisualWallpaperActive =
+    backgroundEffectId.startsWith('video_') ||
+    backgroundEffectId.startsWith('image_');
+  const rawAnimationId = mode === 'work' ? workAnimationId : breakAnimationId;
+  const activeAnimationId = isVisualWallpaperActive ? 'none' : rawAnimationId;
   const recordPomodoro = useStatsStore((s) => s.recordPomodoro);
   const workDuration = useSettingsStore((s) => s.workDuration);
   const colors = useColors();
@@ -122,9 +126,31 @@ export function TimerScreen() {
     };
   }, [isRunning, mode]);
 
+  // Listen for AppState changes to sync timer when screen turns on or app returns to foreground
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        useTimerStore.getState().syncWithCurrentTime();
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Schedule background completion notification when timer starts, cancel when paused/reset
+  useEffect(() => {
+    if (isRunning && remainingSeconds > 0) {
+      const title = mode === 'work' ? t('timer.pomodoroCompletedTitle') : t('timer.breakCompletedTitle');
+      const body = mode === 'work' ? t('timer.pomodoroCompletedBody') : t('timer.breakCompletedBody');
+      notificationService.scheduleTimerCompleteIn(remainingSeconds, title, body);
+    } else if (!isRunning) {
+      notificationService.cancelAllScheduled();
+    }
+  }, [isRunning, mode, t]);
+
   // When timer hits 0, auto-advance and notify
   useEffect(() => {
     if (remainingSeconds === 0 && !isRunning) {
+      notificationService.cancelAllScheduled();
       if (mode === 'work') {
         recordPomodoro(workDuration);
         

@@ -108,6 +108,8 @@ export interface TimerState {
   mode: TimerMode;
   /** Current cycle index within the pomodoro set. */
   currentCycle: number;
+  /** Timestamp (in milliseconds) when the current interval is scheduled to end. */
+  targetEndTime?: number | null;
 }
 
 /* -------------------------------------------------------------------------- */

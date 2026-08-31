@@ -2,7 +2,7 @@
  * Sound Service — handles audio cues, timer completion sounds, 2s previews,
  * and continuous ambient background audio during focus/break sessions.
  */
-import { createAudioPlayer } from 'expo-audio';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { logger } from '../../../utils/logger';
 import { useSettingsStore } from '../../../state';
@@ -72,6 +72,22 @@ class SoundService {
   private previewTimeout: ReturnType<typeof setTimeout> | null = null;
   private ambientPlayer: any = null;
   private activeAmbientId: string | null = null;
+
+  constructor() {
+    this.ensureAudioMode();
+  }
+
+  private async ensureAudioMode(): Promise<void> {
+    try {
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        interruptionMode: 'mixWithOthers',
+      });
+    } catch (err) {
+      logger.warn('[SoundService] Failed to set background audio mode:', err);
+    }
+  }
 
   /* ─── 2-Second Preview for Settings ─── */
 
@@ -154,8 +170,15 @@ class SoundService {
     this.stopAmbient();
 
     try {
+      await this.ensureAudioMode();
       const player = createAudioPlayer(soundItem.url);
       player.loop = true;
+      try {
+        player.setActiveForLockScreen(true, {
+          title: 'PomoMate',
+          artist: soundItem.label,
+        });
+      } catch {}
       this.ambientPlayer = player;
       this.activeAmbientId = soundId;
       player.play();

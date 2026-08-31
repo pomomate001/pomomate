@@ -8,14 +8,13 @@ import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
-import { BackgroundEffect } from '../../animations/BackgroundEffect';
 import { RoomTimerBar } from './features/RoomTimerBar';
 import { RoomCameraGrid } from './features/RoomCameraGrid';
 import { RoomScreenPanel } from './features/RoomScreenPanel';
 import { RoomViewToggles } from './features/RoomViewToggles';
 import { RoomBottomBar } from './RoomBottomBar';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
-import { useRoomStore, useSettingsStore, useUserStore, useTaskStore } from '../../../state';
+import { useRoomStore, useUserStore, useTaskStore } from '../../../state';
 import { mediaService } from '../../../services/mobile/media/MediaService';
 import { pipService } from '../../../services/mobile/pip/PiPService';
 import { generateId } from '../../../utils/id';
@@ -77,7 +76,6 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const setActiveSharedFileId = useRoomStore((s) => s.setActiveSharedFileId);
   const roomSettings = useRoomStore((s) => s.roomSettings);
   
-  const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
   const user = useUserStore((s) => s.user);
   const addTask = useTaskStore((s) => s.addTask);
 
@@ -315,7 +313,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   }
 
   return (
-    <BackgroundEffect effectId={backgroundEffectId}>
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
       {/* Task Creation Sheet for Room */}
       <AddTaskSheet
         visible={showAddTask}
@@ -443,11 +441,14 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         onLeave={onLeave}
         onPickFile={handlePickFile}
       />
-    </BackgroundEffect>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
   contentArea: {
     flex: 1,
     paddingHorizontal: spacing.sm,

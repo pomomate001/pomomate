@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RoomListScreen, RoomActiveScreen, RoomCreateSheet, RoomJoinSheet } from '../../ui/screens/room';
-import { useRoomStore, useUserStore } from '../../state';
+import { PremiumPaywallSheet } from '../../ui/screens/profile/PremiumPaywallSheet';
+import { useRoomStore, useUserStore, useSettingsStore } from '../../state';
 import { nowIso } from '../../utils/datetime';
 import type { Room } from '../../types';
 import type { RoomStackParamList } from '../types';
@@ -22,11 +23,13 @@ function generateLocalInviteCode(): string {
 function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamList, 'RoomList'>) {
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const addRoom = useRoomStore((s) => s.addRoom);
   const setRoomActive = useRoomStore((s) => s.setRoomActive);
   const setCurrentRoom = useRoomStore((s) => s.setCurrentRoom);
   const rooms = useRoomStore((s) => s.rooms);
   const user = useUserStore((s) => s.user);
+  const isPremium = useSettingsStore((s) => s.isPremium);
 
   const handleCreateRoom = (name: string) => {
     const inviteCode = generateLocalInviteCode();
@@ -95,7 +98,13 @@ function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamLi
   return (
     <>
       <RoomListScreen
-        onCreateRoom={() => setShowCreate(true)}
+        onCreateRoom={() => {
+          if (!isPremium) {
+            setShowPaywall(true);
+          } else {
+            setShowCreate(true);
+          }
+        }}
         onJoinRoom={() => setShowJoin(true)}
         onEnterRoom={handleEnterRoom}
       />
@@ -108,6 +117,10 @@ function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamLi
         visible={showJoin}
         onClose={() => setShowJoin(false)}
         onJoin={handleJoinRoom}
+      />
+      <PremiumPaywallSheet
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
       />
     </>
   );

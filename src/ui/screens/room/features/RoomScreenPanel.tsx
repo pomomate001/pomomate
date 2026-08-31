@@ -40,24 +40,107 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   // Rotation logic
   const [rotationMultiplier, setRotationMultiplier] = useState(0);
 
-  // Zoom logic
+  // Focal Zoom & Pan logic
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+
+  const containerWidth = useSharedValue(300);
+  const containerHeight = useSharedValue(300);
 
   const pinchGesture = Gesture.Pinch()
     .onUpdate((e) => {
-      scale.value = savedScale.value * e.scale;
+      const newScale = Math.max(1, Math.min(savedScale.value * e.scale, 6));
+      scale.value = newScale;
+
+      // Focal point zoom calculation
+      const centerX = containerWidth.value / 2;
+      const centerY = containerHeight.value / 2;
+      const scaleRatio = newScale / savedScale.value;
+
+      translateX.value = savedTranslateX.value + (e.focalX - centerX) * (1 - scaleRatio);
+      translateY.value = savedTranslateY.value + (e.focalY - centerY) * (1 - scaleRatio);
     })
     .onEnd(() => {
-      // Keep the zoomed scale
-      savedScale.value = scale.value;
+      if (scale.value <= 1.05) {
+        scale.value = withTiming(1);
+        translateX.value = withTiming(0);
+        translateY.value = withTiming(0);
+        savedScale.value = 1;
+        savedTranslateX.value = 0;
+        savedTranslateY.value = 0;
+      } else {
+        savedScale.value = scale.value;
+        savedTranslateX.value = translateX.value;
+        savedTranslateY.value = translateY.value;
+      }
     });
+
+  const panGesture = Gesture.Pan()
+    .averageTouches(true)
+    .onUpdate((e) => {
+      if (scale.value > 1) {
+        translateX.value = savedTranslateX.value + e.translationX;
+        translateY.value = savedTranslateY.value + e.translationY;
+      }
+    })
+    .onEnd(() => {
+      if (scale.value > 1) {
+        savedTranslateX.value = translateX.value;
+        savedTranslateY.value = translateY.value;
+      }
+    });
+
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onEnd((e) => {
+      if (scale.value > 1.2) {
+        scale.value = withTiming(1);
+        translateX.value = withTiming(0);
+        translateY.value = withTiming(0);
+        savedScale.value = 1;
+        savedTranslateX.value = 0;
+        savedTranslateY.value = 0;
+      } else {
+        const centerX = containerWidth.value / 2;
+        const centerY = containerHeight.value / 2;
+        const targetScale = 2.5;
+        scale.value = withTiming(targetScale);
+        const targetX = (centerX - e.x) * 1.5;
+        const targetY = (centerY - e.y) * 1.5;
+        translateX.value = withTiming(targetX);
+        translateY.value = withTiming(targetY);
+        savedScale.value = targetScale;
+        savedTranslateX.value = targetX;
+        savedTranslateY.value = targetY;
+      }
+    });
+
+  const composedGesture = Gesture.Race(
+    doubleTapGesture,
+    Gesture.Simultaneous(pinchGesture, panGesture)
+  );
+
+  const resetTransform = () => {
+    scale.value = withTiming(1);
+    translateX.value = withTiming(0);
+    translateY.value = withTiming(0);
+    savedScale.value = 1;
+    savedTranslateX.value = 0;
+    savedTranslateY.value = 0;
+    setRotationMultiplier(0);
+  };
 
   const animatedImageStyle = useAnimatedStyle(() => {
     return {
       transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
         { rotate: withTiming(`${rotationMultiplier * 90}deg`) },
-        { scale: scale.value }
+        { scale: scale.value },
       ],
     };
   });
@@ -86,9 +169,15 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   if (sharedFile) {
     const isImage = sharedFile.fileType.startsWith('image');
     return (
-      <View style={styles.container}>
+      <View
+        style={styles.container}
+        onLayout={(e) => {
+          containerWidth.value = e.nativeEvent.layout.width;
+          containerHeight.value = e.nativeEvent.layout.height;
+        }}
+      >
         {isImage ? (
-          <GestureDetector gesture={pinchGesture}>
+          <GestureDetector gesture={composedGesture}>
             <Animated.View style={styles.imageContainer}>
               <Animated.Image 
                 source={{ uri: sharedFile.uri }} 
@@ -107,17 +196,25 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
         {/* Top-Right Tools */}
         <View style={styles.toolsOverlay}>
           {isImage && (
-            <Pressable 
-              style={styles.iconButton} 
-              onPress={() => setRotationMultiplier(r => r + 1)}
-            >
-              <Ionicons name="refresh" size={24} color="#FFF" />
-            </Pressable>
+            <>
+              <Pressable 
+                style={styles.iconButton} 
+                onPress={resetTransform}
+              >
+                <Ionicons name="scan-outline" size={20} color="#FFF" />
+              </Pressable>
+              <Pressable 
+                style={styles.iconButton} 
+                onPress={() => setRotationMultiplier(r => r + 1)}
+              >
+                <Ionicons name="refresh" size={20} color="#FFF" />
+              </Pressable>
+            </>
           )}
           
           {(isHost || allowFiles) && (
             <Pressable style={styles.iconButton} onPress={onRemoveFile}>
-              <Ionicons name="close" size={24} color="#FFF" />
+              <Ionicons name="close" size={20} color="#FFF" />
             </Pressable>
           )}
         </View>

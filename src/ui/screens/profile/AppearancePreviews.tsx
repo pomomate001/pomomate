@@ -314,21 +314,35 @@ export function TimerDesignPreview({ designId }: { designId: string }) {
     case 'arc':
       return (
         <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
-          <Svg width={48} height={40} viewBox="0 0 48 40">
-            <Path
-              d="M 6 34 A 18 18 0 1 1 42 34"
+          <Svg width={48} height={48} viewBox="0 0 48 48">
+            {/* Background Track Arc (240 deg) */}
+            <Circle
+              cx="24"
+              cy="24"
+              r="18"
               stroke={colors.border}
-              strokeWidth="3"
+              strokeWidth="3.5"
               fill="none"
+              strokeLinecap="round"
+              strokeDasharray="75.4 113.1"
+              transform="rotate(150 24 24)"
             />
-            <Path
-              d="M 6 34 A 18 18 0 0 1 38 16"
+            {/* Active Progress Arc */}
+            <Circle
+              cx="24"
+              cy="24"
+              r="18"
               stroke={primaryColor}
               strokeWidth="4"
               fill="none"
               strokeLinecap="round"
+              strokeDasharray="52.8 113.1"
+              transform="rotate(150 24 24)"
             />
           </Svg>
+          <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: colors.textPrimary, marginTop: -2 }}>25m</Text>
+          </View>
         </View>
       );
 
