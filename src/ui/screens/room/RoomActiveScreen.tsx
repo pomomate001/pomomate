@@ -19,6 +19,7 @@ import { useRoomStore, useSettingsStore, useUserStore, useTaskStore } from '../.
 import { mediaService } from '../../../services/mobile/media/MediaService';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
+import { useTranslation } from '../../../i18n';
 
 interface RoomActiveScreenProps {
   roomId: string;
@@ -36,6 +37,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { t } = useTranslation();
 
   const room = useRoomStore((s) => s.currentRoom);
   const members = useRoomStore((s) => s.members);
@@ -59,7 +61,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const participants = [
     {
       userId: user?.id ?? 'my-user',
-      displayName: user?.displayName ?? 'Sen (Host)',
+      displayName: user?.displayName ?? `You (${isHost ? 'Host' : 'Member'})`,
       avatarUrl: user?.avatarUrl ?? undefined,
       hasCamera: camOn,
       hasMic: micOn,
@@ -81,7 +83,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const handleToggleMic = useCallback(async () => {
     if (!isHost && !roomSettings.allowMic) {
-      Alert.alert('Yetkiniz Yok', 'Yönetici mikrofon kullanımını kapattı.');
+      Alert.alert(t('rooms.noPermissionTitle'), t('rooms.adminDisabledMic'));
       return;
     }
 
@@ -91,7 +93,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         setMicOn(true);
         if (camOn) setLocalStream(stream);
       } else {
-        Alert.alert('Mikrofon İzni Gerekli', 'Sesli çalışma oturumu için mikrofon izni vermelisiniz.');
+        Alert.alert(t('rooms.micPermissionRequired'), t('rooms.micPermissionBody'));
       }
     } else {
       if (camOn) {
@@ -103,11 +105,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       }
       setMicOn(false);
     }
-  }, [micOn, camOn, isHost, roomSettings.allowMic]);
+  }, [micOn, camOn, isHost, roomSettings.allowMic, t]);
 
   const handleToggleCam = useCallback(async () => {
     if (!isHost && !roomSettings.allowCamera) {
-      Alert.alert('Yetkiniz Yok', 'Yönetici kamera kullanımını kapattı.');
+      Alert.alert(t('rooms.noPermissionTitle'), t('rooms.adminDisabledCam'));
       return;
     }
 
@@ -121,7 +123,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           toggleView('cameras');
         }
       } else {
-        Alert.alert('Kamera İzni Gerekli', 'Görüntülü çalışma oturumu için kamera izni vermelisiniz.');
+        Alert.alert(t('rooms.camPermissionRequired'), t('rooms.camPermissionBody'));
       }
     } else {
       if (micOn) {
@@ -132,11 +134,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       setCamOn(false);
       setLocalStream(null);
     }
-  }, [camOn, micOn, viewToggles.cameras, toggleView, isHost, roomSettings.allowCamera]);
+  }, [camOn, micOn, viewToggles.cameras, toggleView, isHost, roomSettings.allowCamera, t]);
 
   const handleToggleScreen = useCallback(async () => {
     if (!isHost) {
-      Alert.alert('Yetkisiz İşlem', 'Sadece oda yöneticisi ekran paylaşımı yapabilir.');
+      Alert.alert(t('rooms.unauthorizedTitle'), t('rooms.onlyHostScreenShare'));
       return;
     }
 
@@ -159,36 +161,39 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
             toggleView('screen');
           }
         } else {
-          Alert.alert('Ekran Paylaşımı', 'Ekran paylaşımı başlatılamadı veya iptal edildi.');
+          Alert.alert(t('rooms.screenShareTitle'), t('rooms.screenShareError'));
         }
       } catch {
-        Alert.alert('Ekran Paylaşımı', 'Ekran paylaşımı başlatılamadı.');
+        Alert.alert(t('rooms.screenShareTitle'), t('rooms.screenShareError'));
       }
     } else {
       setScreenShareOn(false);
       setScreenStream(null);
       setIsScreenShrunk(false);
     }
-  }, [screenShareOn, isHost, viewToggles.screen, toggleView]);
+  }, [screenShareOn, isHost, viewToggles.screen, toggleView, t]);
 
   /* ─── Share Handler ─── */
 
   const handleShare = useCallback(async () => {
     try {
       await Share.share({
-        message: `🍅 PomoMate ile birlikte çalışalım!\n\nOda: ${room?.name ?? 'Çalışma Odası'}\nOda Kodu: ${inviteCode}\n\nPomoMate uygulamasını aç → "Odaya Katıl" → Kodu yapıştır`,
-        title: 'PomoMate Çalışma Odası',
+        message: t('rooms.shareRoomMessage', {
+          name: room?.name ?? t('rooms.defaultRoomName'),
+          code: inviteCode,
+        }),
+        title: t('rooms.shareMessageTitle'),
       });
     } catch {
       // User cancelled share
     }
-  }, [room, inviteCode]);
+  }, [room, inviteCode, t]);
 
   /* ─── File Pick Handler ─── */
 
   const handlePickFile = useCallback(async () => {
     if (!isHost && !roomSettings.allowFiles) {
-      Alert.alert('Yetkiniz Yok', 'Yönetici dosya paylaşımını kapattı.');
+      Alert.alert(t('rooms.noPermissionTitle'), t('rooms.adminDisabledFiles'));
       return;
     }
 
@@ -218,9 +223,9 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         }
       }
     } catch {
-      Alert.alert('Dosya Seçimi', 'Dosya seçilemedi.');
+      Alert.alert(t('rooms.filePickTitle'), t('rooms.filePickError'));
     }
-  }, [addSharedFile, setActiveSharedFileId, user, viewToggles.screen, toggleView, isHost, roomSettings.allowFiles]);
+  }, [addSharedFile, setActiveSharedFileId, user, viewToggles.screen, toggleView, isHost, roomSettings.allowFiles, t]);
 
   const handleRemoveFile = useCallback((fileId: string) => {
     removeSharedFile(fileId);
@@ -286,7 +291,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           <View style={styles.emptyContent}>
             <Ionicons name="eye-off-outline" size={48} color={colors.textDisabled} />
             <Text style={[typography.body, { color: colors.textDisabled, marginTop: spacing.md, textAlign: 'center' }]}>
-              Sağdaki butonları kullanarak{'\n'}ekran veya kameraları gösterebilirsin
+              {t('rooms.toggleHelpText')}
             </Text>
           </View>
         )}

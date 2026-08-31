@@ -10,26 +10,28 @@ import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { revenueCatService } from '../../../services/monetization/RevenueCatService';
+import { useTranslation } from '../../../i18n';
 
 interface PremiumPaywallSheetProps {
   visible: boolean;
   onClose: () => void;
 }
 
-const PREMIUM_FEATURES = [
-  'Reklamsız kesintisiz odaklanma',
-  'Tüm özel arka plan animasyonları',
-  'Özel çalışma odaları oluşturma',
-  'Detaylı istatistik ve analizler',
-];
-
 export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<PurchasesPackage | null>(null);
   const [loading, setLoading] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [prevVisible, setPrevVisible] = useState(false);
+
+  const premiumFeatures = [
+    t('premium.feature1'),
+    t('premium.feature2'),
+    t('premium.feature3'),
+    t('premium.feature4'),
+  ];
 
   if (visible !== prevVisible) {
     setPrevVisible(visible);
@@ -65,11 +67,11 @@ export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetPro
     setPurchasing(false);
     
     if (success) {
-      Alert.alert('Tebrikler!', 'PomoMate Pro özelliklerine başarıyla eriştiniz.', [
-        { text: 'Tamam', onPress: onClose }
+      Alert.alert(t('premium.successTitle'), t('premium.successMessage'), [
+        { text: t('common.ok'), onPress: onClose }
       ]);
     } else {
-      Alert.alert('Hata', 'Satın alma işlemi başarısız oldu veya iptal edildi.');
+      Alert.alert(t('premium.errorTitle'), t('premium.errorMessage'));
     }
   };
 
@@ -79,11 +81,11 @@ export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetPro
     setPurchasing(false);
     
     if (success) {
-      Alert.alert('Başarılı', 'Önceki satın alımlarınız geri yüklendi.', [
-        { text: 'Tamam', onPress: onClose }
+      Alert.alert(t('premium.restoreSuccessTitle'), t('premium.restoreSuccessMessage'), [
+        { text: t('common.ok'), onPress: onClose }
       ]);
     } else {
-      Alert.alert('Bilgi', 'Geri yüklenecek bir abonelik bulunamadı.');
+      Alert.alert(t('premium.restoreNotFoundTitle'), t('premium.restoreNotFoundMessage'));
     }
   };
 
@@ -100,15 +102,15 @@ export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetPro
           <Ionicons name="star" size={32} color="#fff" />
         </View>
         <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>
-          PomoMate Pro
+          {t('premium.title')}
         </Text>
         <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
-          Potansiyelini maksimuma çıkar ve odaklanmanın keyfini sür!
+          {t('premium.subtitle')}
         </Text>
       </View>
 
       <View style={styles.features}>
-        {PREMIUM_FEATURES.map((feat, i) => (
+        {premiumFeatures.map((feat, i) => (
           <View key={i} style={styles.featureRow}>
             <Ionicons name="checkmark-circle" size={20} color={colors.success} />
             <Text style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm }]}>
@@ -122,14 +124,14 @@ export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetPro
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>
-            Paketler yükleniyor...
+            {t('premium.loadingPackages')}
           </Text>
         </View>
       ) : (
         <View style={styles.packagesWrap}>
           {packages.length === 0 ? (
             <Text style={[typography.caption, { color: colors.error, textAlign: 'center' }]}>
-              Aktif abonelik paketi bulunamadı. Lütfen daha sonra tekrar deneyin.
+              {t('premium.noPackages')}
             </Text>
           ) : (
             packages.map((pkg) => {
@@ -167,14 +169,14 @@ export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetPro
 
       <View style={styles.footer}>
         <Button
-          title={purchasing ? "İşleniyor..." : "Şimdi Başla"}
+          title={purchasing ? t('premium.processing') : t('premium.startNow')}
           onPress={handlePurchase}
           disabled={!selectedPackage || loading || purchasing}
           loading={purchasing}
         />
         <Pressable onPress={handleRestore} style={styles.restoreBtn}>
           <Text style={[typography.captionBold, { color: colors.textSecondary }]}>
-            Satın Alımları Geri Yükle
+            {t('premium.restorePurchases')}
           </Text>
         </Pressable>
       </View>

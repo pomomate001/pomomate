@@ -6,4 +6,6 @@ export { PremiumReferralCard } from './PremiumReferralCard';
 export { AvatarPicker } from './AvatarPicker';
 export { PremiumPaywallSheet } from './PremiumPaywallSheet';
 export { AboutSheet } from './AboutSheet';
+export { LanguageSheet } from './LanguageSheet';
 export { AppearanceOptionCard } from './AppearanceOptionCard';
+

@@ -15,6 +15,7 @@ import { RoomChat, RoomFilesBoard, RoomSettingsPanel } from './features';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
+import { useTranslation } from '../../../i18n';
 
 interface Participant {
   userId: string;
@@ -63,6 +64,7 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { t } = useTranslation();
   const height = useSharedValue(EXPANDED_HEIGHT);
   const startHeight = useSharedValue(EXPANDED_HEIGHT);
 
@@ -144,7 +146,7 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
     return {
       opacity,
       flex: 1,
-      display: height.value <= EXPANDED_HEIGHT + 20 ? 'none' : 'flex',
+      display: height.value <= EXPANDED_HEIGHT ? 'none' : 'flex',
     };
   });
 
@@ -155,9 +157,9 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
           styles.container,
           animatedStyle,
           {
-            backgroundColor: colors.surface ? `${colors.surface}F5` : 'rgba(24, 24, 28, 0.96)',
-            borderColor: colors.border,
-            paddingBottom: insets.bottom + spacing.xs,
+            backgroundColor: `${colors.surface}FA`,
+            borderTopColor: colors.border,
+            paddingBottom: insets.bottom,
           },
         ]}
       >
@@ -182,12 +184,11 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
               <Text style={[styles.inviteText, { color: colors.primary }]}>{inviteCode}</Text>
             </View>
           </View>
+          
+          <View style={styles.participantsWrap}>
+            <ParticipantsBar participants={participants} />
+          </View>
         </Animated.View>
-
-        {/* Compact Participants Row */}
-        <View style={styles.participantsWrap}>
-          <ParticipantsBar participants={participants} />
-        </View>
 
         {/* Controls Row */}
         <View style={styles.controlsRow}>
@@ -231,16 +232,16 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
         <Animated.View style={[styles.contentSection, contentSectionStyle]}>
           <View style={[styles.tabHeader, { borderBottomColor: colors.border }]}>
             <Pressable style={styles.tabBtn} onPress={() => setActiveTab('chat')}>
-              <Text style={[styles.tabText, { color: activeTab === 'chat' ? colors.primary : colors.textSecondary }]}>Sohbet</Text>
+              <Text style={[styles.tabText, { color: activeTab === 'chat' ? colors.primary : colors.textSecondary }]}>{t('rooms.tabChat')}</Text>
               {activeTab === 'chat' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
             </Pressable>
             <Pressable style={styles.tabBtn} onPress={() => setActiveTab('files')}>
-              <Text style={[styles.tabText, { color: activeTab === 'files' ? colors.primary : colors.textSecondary }]}>Dosyalar</Text>
+              <Text style={[styles.tabText, { color: activeTab === 'files' ? colors.primary : colors.textSecondary }]}>{t('rooms.tabFiles')}</Text>
               {activeTab === 'files' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
             </Pressable>
             {isHost && (
               <Pressable style={styles.tabBtn} onPress={() => setActiveTab('settings')}>
-                <Text style={[styles.tabText, { color: activeTab === 'settings' ? colors.primary : colors.textSecondary }]}>Ayarlar</Text>
+                <Text style={[styles.tabText, { color: activeTab === 'settings' ? colors.primary : colors.textSecondary }]}>{t('rooms.tabSettings')}</Text>
                 {activeTab === 'settings' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
               </Pressable>
             )}

@@ -13,6 +13,7 @@ import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { useUserStore, useSettingsStore } from '../../../state';
 import { referralService, ReferralReward } from '../../../services/monetization/ReferralService';
+import { useTranslation } from '../../../i18n';
 
 interface ReferralSheetProps {
   visible: boolean;
@@ -21,6 +22,7 @@ interface ReferralSheetProps {
 
 export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const user = useUserStore((s) => s.user);
   const setIsPremium = useSettingsStore((s) => s.setIsPremium);
 
@@ -51,16 +53,16 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
   const handleShare = async () => {
     try {
       await Share.share({
-        title: 'PomoMate — Birlikte Çalışalım!',
-        message: `PomoMate ile birlikte odaklanalım! Benim davet kodumla kaydol ve çalışma odalarında buluşalım: ${referralLink}\n\nDavet Kodu: ${referralCode}`,
+        title: t('referral.shareTitle'),
+        message: t('referral.shareMessage', { link: referralLink, code: referralCode }),
       });
     } catch {
-      Alert.alert('Hata', 'Paylaşım başlatılamadı.');
+      Alert.alert(t('common.error'), t('rooms.shareMessageTitle'));
     }
   };
 
   const handleCopy = () => {
-    Alert.alert('Kopyalandı!', `Davet Kodun: ${referralCode}\nArkadaşlarınla paylaşabilirsin!`);
+    Alert.alert(t('referral.copiedTitle'), t('referral.copiedMessage', { code: referralCode }));
   };
 
   const handleClaim = async () => {
@@ -70,15 +72,20 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
 
     if (success || rewardStatus.completedReferrals >= 3) {
       setIsPremium(true);
-      Alert.alert('Tebrikler! 🎉', '1 Aylık Ücretsiz PomoMate Pro üyeliğiniz aktif edildi!', [
-        { text: 'Harika!', onPress: onClose },
+      Alert.alert(t('referral.claimSuccessTitle'), t('referral.claimSuccessMessage'), [
+        { text: t('common.ok'), onPress: onClose },
       ]);
     } else {
-      Alert.alert('Yetersiz Davet', '1 ay ücretsiz Pro kazanmak için 3 arkadaşının kaydolması gerekir.');
+      Alert.alert(t('referral.insufficientTitle'), t('referral.insufficientMessage'));
     }
   };
 
   const completed = rewardStatus.completedReferrals;
+  const friendSteps = [
+    t('referral.friendStep1'),
+    t('referral.friendStep2'),
+    t('referral.friendStep3'),
+  ];
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
@@ -93,21 +100,21 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
           <Ionicons name="gift" size={32} color="#fff" />
         </View>
         <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>
-          Bedava Pro Kazan
+          {t('referral.title')}
         </Text>
         <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
-          3 arkadaşını PomoMate&apos;e davet et, 1 ay boyunca tüm Pro özelliklerini ücretsiz kullan!
+          {t('referral.subtitle')}
         </Text>
       </View>
 
       {/* Progress Cards */}
       <View style={[styles.progressCard, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
         <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.sm }]}>
-          DAVET İLERLEMESİ ({completed} / 3)
+          {t('referral.progressHeader', { completed })}
         </Text>
 
         <View style={styles.stepsRow}>
-          {[1, 2, 3].map((step) => {
+          {[1, 2, 3].map((step, idx) => {
             const isDone = completed >= step;
             return (
               <View key={step} style={styles.stepItem}>
@@ -127,7 +134,7 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
                   />
                 </View>
                 <Text style={[typography.caption, { color: isDone ? colors.success : colors.textDisabled, marginTop: 4 }]}>
-                  {step}. Arkadaş
+                  {friendSteps[idx]}
                 </Text>
               </View>
             );
@@ -138,7 +145,7 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
       {/* Referral Code Box */}
       <View style={styles.codeSection}>
         <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
-          SENİN ÖZEL DAVET KODUN
+          {t('referral.yourCodeHeader')}
         </Text>
         <Pressable
           onPress={handleCopy}
@@ -149,7 +156,7 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
           </Text>
           <View style={[styles.copyPill, { backgroundColor: `${colors.primary}15` }]}>
             <Ionicons name="copy-outline" size={14} color={colors.primary} style={{ marginRight: 4 }} />
-            <Text style={[typography.captionBold, { color: colors.primary }]}>Kopyala</Text>
+            <Text style={[typography.captionBold, { color: colors.primary }]}>{t('referral.copy')}</Text>
           </View>
         </Pressable>
       </View>
@@ -157,7 +164,7 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
       {/* Actions */}
       <View style={styles.footer}>
         <Button
-          title="Arkadaşlarınla Paylaş"
+          title={t('referral.shareBtn')}
           onPress={handleShare}
           icon={<Ionicons name="share-social" size={18} color={colors.textInverse} />}
           style={{ marginBottom: spacing.sm }}
@@ -165,7 +172,7 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
 
         {completed >= 3 && (
           <Button
-            title="1 Ay Pro Ödülünü Al 🎉"
+            title={t('referral.claimBtn')}
             onPress={handleClaim}
             variant="gradient"
             loading={loading}

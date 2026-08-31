@@ -6,10 +6,15 @@
  * existing consumers.
  */
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { storage } from '../platform/storage';
 
 export type AmbientSoundMode = 'work' | 'break' | 'always' | 'off';
 
 export interface SettingsState {
+  // Localization
+  language: 'tr' | 'en';
+
   // Appearance
   themeId: string;
   timerDesignId: string;
@@ -34,6 +39,7 @@ export interface SettingsState {
 }
 
 interface SettingsActions {
+  setLanguage: (language: 'tr' | 'en') => void;
   setThemeId: (id: string) => void;
   setTimerDesignId: (id: string) => void;
   setBackgroundEffectId: (id: string) => void;
@@ -52,6 +58,7 @@ interface SettingsActions {
 }
 
 const initialSettings: SettingsState = {
+  language: 'tr',
   themeId: 'dark',
   timerDesignId: 'circle',
   backgroundEffectId: 'none',
@@ -68,22 +75,31 @@ const initialSettings: SettingsState = {
   isPremium: false,
 };
 
-export const useSettingsStore = create<SettingsState & SettingsActions>((set) => ({
-  ...initialSettings,
+export const useSettingsStore = create<SettingsState & SettingsActions>()(
+  persist(
+    (set) => ({
+      ...initialSettings,
 
-  setThemeId: (themeId) => set({ themeId }),
-  setTimerDesignId: (timerDesignId) => set({ timerDesignId }),
-  setBackgroundEffectId: (backgroundEffectId) => set({ backgroundEffectId }),
-  setWorkAnimationId: (workAnimationId) => set({ workAnimationId }),
-  setBreakAnimationId: (breakAnimationId) => set({ breakAnimationId }),
-  setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
-  setSoundId: (soundId) => set({ soundId }),
-  setAmbientSoundId: (ambientSoundId) => set({ ambientSoundId }),
-  setAmbientSoundMode: (ambientSoundMode) => set({ ambientSoundMode }),
-  setWorkDuration: (workDuration) => set({ workDuration }),
-  setShortBreakDuration: (shortBreakDuration) => set({ shortBreakDuration }),
-  setLongBreakDuration: (longBreakDuration) => set({ longBreakDuration }),
-  setCyclesBeforeLongBreak: (cyclesBeforeLongBreak) => set({ cyclesBeforeLongBreak }),
-  setIsPremium: (isPremium) => set({ isPremium }),
-  reset: () => set(initialSettings),
-}));
+      setLanguage: (language) => set({ language }),
+      setThemeId: (themeId) => set({ themeId }),
+      setTimerDesignId: (timerDesignId) => set({ timerDesignId }),
+      setBackgroundEffectId: (backgroundEffectId) => set({ backgroundEffectId }),
+      setWorkAnimationId: (workAnimationId) => set({ workAnimationId }),
+      setBreakAnimationId: (breakAnimationId) => set({ breakAnimationId }),
+      setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
+      setSoundId: (soundId) => set({ soundId }),
+      setAmbientSoundId: (ambientSoundId) => set({ ambientSoundId }),
+      setAmbientSoundMode: (ambientSoundMode) => set({ ambientSoundMode }),
+      setWorkDuration: (workDuration) => set({ workDuration }),
+      setShortBreakDuration: (shortBreakDuration) => set({ shortBreakDuration }),
+      setLongBreakDuration: (longBreakDuration) => set({ longBreakDuration }),
+      setCyclesBeforeLongBreak: (cyclesBeforeLongBreak) => set({ cyclesBeforeLongBreak }),
+      setIsPremium: (isPremium) => set({ isPremium }),
+      reset: () => set(initialSettings),
+    }),
+    {
+      name: 'pomomate-settings',
+      storage: createJSONStorage(() => storage),
+    }
+  )
+);

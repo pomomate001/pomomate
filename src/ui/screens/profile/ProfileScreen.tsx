@@ -13,8 +13,10 @@ import { PremiumReferralCard } from './PremiumReferralCard';
 import { PremiumPaywallSheet } from './PremiumPaywallSheet';
 import { ReferralSheet } from './ReferralSheet';
 import { AboutSheet } from './AboutSheet';
+import { LanguageSheet } from './LanguageSheet';
 import * as ImagePicker from 'expo-image-picker';
 import { AdPlacement } from '../../ads';
+import { useTranslation } from '../../../i18n';
 
 interface ProfileScreenProps {
   onNavigateAppearance: () => void;
@@ -51,11 +53,13 @@ export function ProfileScreen({
   onNavigateSounds,
 }: ProfileScreenProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const user = useUserStore((s) => s.user);
   const updateUser = useUserStore((s) => s.updateUser);
   const [showPaywall, setShowPaywall] = React.useState(false);
   const [showReferral, setShowReferral] = React.useState(false);
   const [showAbout, setShowAbout] = React.useState(false);
+  const [showLanguage, setShowLanguage] = React.useState(false);
 
   const handlePickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -93,7 +97,7 @@ export function ProfileScreen({
               onRemove={handleRemoveAvatar}
             />
             <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center', marginTop: spacing.md }]}>
-              {user?.displayName ?? 'Kullanıcı'}
+              {user?.displayName ?? t('profile.userDefault')}
             </Text>
             <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>
               {user?.email ?? ''}
@@ -110,11 +114,12 @@ export function ProfileScreen({
 
           {/* Settings */}
           <View style={[styles.settingsSection, shadows.sm, { backgroundColor: colors.surface }]}>
-            <SettingRow icon="color-palette-outline" label="Tema ve Görünüm" onPress={onNavigateAppearance} />
-            <SettingRow icon="timer-outline" label="Çalışma / Mola Süreleri" onPress={onNavigateTimer} />
-            <SettingRow icon="volume-high-outline" label="Sesler ve Bildirimler" onPress={onNavigateSounds} />
-            <SettingRow icon="shield-checkmark-outline" label="Gizlilik ve Veriler" onPress={() => alert('PomoMate verilerinizi yerel ve güvenli Supabase veritabanında saklar.')} />
-            <SettingRow icon="information-circle-outline" label="Hakkında" onPress={() => setShowAbout(true)} hideBorder />
+            <SettingRow icon="color-palette-outline" label={t('profile.appearance')} onPress={onNavigateAppearance} />
+            <SettingRow icon="timer-outline" label={t('profile.timerSettings')} onPress={onNavigateTimer} />
+            <SettingRow icon="volume-high-outline" label={t('profile.soundSettings')} onPress={onNavigateSounds} />
+            <SettingRow icon="globe-outline" label={t('profile.language')} onPress={() => setShowLanguage(true)} />
+            <SettingRow icon="shield-checkmark-outline" label={t('profile.privacyData')} onPress={() => alert(t('profile.privacyAlert'))} />
+            <SettingRow icon="information-circle-outline" label={t('profile.about')} onPress={() => setShowAbout(true)} hideBorder />
           </View>
 
           {/* Sign out */}
@@ -127,7 +132,7 @@ export function ProfileScreen({
           >
             <Ionicons name="log-out-outline" size={20} color={colors.error} />
             <Text style={[typography.bodyBold, { color: colors.error, marginLeft: spacing.sm }]}>
-              Çıkış Yap
+              {t('profile.signOut')}
             </Text>
           </Pressable>
 
@@ -150,6 +155,11 @@ export function ProfileScreen({
       <AboutSheet
         visible={showAbout}
         onClose={() => setShowAbout(false)}
+      />
+
+      <LanguageSheet
+        visible={showLanguage}
+        onClose={() => setShowLanguage(false)}
       />
     </>
   );

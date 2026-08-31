@@ -17,6 +17,7 @@ import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { authService } from '../../../services/auth';
 import { useUserStore } from '../../../state';
+import { useTranslation } from '../../../i18n';
 
 interface LoginScreenProps {
   onGoToRegister: () => void;
@@ -25,6 +26,7 @@ interface LoginScreenProps {
 
 export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScreenProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const setUser = useUserStore((state) => state.setUser);
 
   const [email, setEmail] = useState('');
@@ -36,7 +38,7 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail || !password) {
-      setError('Lütfen e-posta ve şifre alanlarını doldurun.');
+      setError(t('auth.fillAllFields'));
       return;
     }
 
@@ -46,7 +48,7 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
       const user = await authService.signInWithEmail(normalizedEmail, password);
       setUser(user);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Giriş sırasında beklenmeyen bir hata oluştu.';
+      const message = err instanceof Error ? err.message : t('auth.unexpectedError');
       setError(message);
     } finally {
       setIsLoading(false);
@@ -60,8 +62,8 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
       const user = await authService.signInWithGoogle();
       setUser(user);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Google ile giriş sırasında hata oluştu.';
-      if (message !== 'Giriş iptal edildi.') {
+      const message = err instanceof Error ? err.message : t('auth.unexpectedError');
+      if (message !== 'Giriş iptal edildi.' && message !== 'Sign in cancelled.') {
         setError(message);
       }
     } finally {
@@ -89,25 +91,25 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
         >
           <View style={styles.header}>
             <PomoMateIcon size={64} />
-            <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>Hoş geldin</Text>
+            <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>{t('auth.welcomeTitle')}</Text>
             <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, textAlign: 'center' }]}> 
-              PomoMate hesabınla giriş yap ve birlikte çalışmaya devam et.
+              {t('auth.welcomeSubtitle')}
             </Text>
           </View>
 
           <Input
-            label="E-posta"
+            label={t('auth.email')}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
-            placeholder="ornek@eposta.com"
+            placeholder={t('auth.emailPlaceholder')}
             leftIcon="mail-outline"
           />
 
           <Input
-            label="Şifre"
+            label={t('auth.password')}
             value={password}
             onChangeText={setPassword}
             autoCapitalize="none"
@@ -119,7 +121,7 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
 
           <View style={{ alignItems: 'flex-end', marginBottom: spacing.lg, marginTop: -spacing.sm }}>
             <Pressable onPress={onGoToForgotPassword} hitSlop={8}>
-              <Text style={[typography.caption, { color: colors.primary }]}>Şifremi Unuttum</Text>
+              <Text style={[typography.caption, { color: colors.primary }]}>{t('auth.forgotPassword')}</Text>
             </Pressable>
           </View>
 
@@ -130,7 +132,7 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
           )}
 
           <Button
-            title="Giriş Yap"
+            title={t('auth.loginBtn')}
             onPress={handleEmailLogin}
             loading={isLoading}
             disabled={isLoading}
@@ -140,7 +142,7 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
           />
 
           <Button
-            title="Google ile Giriş"
+            title={t('auth.loginGoogle')}
             onPress={handleGoogleSignIn}
             variant="outline"
             disabled={isLoading}
@@ -148,9 +150,9 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
           />
 
           <View style={styles.footer}>
-            <Text style={[typography.body, { color: colors.textSecondary }]}>Hesabın yok mu?</Text>
+            <Text style={[typography.body, { color: colors.textSecondary }]}>{t('auth.noAccount')}</Text>
             <Pressable onPress={onGoToRegister} hitSlop={8} style={{ padding: spacing.xs }}>
-              <Text style={[typography.bodyBold, { color: colors.primary }]}>Kayıt ol</Text>
+              <Text style={[typography.bodyBold, { color: colors.primary }]}>{t('auth.registerLink')}</Text>
             </Pressable>
           </View>
         </ScrollView>

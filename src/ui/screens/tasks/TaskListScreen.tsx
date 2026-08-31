@@ -18,6 +18,7 @@ import { AddTaskInput } from './AddTaskInput';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
 import type { Task } from '../../../types';
+import { useTranslation } from '../../../i18n';
 
 export function TaskListScreen() {
   const tasks = useTaskStore((s) => s.tasks);
@@ -26,6 +27,7 @@ export function TaskListScreen() {
   const removeTask = useTaskStore((s) => s.removeTask);
   const recordTaskCompleted = useStatsStore((s) => s.recordTaskCompleted);
   const colors = useColors();
+  const { t } = useTranslation();
 
   const handleAdd = useCallback(
     (title: string) => {
@@ -71,8 +73,8 @@ export function TaskListScreen() {
         ListEmptyComponent={
           <EmptyState
             icon={<Ionicons name="list-outline" size={48} color={colors.textDisabled} />}
-            title="Henüz görev yok"
-            message="Yukarıdan yeni bir görev ekleyin"
+            title={t('tasks.emptyTasks')}
+            message={t('tasks.emptyTasksSubtitle')}
           />
         }
       />

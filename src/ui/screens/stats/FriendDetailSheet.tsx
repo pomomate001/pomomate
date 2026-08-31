@@ -8,6 +8,7 @@ import { BottomSheet } from '../../components/BottomSheet';
 import { StatCard } from './StatCard';
 import { Ionicons } from '@expo/vector-icons';
 import type { FriendSummary } from '../../../state/friendsStore';
+import { useTranslation, Language } from '../../../i18n';
 
 interface FriendDetailSheetProps {
   friend: FriendSummary | null;
@@ -15,14 +16,18 @@ interface FriendDetailSheetProps {
   onClose: () => void;
 }
 
-function formatHours(seconds: number): string {
+function formatHours(seconds: number, lang: Language): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
+  if (lang === 'en') {
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
   return h > 0 ? `${h}s ${m}dk` : `${m}dk`;
 }
 
 export function FriendDetailSheet({ friend, visible, onClose }: FriendDetailSheetProps) {
   const colors = useColors();
+  const { t, language } = useTranslation();
 
   if (!friend) return null;
 
@@ -37,19 +42,19 @@ export function FriendDetailSheet({ friend, visible, onClose }: FriendDetailShee
       <View style={styles.cards}>
         <StatCard
           icon={<Ionicons name="time-outline" size={20} color={colors.info} />}
-          label="Toplam Süre"
-          value={formatHours(friend.totalWorkSeconds)}
+          label={t('stats.totalDuration')}
+          value={formatHours(friend.totalWorkSeconds, language)}
         />
         <View style={{ width: spacing.sm }} />
         <StatCard
           icon={<Text style={{ fontSize: 18 }}>🍅</Text>}
-          label="Pomodoro"
+          label={t('stats.pomodoro')}
           value={String(friend.totalPomodoros)}
         />
         <View style={{ width: spacing.sm }} />
         <StatCard
           icon={<Text style={{ fontSize: 18 }}>🔥</Text>}
-          label="Streak"
+          label={t('stats.streak')}
           value={String(friend.streak)}
         />
       </View>

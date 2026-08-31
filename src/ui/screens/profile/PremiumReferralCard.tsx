@@ -8,6 +8,7 @@ import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { shadows } from '../../theme/shadows';
 import { useSettingsStore } from '../../../state';
+import { useTranslation } from '../../../i18n';
 
 interface PremiumReferralCardProps {
   onPremiumPress: () => void;
@@ -17,6 +18,7 @@ interface PremiumReferralCardProps {
 export function PremiumReferralCard({ onPremiumPress, onReferralPress }: PremiumReferralCardProps) {
   const isPremium = useSettingsStore((s) => s.isPremium);
   const colors = useColors();
+  const { t } = useTranslation();
 
   if (isPremium) return null;
 
@@ -34,10 +36,10 @@ export function PremiumReferralCard({ onPremiumPress, onReferralPress }: Premium
           <Ionicons name="star" size={24} color="#fff" />
         </View>
         <Text style={[typography.bodyBold, { color: colors.textPrimary, marginTop: spacing.xs, textAlign: 'center' }]}>
-          PomoMate Pro
+          {t('premium.cardBadge')}
         </Text>
         <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xxs }]}>
-          Tüm özellikleri aç
+          {t('premium.cardSubtitle')}
         </Text>
       </Pressable>
 
@@ -53,10 +55,10 @@ export function PremiumReferralCard({ onPremiumPress, onReferralPress }: Premium
           <Ionicons name="gift" size={24} color="#fff" />
         </View>
         <Text style={[typography.bodyBold, { color: colors.textPrimary, marginTop: spacing.xs, textAlign: 'center' }]}>
-          Bedava Pro Kazan
+          {t('referral.cardTitle')}
         </Text>
         <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xxs }]}>
-          3 arkadaşını davet et
+          {t('referral.cardSubtitle')}
         </Text>
       </Pressable>
     </View>

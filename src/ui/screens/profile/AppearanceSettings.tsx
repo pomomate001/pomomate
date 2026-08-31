@@ -12,6 +12,7 @@ import { timerDesigns } from '../timer/timerDesigns';
 import { backgroundEffects } from '../../animations/backgroundEffects';
 import { focusAnimations } from '../../animations/focusAnimations';
 import { AppearanceOptionCard } from './AppearanceOptionCard';
+import { useTranslation } from '../../../i18n';
 import {
   VideoWindmillPreview,
   VideoSkyPreview,
@@ -34,6 +35,7 @@ import {
 
 export function AppearanceSettings() {
   const colors = useColors();
+  const { t } = useTranslation();
   const { availableThemes, setThemeId } = useTheme();
   const {
     themeId,
@@ -108,7 +110,7 @@ export function AppearanceSettings() {
       showsVerticalScrollIndicator={false}
     >
       {/* 1. Live Video Backgrounds */}
-      <SectionHeader title="🎥 Canlı Video Arka Planlar" />
+      <SectionHeader title={t('appearance.videoBackgrounds')} />
       <View style={styles.gridContainer}>
         {videoBackgrounds.map((e) => (
           <AppearanceOptionCard
@@ -124,7 +126,7 @@ export function AppearanceSettings() {
       </View>
 
       {/* 2. Static Image Wallpapers */}
-      <SectionHeader title="🖼️ Duvar Kağıtları" />
+      <SectionHeader title={t('appearance.wallpapers')} />
       <View style={styles.gridContainer}>
         {imageBackgrounds.map((e) => (
           <AppearanceOptionCard
@@ -140,7 +142,7 @@ export function AppearanceSettings() {
       </View>
 
       {/* 3. Particle & Ambient Effects */}
-      <SectionHeader title="✨ Atmosfer & Parçacık Efektleri" />
+      <SectionHeader title={t('appearance.atmosphereEffects')} />
       <View style={styles.gridContainer}>
         {otherBackgrounds.map((e) => (
           <AppearanceOptionCard
@@ -156,7 +158,7 @@ export function AppearanceSettings() {
       </View>
 
       {/* 4. Focus Animation (Work) */}
-      <SectionHeader title="🐱 Çalışma Zamanı Animasyonu" />
+      <SectionHeader title={t('appearance.workAnimation')} />
       <View style={styles.gridContainer}>
         {focusAnimations.map((a) => (
           <AppearanceOptionCard
@@ -172,7 +174,7 @@ export function AppearanceSettings() {
       </View>
 
       {/* 5. Focus Animation (Break) */}
-      <SectionHeader title="☕ Mola Zamanı Animasyonu" />
+      <SectionHeader title={t('appearance.breakAnimation')} />
       <View style={styles.gridContainer}>
         {focusAnimations.map((a) => (
           <AppearanceOptionCard
@@ -188,23 +190,23 @@ export function AppearanceSettings() {
       </View>
 
       {/* 6. Theme */}
-      <SectionHeader title="🎨 Renk Temaları" />
+      <SectionHeader title={t('appearance.colorThemes')} />
       <View style={styles.gridContainer}>
-        {availableThemes.map((t) => (
+        {availableThemes.map((tItem) => (
           <AppearanceOptionCard
-            key={t.id}
-            title={t.label}
-            subtitle={t.description}
-            isSelected={themeId === t.id}
-            isPremium={t.isPremium}
-            onPress={() => handleTheme(t.id)}
-            renderPreview={() => <ThemeMockupPreview theme={t} />}
+            key={tItem.id}
+            title={tItem.label}
+            subtitle={tItem.description}
+            isSelected={themeId === tItem.id}
+            isPremium={tItem.isPremium}
+            onPress={() => handleTheme(tItem.id)}
+            renderPreview={() => <ThemeMockupPreview theme={tItem} />}
           />
         ))}
       </View>
 
       {/* 7. Timer Design */}
-      <SectionHeader title="⏱️ Sayaç Tasarımı" />
+      <SectionHeader title={t('appearance.timerDesign')} />
       <View style={styles.gridContainer}>
         {timerDesigns.map((d) => (
           <AppearanceOptionCard

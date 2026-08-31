@@ -9,6 +9,7 @@ import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import type { Task, RecurrenceType } from '../../../types';
+import { useTranslation } from '../../../i18n';
 
 interface AddTaskSheetProps {
   visible: boolean;
@@ -19,20 +20,21 @@ interface AddTaskSheetProps {
   initialTask?: Task;
 }
 
-const RECURRENCE_OPTIONS: { label: string; value: RecurrenceType }[] = [
-  { label: 'Tek Seferlik', value: 'none' },
-  { label: 'Her Gün', value: 'daily' },
-  { label: 'Hafta İçi', value: 'weekdays' },
-  { label: 'Hafta Sonu', value: 'weekends' },
-];
-
 export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, initialTask }: AddTaskSheetProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [tag, setTag] = useState('');
   const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
   const [prevTask, setPrevTask] = useState<Task | undefined>(undefined);
   const [prevVisible, setPrevVisible] = useState(false);
+
+  const recurrenceOptions: { label: string; value: RecurrenceType }[] = [
+    { label: t('tasks.recurrenceNone'), value: 'none' },
+    { label: t('tasks.recurrenceDaily'), value: 'daily' },
+    { label: t('tasks.recurrenceWeekdays'), value: 'weekdays' },
+    { label: t('tasks.recurrenceWeekends'), value: 'weekends' },
+  ];
 
   if (visible !== prevVisible || initialTask !== prevTask) {
     setPrevVisible(visible);
@@ -66,31 +68,31 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.lg }]}>
-        {initialTask ? 'Görevi Düzenle' : 'Yeni Görev Ekle'}
+        {initialTask ? t('tasks.editTask') : t('tasks.addNewTask')}
       </Text>
 
       <Input
-        label="Görev Adı"
-        placeholder="Örn: 20 sayfa kitap oku"
+        label={t('tasks.taskTitle')}
+        placeholder={t('tasks.taskTitlePlaceholder')}
         value={title}
         onChangeText={setTitle}
         autoFocus
       />
 
       <Input
-        label="Etiket (Klas)"
-        placeholder="Örn: Biyoloji, Kitap, Spor"
+        label={t('tasks.tagLabel')}
+        placeholder={t('tasks.tagPlaceholder')}
         value={tag}
         onChangeText={setTag}
         leftIcon="pricetag-outline"
       />
 
       <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.sm, marginTop: spacing.md }]}>
-        Tekrar Etme
+        {t('tasks.recurrence')}
       </Text>
       
       <View style={styles.optionsWrap}>
-        {RECURRENCE_OPTIONS.map((opt) => {
+        {recurrenceOptions.map((opt) => {
           const isSelected = recurrence === opt.value;
           return (
             <Pressable
@@ -117,7 +119,7 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
 
       <View style={styles.footer}>
         <Button 
-          title={initialTask ? 'Kaydet' : 'Görevi Ekle'} 
+          title={initialTask ? t('tasks.saveBtn') : t('tasks.addTaskBtn')} 
           onPress={handleSave} 
           disabled={!title.trim()} 
           icon={<Ionicons name={initialTask ? "save" : "add"} size={20} color={colors.textInverse} />}

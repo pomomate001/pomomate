@@ -20,20 +20,16 @@ import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
 import { TaskItem } from '../tasks/TaskItem';
+import { useTranslation } from '../../../i18n';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const modeLabels: Record<TimerMode, string> = {
-  work: 'Çalışma',
-  shortBreak: 'Kısa Mola',
-  longBreak: 'Uzun Mola',
-};
-
 export function TimerScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const {
     remainingSeconds,
     duration,
@@ -47,6 +43,12 @@ export function TimerScreen() {
     next,
     setMode,
   } = useTimerStore();
+
+  const modeLabels: Record<TimerMode, string> = {
+    work: t('timer.work'),
+    shortBreak: t('timer.shortBreak'),
+    longBreak: t('timer.longBreak'),
+  };
 
   const timerDesignId = useSettingsStore((s) => s.timerDesignId);
   const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
@@ -122,8 +124,8 @@ export function TimerScreen() {
         
         soundService.playCompletionSound();
         notificationService.scheduleTimerComplete(
-          'Pomodoro Tamamlandı! 🍅',
-          'Mola zamanı. İyi dinlenmeler!',
+          t('timer.pomodoroCompletedTitle'),
+          t('timer.pomodoroCompletedBody'),
         );
 
         // Show interstitial ad for free users
@@ -134,12 +136,12 @@ export function TimerScreen() {
       } else {
         soundService.playCompletionSound();
         notificationService.scheduleTimerComplete(
-          'Mola Bitti! ⏰',
-          'Çalışmaya geri dön.',
+          t('timer.breakCompletedTitle'),
+          t('timer.breakCompletedBody'),
         );
       }
     }
-  }, [remainingSeconds, isRunning, mode, recordPomodoro, workDuration]);
+  }, [remainingSeconds, isRunning, mode, recordPomodoro, workDuration, t]);
 
   const [showAddTask, setShowAddTask] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
@@ -241,7 +243,7 @@ export function TimerScreen() {
           {/* Cycle indicator */}
           <View style={[styles.cycleIndicator, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1 }]}>
             <Text style={[typography.captionBold, { color: colors.textPrimary, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 3 }]}>
-              DÖNGÜ {currentCycle}
+              {t('timer.cycle')} {currentCycle}
             </Text>
           </View>
         </View>
@@ -291,7 +293,7 @@ export function TimerScreen() {
           <View style={styles.tasksSection}>
             {/* Header */}
             <View style={styles.tasksHeader}>
-              <Text style={[typography.h4, { color: colors.textPrimary, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }]}>📋 Görevlerim</Text>
+              <Text style={[typography.h4, { color: colors.textPrimary, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }]}>{t('timer.myTasks')}</Text>
               <View style={[styles.taskCountBadge, { backgroundColor: colors.primaryLight }]}>
                 <Text style={[typography.captionBold, { color: colors.textInverse, fontSize: 10 }]}>
                   {uncompletedTasks.length}
@@ -299,7 +301,7 @@ export function TimerScreen() {
               </View>
               <View style={{ flex: 1 }} />
               <Button 
-                title="Yeni" 
+                title={t('timer.newTask')} 
                 size="sm" 
                 variant="outline" 
                 icon={<Ionicons name="add" size={14} color={colors.primary} />}
@@ -313,7 +315,7 @@ export function TimerScreen() {
               <View style={[styles.emptyCard, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
                 <Ionicons name="clipboard-outline" size={24} color={colors.textSecondary} />
                 <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
-                  Henüz görev eklenmedi.
+                  {t('timer.noTasksYet')}
                 </Text>
               </View>
             ) : (
@@ -326,7 +328,7 @@ export function TimerScreen() {
                   {isRunning && mode === 'work' && (
                     <View style={[styles.workingIndicator, { backgroundColor: colors.primary }]}>
                       <Ionicons name="radio" size={8} color={colors.textInverse} />
-                      <Text style={[typography.overline, { color: colors.textInverse, marginLeft: 3, fontSize: 8 }]}>ÜZERİNDE ÇALIŞILIYOR</Text>
+                      <Text style={[typography.overline, { color: colors.textInverse, marginLeft: 3, fontSize: 8 }]}>{t('timer.workingOn')}</Text>
                     </View>
                   )}
                   <View style={{ transform: [{ scale: 0.95 }] }}>
@@ -346,7 +348,7 @@ export function TimerScreen() {
                     style={[styles.expandBtn, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1 }]}
                   >
                     <Text style={[typography.captionBold, { color: colors.textPrimary, fontSize: 11 }]}>
-                      {isTaskListExpanded ? 'Görevleri Gizle' : `+${remainingTaskList.length} görev daha`}
+                      {isTaskListExpanded ? t('timer.hideTasks') : t('timer.moreTasks', { count: remainingTaskList.length })}
                     </Text>
                     <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>
                       <Ionicons name="chevron-down" size={14} color={colors.textPrimary} />

@@ -8,6 +8,7 @@ import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
+import { useTranslation } from '../../../i18n';
 
 interface AboutSheetProps {
   visible: boolean;
@@ -17,26 +18,27 @@ interface AboutSheetProps {
 const APP_VERSION = 'v1.0.6';
 const BUILD_NUMBER = '6';
 
-const HIGHLIGHTS = [
-  {
-    icon: 'color-palette-outline',
-    title: 'Modern Görünüm & Temalar',
-    desc: 'Canlı video arka planlar, parçacık efektleri ve renk temaları',
-  },
-  {
-    icon: 'people-outline',
-    title: 'Birlikte Çalışma Odaları',
-    desc: 'Arkadaşlarınızla sesli ve görüntülü eşzamanlı odaklanma',
-  },
-  {
-    icon: 'stats-chart-outline',
-    title: 'Gelişmiş İstatistikler',
-    desc: 'Günlük hedefler, seriler ve detaylı üretkenlik grafikleri',
-  },
-];
-
 export function AboutSheet({ visible, onClose }: AboutSheetProps) {
   const colors = useColors();
+  const { t } = useTranslation();
+
+  const highlights = [
+    {
+      icon: 'color-palette-outline',
+      title: t('about.highlightThemesTitle'),
+      desc: t('about.highlightThemesDesc'),
+    },
+    {
+      icon: 'people-outline',
+      title: t('about.highlightRoomsTitle'),
+      desc: t('about.highlightRoomsDesc'),
+    },
+    {
+      icon: 'stats-chart-outline',
+      title: t('about.highlightStatsTitle'),
+      desc: t('about.highlightStatsDesc'),
+    },
+  ];
 
   const handleOpenUrl = async (url: string) => {
     try {
@@ -60,21 +62,21 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
             PomoMate
           </Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
-            Birlikte Odaklan, Daha Fazlasını Başar
+            {t('about.slogan')}
           </Text>
 
           {/* Version Pill */}
           <View style={[styles.versionBadge, { backgroundColor: colors.surfaceVariant }]}>
             <Ionicons name="code-slash-outline" size={13} color={colors.primary} />
             <Text style={[styles.versionText, { color: colors.primary }]}>
-              Sürüm {APP_VERSION} ({BUILD_NUMBER})
+              {t('about.version')} {APP_VERSION} ({BUILD_NUMBER})
             </Text>
           </View>
         </View>
 
         {/* Highlights List */}
         <View style={styles.highlightsContainer}>
-          {HIGHLIGHTS.map((item, index) => (
+          {highlights.map((item, index) => (
             <View
               key={index}
               style={[
@@ -107,13 +109,13 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
         {/* Info & Legal Section */}
         <View style={[styles.infoSection, { borderColor: colors.divider }]}>
           <View style={styles.infoRow}>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Geliştirici</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('about.developer')}</Text>
             <Text style={[typography.captionBold, { color: colors.textPrimary }]}>
-              PomoMate Team
+              {t('about.developerName')}
             </Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>E-Posta Destek</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('about.emailSupport')}</Text>
             <Pressable onPress={() => handleOpenUrl('mailto:support@pomomate.app')}>
               <Text style={[typography.captionBold, { color: colors.primary }]}>
                 support@pomomate.app
@@ -130,7 +132,7 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
           >
             <Ionicons name="shield-checkmark-outline" size={14} color={colors.textSecondary} />
             <Text style={[styles.linkText, { color: colors.textSecondary }]}>
-              Gizlilik Politikası
+              {t('about.privacyPolicy')}
             </Text>
           </Pressable>
 
@@ -140,14 +142,14 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
           >
             <Ionicons name="document-text-outline" size={14} color={colors.textSecondary} />
             <Text style={[styles.linkText, { color: colors.textSecondary }]}>
-              Kullanım Şartları
+              {t('about.terms')}
             </Text>
           </Pressable>
         </View>
 
         {/* Copyright */}
         <Text style={[styles.copyrightText, { color: colors.textDisabled }]}>
-          © 2026 PomoMate. Tüm hakları saklıdır.
+          {t('about.copyright')}
         </Text>
       </View>
     </BottomSheet>

@@ -10,6 +10,7 @@ import { Button } from '../../components/Button';
 import { Avatar } from '../../components/Avatar';
 import { useUserStore, useFriendsStore } from '../../../state';
 import { friendService } from '../../../services/friends/FriendService';
+import { useTranslation } from '../../../i18n';
 
 interface AddFriendSheetProps {
   visible: boolean;
@@ -20,6 +21,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
   const [friendIdInput, setFriendIdInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [activeTab, setActiveTab] = useState<'add' | 'requests'>('add');
+  const { t } = useTranslation();
 
   const user = useUserStore((s) => s.user);
   const incomingRequests = useFriendsStore((s) => s.incomingRequests);
@@ -36,8 +38,8 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
   const handleShareMyCode = async () => {
     try {
       await Share.share({
-        message: `🍅 PomoMate'de birlikte odaklanalım! Beni arkadaş olarak ekle:\n\nArkadaşlık Kodu: ${myCode}\n\nPomoMate → İstatistikler → Arkadaşlarım → Arkadaş Ekle`,
-        title: 'PomoMate Arkadaşlık Kodu',
+        message: t('friends.shareCodeMessage', { code: myCode }),
+        title: t('friends.shareCodeTitle'),
       });
     } catch {
       // User cancelled
@@ -45,17 +47,17 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
   };
 
   const handleCopyCode = () => {
-    Alert.alert('Arkadaşlık Kodun', `Kodun: ${myCode}\n\nBu kodu arkadaşına göndererek seni eklemesini sağlayabilirsin!`);
+    Alert.alert(t('friends.yourCodeAlertTitle'), t('friends.yourCodeAlertBody', { code: myCode }));
   };
 
   const handleSendRequest = async () => {
     if (!friendIdInput.trim()) {
-      Alert.alert('Uyarı', 'Lütfen arkadaşının kullanıcı ID veya kodunu gir.');
+      Alert.alert(t('common.warning'), t('friends.enterCodeWarning'));
       return;
     }
 
     if (!user?.id) {
-      Alert.alert('Hata', 'Arkadaş eklemek için oturum açmalısınız.');
+      Alert.alert(t('common.error'), t('friends.loginRequired'));
       return;
     }
 
@@ -64,11 +66,11 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
     setIsSending(false);
 
     if (result.success) {
-      Alert.alert('Başarılı', result.message);
+      Alert.alert(t('common.success'), result.message);
       setFriendIdInput('');
       onClose();
     } else {
-      Alert.alert('Hata', result.message);
+      Alert.alert(t('common.error'), result.message);
     }
   };
 
@@ -76,9 +78,9 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
     if (!user?.id) return;
     const ok = await friendService.acceptRequest(requestId, fromUserId, user.id);
     if (ok) {
-      Alert.alert('Başarılı', 'Arkadaşlık isteği kabul edildi!');
+      Alert.alert(t('common.success'), t('friends.requestAccepted'));
     } else {
-      Alert.alert('Hata', 'İstek kabul edilirken bir hata oluştu.');
+      Alert.alert(t('common.error'), t('friends.requestAcceptError'));
     }
   };
 
@@ -105,7 +107,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
                 { color: activeTab === 'add' ? colors.primary : colors.textSecondary },
               ]}
             >
-              Arkadaş Ekle
+              {t('friends.addFriendTab')}
             </Text>
           </Pressable>
 
@@ -123,7 +125,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
                   { color: activeTab === 'requests' ? colors.primary : colors.textSecondary },
                 ]}
               >
-                İstekler
+                {t('friends.requestsTab')}
               </Text>
               {incomingRequests.length > 0 && (
                 <View style={[styles.badge, { backgroundColor: colors.error }]}>
@@ -141,7 +143,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
             {/* My Share Code Card */}
             <View style={[styles.shareCard, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
               <View style={{ flex: 1 }}>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>Senin Arkadaşlık Kodun</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('friends.yourFriendCode')}</Text>
                 <Text style={[typography.bodyBold, { color: colors.textPrimary, marginTop: 2 }]} numberOfLines={1}>
                   {myCode.slice(0, 16)}...
                 </Text>
@@ -159,13 +161,13 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
             {/* Input Form */}
             <View style={styles.inputSection}>
               <Text style={[typography.captionBold, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
-                Arkadaşının Kodunu Gir
+                {t('friends.enterFriendCodeHeader')}
               </Text>
               <View style={[styles.inputWrapper, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
                 <Ionicons name="person-add-outline" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
                 <TextInput
                   style={[styles.input, { color: colors.textPrimary }]}
-                  placeholder="Kullanıcı ID veya Arkadaş Kodu"
+                  placeholder={t('friends.codePlaceholder')}
                   placeholderTextColor={colors.textDisabled}
                   value={friendIdInput}
                   onChangeText={setFriendIdInput}
@@ -181,7 +183,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
             </View>
 
             <Button
-              title={isSending ? 'Gönderiliyor...' : 'Arkadaşlık İsteği Gönder'}
+              title={isSending ? t('friends.sending') : t('friends.sendRequestBtn')}
               onPress={handleSendRequest}
               disabled={isSending || !friendIdInput.trim()}
               style={{ marginTop: spacing.md }}
@@ -194,7 +196,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
               <View style={styles.emptyRequests}>
                 <Ionicons name="mail-outline" size={40} color={colors.textDisabled} />
                 <Text style={[typography.body, { color: colors.textDisabled, marginTop: spacing.sm, textAlign: 'center' }]}>
-                  Bekleyen arkadaşlık isteğin yok.
+                  {t('friends.noIncomingRequests')}
                 </Text>
               </View>
             ) : (
@@ -208,7 +210,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
                     <Text style={[typography.bodyBold, { color: colors.textPrimary }]} numberOfLines={1}>
                       {req.fromDisplayName}
                     </Text>
-                    <Text style={[typography.caption, { color: colors.textSecondary }]}>İstek gönderdi</Text>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('friends.sentRequest')}</Text>
                   </View>
                   <View style={styles.requestActions}>
                     <Pressable

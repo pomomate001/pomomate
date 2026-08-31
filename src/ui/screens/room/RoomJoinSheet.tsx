@@ -6,6 +6,7 @@ import { Button } from '../../components/Button';
 import { typography } from '../../theme/typography';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
+import { useTranslation } from '../../../i18n';
 
 interface RoomJoinSheetProps {
   visible: boolean;
@@ -16,6 +17,7 @@ interface RoomJoinSheetProps {
 export function RoomJoinSheet({ visible, onClose, onJoin }: RoomJoinSheetProps) {
   const [code, setCode] = useState('');
   const colors = useColors();
+  const { t } = useTranslation();
 
   const handleJoin = () => {
     const trimmed = code.trim();
@@ -29,24 +31,24 @@ export function RoomJoinSheet({ visible, onClose, onJoin }: RoomJoinSheetProps) 
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={[typography.h3, { color: colors.textPrimary }]}>Odaya Katıl</Text>
+          <Text style={[typography.h3, { color: colors.textPrimary }]}>{t('rooms.joinRoomTitle')}</Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-            Arkadaşının paylaştığı 6 haneli oda kodunu girerek oturuma katılabilirsin.
+            {t('rooms.joinRoomSubtitle')}
           </Text>
         </View>
         
         <Input
-          label="Oda Kodu"
+          label={t('rooms.roomCodeLabel')}
           value={code}
           onChangeText={setCode}
-          placeholder="Örn: X7A9P2"
+          placeholder={t('rooms.roomCodePlaceholder')}
           autoCapitalize="characters"
           autoFocus
         />
         
         <View style={styles.footer}>
           <Button 
-            title="Odaya Katıl" 
+            title={t('rooms.joinRoomBtn')} 
             onPress={handleJoin} 
             disabled={!code.trim()} 
           />

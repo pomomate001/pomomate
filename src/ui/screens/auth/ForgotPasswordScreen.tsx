@@ -16,6 +16,7 @@ import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { authService } from '../../../services/auth';
+import { useTranslation } from '../../../i18n';
 
 interface ForgotPasswordScreenProps {
   onGoBack: () => void;
@@ -23,6 +24,7 @@ interface ForgotPasswordScreenProps {
 
 export function ForgotPasswordScreen({ onGoBack }: ForgotPasswordScreenProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
@@ -32,7 +34,7 @@ export function ForgotPasswordScreen({ onGoBack }: ForgotPasswordScreenProps) {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail) {
-      setError('Lütfen e-posta adresinizi girin.');
+      setError(t('auth.enterEmailWarning'));
       return;
     }
 
@@ -42,7 +44,7 @@ export function ForgotPasswordScreen({ onGoBack }: ForgotPasswordScreenProps) {
       await authService.resetPassword(normalizedEmail);
       setSuccess(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Bir hata oluştu.';
+      const message = err instanceof Error ? err.message : t('auth.unexpectedError');
       setError(message);
     } finally {
       setIsLoading(false);
@@ -69,19 +71,19 @@ export function ForgotPasswordScreen({ onGoBack }: ForgotPasswordScreenProps) {
         >
           <View style={styles.header}>
             <PomoMateIcon size={64} />
-            <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>Şifreni Sıfırla</Text>
+            <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>{t('auth.forgotPasswordTitle')}</Text>
             <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, textAlign: 'center' }]}> 
-              E-posta adresini gir, sana şifre sıfırlama bağlantısı gönderelim.
+              {t('auth.forgotPasswordSubtitle')}
             </Text>
           </View>
 
           {success ? (
             <View style={{ alignItems: 'center' }}>
               <Text style={[typography.body, { color: colors.success, marginBottom: spacing.lg, textAlign: 'center' }]}>
-                Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen gelen kutunuzu kontrol edin.
+                {t('auth.resetLinkSent')}
               </Text>
               <Button
-                title="Girişe Dön"
+                title={t('auth.backToLogin')}
                 onPress={onGoBack}
                 variant="outline"
               />
@@ -89,13 +91,13 @@ export function ForgotPasswordScreen({ onGoBack }: ForgotPasswordScreenProps) {
           ) : (
             <>
               <Input
-                label="E-posta"
+                label={t('auth.email')}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
-                placeholder="ornek@eposta.com"
+                placeholder={t('auth.emailPlaceholder')}
                 leftIcon="mail-outline"
               />
 
@@ -106,7 +108,7 @@ export function ForgotPasswordScreen({ onGoBack }: ForgotPasswordScreenProps) {
               )}
 
               <Button
-                title="Sıfırlama Bağlantısı Gönder"
+                title={t('auth.sendResetLink')}
                 onPress={handleResetPassword}
                 loading={isLoading}
                 disabled={isLoading}
@@ -116,7 +118,7 @@ export function ForgotPasswordScreen({ onGoBack }: ForgotPasswordScreenProps) {
 
               <View style={styles.footer}>
                 <Pressable onPress={onGoBack} hitSlop={8} style={{ padding: spacing.xs }}>
-                  <Text style={[typography.bodyBold, { color: colors.primary }]}>Geri Dön</Text>
+                  <Text style={[typography.bodyBold, { color: colors.primary }]}>{t('auth.backLink')}</Text>
                 </Pressable>
               </View>
             </>

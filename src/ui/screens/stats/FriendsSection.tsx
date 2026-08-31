@@ -14,11 +14,13 @@ import { FriendDetailSheet } from './FriendDetailSheet';
 import { AddFriendSheet } from './AddFriendSheet';
 import { friendService } from '../../../services/friends/FriendService';
 import type { FriendSummary } from '../../../state/friendsStore';
+import { useTranslation } from '../../../i18n';
 
 export function FriendsSection() {
   const [expanded, setExpanded] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<FriendSummary | null>(null);
   const [showAddFriend, setShowAddFriend] = useState(false);
+  const { t } = useTranslation();
 
   const friends = useFriendsStore((s) => s.friends);
   const user = useUserStore((s) => s.user);
@@ -39,7 +41,7 @@ export function FriendsSection() {
         style={[styles.header, { borderColor: colors.divider, backgroundColor: colors.surface }]}
       >
         <View style={styles.headerLeft}>
-          <Text style={[typography.h3, { color: colors.textPrimary }]}>Arkadaşlarım</Text>
+          <Text style={[typography.h3, { color: colors.textPrimary }]}>{t('friends.myFriends')}</Text>
           {!expanded && friends.length > 0 && (
             <View style={styles.avatarStack}>
               {friends.slice(0, 3).map((f, i) => (
@@ -81,11 +83,11 @@ export function FriendsSection() {
           {friends.length === 0 ? (
             <EmptyState
               icon={<Ionicons name="people-outline" size={48} color={colors.textDisabled} />}
-              title="Henüz arkadaş yok"
-              message="Arkadaşlarını davet et, birlikte odaklanın!"
+              title={t('friends.noFriends')}
+              message={t('friends.noFriendsSubtitle')}
               action={
                 <Button
-                  title="Arkadaş Ekle"
+                  title={t('friends.addFriend')}
                   variant="outline"
                   size="sm"
                   onPress={() => setShowAddFriend(true)}

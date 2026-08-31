@@ -16,6 +16,7 @@ import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { authService } from '../../../services/auth';
+import { useTranslation } from '../../../i18n';
 
 interface RegisterScreenProps {
   onGoToLogin: () => void;
@@ -23,6 +24,7 @@ interface RegisterScreenProps {
 
 export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
   const colors = useColors();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,17 +37,17 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail || !password || !confirmPassword) {
-      setError('Lütfen tüm alanları doldurun.');
+      setError(t('auth.fillAllFields'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Şifre en az 6 karakter olmalıdır.');
+      setError(t('auth.passwordMinLength'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Şifreler birbiriyle eşleşmiyor.');
+      setError(t('auth.passwordsDoNotMatch'));
       return;
     }
 
@@ -56,7 +58,7 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
       await authService.signUpWithEmail(normalizedEmail, password);
       setIsSuccess(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Kayıt sırasında beklenmeyen bir hata oluştu.';
+      const message = err instanceof Error ? err.message : t('auth.unexpectedError');
       setError(message);
     } finally {
       setIsLoading(false);
@@ -75,13 +77,13 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
         <View style={styles.successContainer}>
           <Ionicons name="mail-unread-outline" size={80} color={colors.primary} />
           <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.lg, textAlign: 'center' }]}>
-            E-postanı Doğrula
+            {t('auth.verifyEmailTitle')}
           </Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.md, textAlign: 'center', marginHorizontal: spacing.xl }]}>
-            {email} adresine bir doğrulama bağlantısı gönderdik. Lütfen e-postanı kontrol et ve hesabını doğrula.
+            {t('auth.verifyEmailBody', { email })}
           </Text>
           <Button
-            title="Giriş Sayfasına Dön"
+            title={t('auth.backToLogin')}
             onPress={onGoToLogin}
             variant="gradient"
             style={{ marginTop: spacing.xl, width: '80%' }}
@@ -111,42 +113,42 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
         >
           <View style={styles.header}>
             <PomoMateIcon size={64} />
-            <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>Yeni Hesap</Text>
+            <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md }]}>{t('auth.registerTitle')}</Text>
             <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}> 
-              PomoMate&apos;e katıl ve odaklanmaya başla.
+              {t('auth.registerSubtitle')}
             </Text>
           </View>
 
           <Input
-            label="E-posta"
+            label={t('auth.email')}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
-            placeholder="ornek@eposta.com"
+            placeholder={t('auth.emailPlaceholder')}
             leftIcon="mail-outline"
           />
 
           <Input
-            label="Şifre"
+            label={t('auth.password')}
             value={password}
             onChangeText={setPassword}
             autoCapitalize="none"
             autoCorrect={false}
             secureTextEntry
-            placeholder="En az 6 karakter"
+            placeholder={t('auth.passwordMinPlaceholder')}
             leftIcon="lock-closed-outline"
           />
 
           <Input
-            label="Şifre (Tekrar)"
+            label={t('auth.passwordConfirm')}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             autoCapitalize="none"
             autoCorrect={false}
             secureTextEntry
-            placeholder="Şifreni tekrar gir"
+            placeholder={t('auth.passwordConfirmPlaceholder')}
             leftIcon="lock-closed-outline"
           />
 
@@ -157,7 +159,7 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
           )}
 
           <Button
-            title="Kayıt Ol"
+            title={t('auth.registerBtn')}
             onPress={handleRegister}
             loading={isLoading}
             disabled={isLoading}
@@ -167,9 +169,9 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
           />
 
           <View style={styles.footer}>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Zaten hesabın var mı?</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('auth.alreadyHaveAccount')}</Text>
             <Pressable onPress={onGoToLogin} hitSlop={8} style={{ padding: spacing.xs }}>
-              <Text style={[typography.bodyBold, { color: colors.primary }]}>Giriş yap</Text>
+              <Text style={[typography.bodyBold, { color: colors.primary }]}>{t('auth.loginLink')}</Text>
             </Pressable>
           </View>
         </ScrollView>

@@ -12,6 +12,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { AdPlacement } from '../../ads';
 import { useRoomStore, useUserStore } from '../../../state';
 import type { Room } from '../../../types';
+import { useTranslation } from '../../../i18n';
 
 interface RoomListScreenProps {
   onCreateRoom: () => void;
@@ -31,10 +32,11 @@ function RoomCard({
   onDelete: () => void;
 }) {
   const colors = useColors();
+  const { t } = useTranslation();
 
   const handleCopyCode = () => {
     const code = room.inviteCode ?? room.id.slice(-6).toUpperCase();
-    Alert.alert('Oda Kodu', `Oda Kodu: ${code}\nArkadaşlarınla paylaşarak onları davet edebilirsin!`);
+    Alert.alert(t('rooms.roomCodeAlertTitle'), t('rooms.roomCodeAlertBody', { code }));
   };
 
   return (
@@ -74,7 +76,7 @@ function RoomCard({
           </Text>
           {isHost && (
             <View style={[styles.hostBadge, { backgroundColor: `${colors.primary}15` }]}>
-              <Text style={[typography.overline, { color: colors.primary }]}>👑 SAHİBİ</Text>
+              <Text style={[typography.overline, { color: colors.primary }]}>{t('rooms.hostBadge')}</Text>
             </View>
           )}
         </View>
@@ -87,12 +89,12 @@ function RoomCard({
               { color: room.isActive ? colors.success : colors.textDisabled, marginRight: spacing.md },
             ]}
           >
-            {room.isActive ? 'Aktif (Canlı)' : 'Pasif (Kapalı)'}
+            {room.isActive ? t('rooms.activeLive') : t('rooms.passiveClosed')}
           </Text>
 
           <Pressable onPress={handleCopyCode} style={styles.codeBadge}>
             <Ionicons name="copy-outline" size={12} color={colors.textSecondary} style={{ marginRight: 3 }} />
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Kod: {room.inviteCode ?? room.id.slice(-6).toUpperCase()}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.codePrefix')}: {room.inviteCode ?? room.id.slice(-6).toUpperCase()}</Text>
           </Pressable>
         </View>
       </View>
@@ -103,9 +105,9 @@ function RoomCard({
           <Pressable
             onPress={(e) => {
               e.stopPropagation();
-              Alert.alert('Odayı Sil', `"${room.name}" odasını silmek istediğinize emin misiniz?`, [
-                { text: 'İptal', style: 'cancel' },
-                { text: 'Sil', style: 'destructive', onPress: onDelete },
+              Alert.alert(t('rooms.deleteRoomTitle'), t('rooms.deleteRoomConfirm', { name: room.name }), [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('common.delete'), style: 'destructive', onPress: onDelete },
               ]);
             }}
             hitSlop={10}
@@ -122,6 +124,7 @@ function RoomCard({
 
 export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomListScreenProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const rooms = useRoomStore((s) => s.rooms);
   const deleteRoom = useRoomStore((s) => s.deleteRoom);
   const user = useUserStore((s) => s.user);
@@ -137,9 +140,9 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
           end={{ x: 1, y: 1 }}
         />
         <View style={styles.headerContent}>
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Çalışma Odaları</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]}>{t('rooms.title')}</Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-            Arkadaşlarınla birlikte odaklan, hedeflerini paylaş
+            {t('rooms.subtitle')}
           </Text>
         </View>
       </View>
@@ -148,7 +151,7 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
       <View style={styles.actions}>
         <View style={{ flex: 1 }}>
           <Button
-            title="Oda Oluştur"
+            title={t('rooms.createRoom')}
             onPress={onCreateRoom}
             icon={<Ionicons name="add-circle-outline" size={20} color={colors.textInverse} />}
           />
@@ -156,7 +159,7 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
         <View style={{ width: spacing.md }} />
         <View style={{ flex: 1 }}>
           <Button
-            title="Katıl"
+            title={t('rooms.joinRoom')}
             variant="outline"
             onPress={onJoinRoom}
             icon={<Ionicons name="enter-outline" size={20} color={colors.primary} />}
@@ -180,8 +183,8 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
         ListEmptyComponent={
           <EmptyState
             icon={<Ionicons name="library-outline" size={56} color={colors.textDisabled} />}
-            title="Henüz çalışma odası yok"
-            message="Yeni bir oda oluşturarak canlı oturum başlat veya bir oda koduna katılarak arkadaşlarına katıl."
+            title={t('rooms.noRooms')}
+            message={t('rooms.noRoomsSubtitle')}
           />
         }
         ListFooterComponent={<AdPlacement size="banner" />}

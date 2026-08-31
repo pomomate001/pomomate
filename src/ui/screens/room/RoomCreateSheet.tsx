@@ -6,6 +6,7 @@ import { Button } from '../../components/Button';
 import { typography } from '../../theme/typography';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
+import { useTranslation } from '../../../i18n';
 
 interface RoomCreateSheetProps {
   visible: boolean;
@@ -16,6 +17,7 @@ interface RoomCreateSheetProps {
 export function RoomCreateSheet({ visible, onClose, onCreate }: RoomCreateSheetProps) {
   const [name, setName] = useState('');
   const colors = useColors();
+  const { t } = useTranslation();
 
   const handleCreate = () => {
     const trimmed = name.trim();
@@ -29,23 +31,23 @@ export function RoomCreateSheet({ visible, onClose, onCreate }: RoomCreateSheetP
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={[typography.h3, { color: colors.textPrimary }]}>Yeni Çalışma Odası</Text>
+          <Text style={[typography.h3, { color: colors.textPrimary }]}>{t('rooms.newRoomTitle')}</Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-            Arkadaşlarınla odaklanmak için özel bir alan yarat
+            {t('rooms.newRoomSubtitle')}
           </Text>
         </View>
         
         <Input
-          label="Oda Adı"
+          label={t('rooms.roomNameLabel')}
           value={name}
           onChangeText={setName}
-          placeholder="Örn: Hafta Sonu Maratonu"
+          placeholder={t('rooms.roomNamePlaceholder')}
           autoFocus
         />
         
         <View style={styles.footer}>
           <Button 
-            title="Odayı Oluştur" 
+            title={t('rooms.createBtn')} 
             onPress={handleCreate} 
             disabled={!name.trim()} 
           />

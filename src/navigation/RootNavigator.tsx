@@ -14,6 +14,7 @@ import { UpdatePasswordModal } from '../ui/screens/auth';
 import type { RootTabParamList } from './types';
 import { useUserStore } from '../state';
 import { authService, supabase } from '../services/auth';
+import { useTranslation } from '../i18n';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -24,15 +25,16 @@ const tabIcons: Record<keyof RootTabParamList, { active: string; inactive: strin
   ProfileTab: { active: 'person', inactive: 'person-outline' },
 };
 
-const tabLabels: Record<keyof RootTabParamList, string> = {
-  TimerTab: 'Sayaç',
-  StatsTab: 'İstatistik',
-  RoomTab: 'Çalışma Odası',
-  ProfileTab: 'Profil',
-};
-
 function MainTabs() {
   const colors = useColors();
+  const { t } = useTranslation();
+
+  const tabLabels: Record<keyof RootTabParamList, string> = {
+    TimerTab: t('tabs.timer'),
+    StatsTab: t('tabs.stats'),
+    RoomTab: t('tabs.room'),
+    ProfileTab: t('tabs.profile'),
+  };
 
   return (
     <Tab.Navigator

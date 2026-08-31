@@ -11,6 +11,7 @@ import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { SectionHeader } from '../../components/SectionHeader';
 import { useSettingsStore, AmbientSoundMode } from '../../../state';
+import { useTranslation } from '../../../i18n';
 import {
   NOTIFICATION_SOUNDS,
   AMBIENT_SOUNDS,
@@ -18,15 +19,9 @@ import {
   SoundItem,
 } from '../../../services/mobile/sound/SoundService';
 
-const AMBIENT_MODE_OPTIONS: { id: AmbientSoundMode; label: string; desc: string }[] = [
-  { id: 'work', label: 'Sadece Çalışırken', desc: 'Odaklanma oturumu süresince çalar' },
-  { id: 'break', label: 'Sadece Molada', desc: 'Mola ve dinlenme süresince çalar' },
-  { id: 'always', label: 'Her Zaman', desc: 'Hem çalışma hem mola modunda çalar' },
-  { id: 'off', label: 'Kapalı', desc: 'Arka planda ortam sesi çalmaz' },
-];
-
 export function SoundSettings() {
   const colors = useColors();
+  const { t } = useTranslation();
   const {
     soundEnabled,
     soundId,
@@ -37,6 +32,13 @@ export function SoundSettings() {
     setAmbientSoundId,
     setAmbientSoundMode,
   } = useSettingsStore();
+
+  const ambientModeOptions: { id: AmbientSoundMode; label: string; desc: string }[] = [
+    { id: 'work', label: t('soundSettings.ambientModeWork'), desc: t('soundSettings.ambientModeWorkDesc') },
+    { id: 'break', label: t('soundSettings.ambientModeBreak'), desc: t('soundSettings.ambientModeBreakDesc') },
+    { id: 'always', label: t('soundSettings.ambientModeAlways'), desc: t('soundSettings.ambientModeAlwaysDesc') },
+    { id: 'off', label: t('soundSettings.ambientModeOff'), desc: t('soundSettings.ambientModeOffDesc') },
+  ];
 
   const [previewingId, setPreviewingId] = useState<string | null>(null);
 
@@ -73,9 +75,9 @@ export function SoundSettings() {
       {/* Master Audio Toggle */}
       <View style={[styles.toggleRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={{ flex: 1 }}>
-          <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>Ses Efektleri</Text>
+          <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('soundSettings.effectsTitle')}</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
-            Sayaç bitiş seslerini ve ortam seslerini etkinleştir
+            {t('soundSettings.effectsSubtitle')}
           </Text>
         </View>
         <Switch
@@ -86,7 +88,7 @@ export function SoundSettings() {
       </View>
 
       {/* ─── 1. Section: Completion Sound ─── */}
-      <SectionHeader title="SAYAÇ BİTİŞ ZİLİ (2 SN ÖNİZLEME)" />
+      <SectionHeader title={t('soundSettings.completionBellTitle')} />
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {NOTIFICATION_SOUNDS.map((s, index) => {
           const isSelected = soundId === s.id;
@@ -128,7 +130,7 @@ export function SoundSettings() {
 
               {isPlaying ? (
                 <View style={[styles.playingBadge, { backgroundColor: colors.primary }]}>
-                  <Text style={[typography.overline, { color: '#FFF', fontSize: 9 }]}>2 SN ÇALIYOR</Text>
+                  <Text style={[typography.overline, { color: '#FFF', fontSize: 9 }]}>{t('soundSettings.playingBadge')}</Text>
                 </View>
               ) : isSelected ? (
                 <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
@@ -141,7 +143,7 @@ export function SoundSettings() {
       </View>
 
       {/* ─── 2. Section: Ambient Background Sound ─── */}
-      <SectionHeader title="ODAKLANMA & ORTAM SESİ (AMBİYANS)" />
+      <SectionHeader title={t('soundSettings.ambientSoundTitle')} />
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {AMBIENT_SOUNDS.map((s, index) => {
           const isSelected = ambientSoundId === s.id;
@@ -191,7 +193,7 @@ export function SoundSettings() {
 
               {isPlaying ? (
                 <View style={[styles.playingBadge, { backgroundColor: colors.primary }]}>
-                  <Text style={[typography.overline, { color: '#FFF', fontSize: 9 }]}>2 SN ÇALIYOR</Text>
+                  <Text style={[typography.overline, { color: '#FFF', fontSize: 9 }]}>{t('soundSettings.playingBadge')}</Text>
                 </View>
               ) : isSelected ? (
                 <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
@@ -204,9 +206,9 @@ export function SoundSettings() {
       </View>
 
       {/* ─── 3. Section: Ambient Sound Mode ─── */}
-      <SectionHeader title="ORTAM SESİ ÇALMA ZAMANI" />
+      <SectionHeader title={t('soundSettings.ambientModeTitle')} />
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        {AMBIENT_MODE_OPTIONS.map((opt, index) => {
+        {ambientModeOptions.map((opt, index) => {
           const isSelected = ambientSoundMode === opt.id;
 
           return (
@@ -215,7 +217,7 @@ export function SoundSettings() {
               onPress={() => setAmbientSoundMode(opt.id)}
               style={[
                 styles.row,
-                index < AMBIENT_MODE_OPTIONS.length - 1 && { borderBottomColor: colors.divider, borderBottomWidth: 1 },
+                index < ambientModeOptions.length - 1 && { borderBottomColor: colors.divider, borderBottomWidth: 1 },
                 isSelected && { backgroundColor: `${colors.primary}12` },
               ]}
             >

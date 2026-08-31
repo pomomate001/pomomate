@@ -12,26 +12,27 @@ import { MiniBarChart } from './MiniBarChart';
 import { FriendsSection } from './FriendsSection';
 import { CalendarView } from './CalendarView';
 import { AdPlacement } from '../../ads';
+import { useTranslation, Language } from '../../../i18n';
 
 type Period = 'daily' | 'weekly' | 'monthly';
 
-const periodLabels: Record<Period, string> = {
-  daily: 'Günlük',
-  weekly: 'Haftalık',
-  monthly: 'Aylık',
-};
-
-function formatHours(seconds: number): string {
+function formatHours(seconds: number, lang: Language): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
+  if (lang === 'en') {
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
   return h > 0 ? `${h}s ${m}d` : `${m}dk`;
 }
 
 // Calculate chart data from real recorded daily stats
-function computeRealChartData(period: Period, dailyStats: import('../../../state/statsStore').DailyStat[]) {
-  const dayLabels = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
-  const monthLabels = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-
+function computeRealChartData(
+  period: Period,
+  dailyStats: import('../../../state/statsStore').DailyStat[],
+  dayLabels: string[],
+  monthLabels: string[],
+  weekPrefix: string
+) {
   if (period === 'daily') {
     const result: { label: string; value: number }[] = [];
     const now = new Date();
@@ -52,7 +53,7 @@ function computeRealChartData(period: Period, dailyStats: import('../../../state
   if (period === 'weekly') {
     const result: { label: string; value: number }[] = [];
     for (let w = 3; w >= 0; w--) {
-      const label = `H${4 - w}`;
+      const label = `${weekPrefix}${4 - w}`;
       const now = new Date();
       const start = new Date(now);
       start.setDate(start.getDate() - (w + 1) * 7);
@@ -86,6 +87,7 @@ function computeRealChartData(period: Period, dailyStats: import('../../../state
 }
 
 export function StatsScreen() {
+  const { t, language } = useTranslation();
   const [period, setPeriod] = useState<Period>('daily');
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -93,7 +95,18 @@ export function StatsScreen() {
   const { totalPomodoros, totalWorkSeconds, totalTasksCompleted, streak, daily } = useStatsStore();
   const tasks = useTaskStore((s) => s.tasks);
   const colors = useColors();
-  const chartData = computeRealChartData(period, daily);
+
+  const periodLabels: Record<Period, string> = {
+    daily: t('stats.daily'),
+    weekly: t('stats.weekly'),
+    monthly: t('stats.monthly'),
+  };
+
+  const dayLabels = (t('stats.dayLabels') as unknown as string[]) || ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+  const monthLabels = (t('stats.monthLabels') as unknown as string[]) || ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+  const weekPrefix = language === 'en' ? 'W' : 'H';
+
+  const chartData = computeRealChartData(period, daily, dayLabels, monthLabels, weekPrefix);
 
   const periods: Period[] = ['daily', 'weekly', 'monthly'];
   
@@ -124,7 +137,7 @@ export function StatsScreen() {
           end={{ x: 1, y: 1 }}
         />
         <View style={styles.headerContent}>
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>İstatistiklerim</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]}>{t('stats.title')}</Text>
           
           <View style={[styles.periodRow, { backgroundColor: colors.surfaceVariant }]}>
             {periods.map((p) => (
@@ -161,7 +174,7 @@ export function StatsScreen() {
                 { backgroundColor: selectedTag === null ? colors.primary : colors.surfaceVariant }
               ]}
             >
-              <Text style={[typography.captionBold, { color: selectedTag === null ? colors.textInverse : colors.textPrimary }]}>Tümü</Text>
+              <Text style={[typography.captionBold, { color: selectedTag === null ? colors.textInverse : colors.textPrimary }]}>{t('stats.allTags')}</Text>
             </Pressable>
             {allTags.map(tag => (
               <Pressable
@@ -182,13 +195,13 @@ export function StatsScreen() {
         <View style={styles.cardRow}>
           <StatCard
             icon={<Ionicons name="time-outline" size={24} color={colors.info} />}
-            label="Toplam Süre"
-            value={formatHours(totalWorkSeconds)}
+            label={t('stats.totalDuration')}
+            value={formatHours(totalWorkSeconds, language)}
           />
           <View style={{ width: spacing.sm }} />
           <StatCard
             icon={<Text style={{ fontSize: 22 }}>🍅</Text>}
-            label="Pomodoro"
+            label={t('stats.pomodoro')}
             value={String(totalPomodoros)}
           />
         </View>
@@ -196,21 +209,21 @@ export function StatsScreen() {
         <View style={[styles.cardRow, { marginTop: spacing.sm }]}>
           <StatCard
             icon={<Ionicons name="checkmark-done-outline" size={24} color={colors.success} />}
-            label="Görev"
+            label={t('stats.tasks')}
             value={String(totalTasksCompleted)}
           />
           <View style={{ width: spacing.sm }} />
           <StatCard
             icon={<Text style={{ fontSize: 22 }}>🔥</Text>}
-            label="Streak"
-            value={`${streak} gün`}
+            label={t('stats.streak')}
+            value={`${streak} ${streak === 1 ? t('stats.dayUnit') : t('stats.daysUnit')}`}
           />
         </View>
 
         {/* Chart */}
         <Card variant="glass" style={styles.chartCard}>
           <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-            POMODORO AKTİVİTESİ
+            {t('stats.activityTitle')}
           </Text>
           <MiniBarChart data={chartData} />
         </Card>
@@ -226,24 +239,24 @@ export function StatsScreen() {
             
             <View style={{ marginTop: spacing.md, borderTopWidth: 1, borderColor: colors.divider, paddingTop: spacing.md }}>
               <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.sm }]}>
-                {selectedDate} GÖREVLERİ
+                {t('stats.dateTasks', { date: selectedDate })}
               </Text>
               
               {selectedDateTasks.length === 0 ? (
                 <Text style={[typography.body, { color: colors.textDisabled, textAlign: 'center', marginVertical: spacing.md }]}>
-                  Bu tarihte görev yok.
+                  {t('stats.noTasksDate')}
                 </Text>
               ) : (
-                selectedDateTasks.map(t => (
-                  <View key={t.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
+                selectedDateTasks.map(tItem => (
+                  <View key={tItem.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
                     <Ionicons 
-                      name={t.completed ? 'checkmark-circle' : 'ellipse-outline'} 
+                      name={tItem.completed ? 'checkmark-circle' : 'ellipse-outline'} 
                       size={20} 
-                      color={t.completed ? colors.success : colors.textDisabled} 
+                      color={tItem.completed ? colors.success : colors.textDisabled} 
                       style={{ marginRight: spacing.sm }}
                     />
-                    <Text style={[typography.body, { color: t.completed ? colors.textDisabled : colors.textPrimary, textDecorationLine: t.completed ? 'line-through' : 'none' }]}>
-                      {t.title}
+                    <Text style={[typography.body, { color: tItem.completed ? colors.textDisabled : colors.textPrimary, textDecorationLine: tItem.completed ? 'line-through' : 'none' }]}>
+                      {tItem.title}
                     </Text>
                   </View>
                 ))

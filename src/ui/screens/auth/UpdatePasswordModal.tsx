@@ -7,9 +7,11 @@ import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { supabase } from '../../../services/auth';
 import { useUserStore } from '../../../state';
+import { useTranslation } from '../../../i18n';
 
 export function UpdatePasswordModal() {
   const colors = useColors();
+  const { t } = useTranslation();
   const needsReset = useUserStore((s) => s.needsPasswordReset);
   const setNeedsReset = useUserStore((s) => s.setNeedsPasswordReset);
   
@@ -19,7 +21,7 @@ export function UpdatePasswordModal() {
 
   const handleUpdate = async () => {
     if (password.length < 6) {
-      setError('Şifre en az 6 karakter olmalıdır.');
+      setError(t('auth.passwordMinLength'));
       return;
     }
     
@@ -40,14 +42,14 @@ export function UpdatePasswordModal() {
       <View style={[styles.overlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
         <View style={[styles.container, { backgroundColor: colors.surface }]}>
           <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>
-            Yeni Şifre Belirle
+            {t('auth.setNewPassword')}
           </Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>
-            Lütfen hesabınız için yeni bir şifre girin.
+            {t('auth.enterNewPasswordSubtitle')}
           </Text>
 
           <Input
-            label="Yeni Şifre"
+            label={t('auth.newPassword')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -62,7 +64,7 @@ export function UpdatePasswordModal() {
           )}
 
           <Button
-            title="Şifreyi Güncelle"
+            title={t('auth.updatePasswordBtn')}
             onPress={handleUpdate}
             loading={loading}
             disabled={loading}

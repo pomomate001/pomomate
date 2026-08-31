@@ -5,9 +5,11 @@ import { useColors } from '../../../theme';
 import { typography } from '../../../theme/typography';
 import { spacing } from '../../../theme/spacing';
 import { useRoomStore } from '../../../../state';
+import { useTranslation } from '../../../../i18n';
 
 export function RoomSettingsPanel() {
   const colors = useColors();
+  const { t } = useTranslation();
   const roomSettings = useRoomStore((s: any) => s.roomSettings);
   const setRoomSettings = useRoomStore((s: any) => s.setRoomSettings);
 
@@ -18,11 +20,11 @@ export function RoomSettingsPanel() {
   return (
     <View style={styles.container}>
       <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>
-        Oda Yetkileri
+        {t('rooms.settingsTitle')}
       </Text>
       
       <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.lg }]}>
-        Bu ayarlar odadaki diğer katılımcıların neleri kullanabileceğini belirler. Yönetici (Host) olarak siz her zaman tüm yetkilere sahipsiniz.
+        {t('rooms.settingsDesc')}
       </Text>
 
       <View style={styles.settingRow}>
@@ -31,8 +33,8 @@ export function RoomSettingsPanel() {
             <Ionicons name="mic" size={20} color={colors.primary} />
           </View>
           <View>
-            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>Mikrofon Kullanımı</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Katılımcılar sesli konuşabilsin</Text>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.micUsageTitle')}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.micUsageDesc')}</Text>
           </View>
         </View>
         <Switch
@@ -48,8 +50,8 @@ export function RoomSettingsPanel() {
             <Ionicons name="videocam" size={20} color={colors.primary} />
           </View>
           <View>
-            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>Kamera Kullanımı</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Katılımcılar kamerasını açabilsin</Text>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.camUsageTitle')}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.camUsageDesc')}</Text>
           </View>
         </View>
         <Switch
@@ -65,8 +67,8 @@ export function RoomSettingsPanel() {
             <Ionicons name="document-text" size={20} color={colors.primary} />
           </View>
           <View>
-            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>Dosya Yükleme</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Katılımcılar ekrana dosya yansıtabilsin</Text>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.fileUploadTitle')}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.fileUploadDesc')}</Text>
           </View>
         </View>
         <Switch
@@ -82,8 +84,8 @@ export function RoomSettingsPanel() {
             <Ionicons name="chatbubbles" size={20} color={colors.primary} />
           </View>
           <View>
-            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>Sohbet Erişimi</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Katılımcılar yazılı sohbet edebilsin</Text>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.chatAccessTitle')}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.chatAccessDesc')}</Text>
           </View>
         </View>
         <Switch
