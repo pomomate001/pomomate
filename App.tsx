@@ -40,7 +40,30 @@ export default function App() {
       const handleDeepLink = async (url: string | null) => {
         if (!url) return;
         
-        // The URL might have tokens in query params or fragment
+        // Check for PKCE flow (auth code)
+        const parsed = Linking.parse(url);
+        const code = parsed.queryParams?.code as string;
+        
+        // If the URL is specifically for password reset or has type=recovery
+        if (
+          url.includes('reset-password') || 
+          parsed.queryParams?.type === 'recovery'
+        ) {
+          useUserStore.getState().setNeedsPasswordReset(true);
+        }
+
+        if (code) {
+          try {
+            const { error } = await supabase.auth.exchangeCodeForSession(code);
+            if (error) throw error;
+            // The session is now established automatically
+          } catch (err) {
+            console.error('[App] Failed to exchange code for session:', err);
+          }
+          return;
+        }
+
+        // Fallback for Implicit flow (legacy)
         let accessToken = '';
         let refreshToken = '';
         let type = '';
@@ -57,7 +80,6 @@ export default function App() {
         }
         
         if (!accessToken) {
-          const parsed = Linking.parse(url);
           accessToken = parsed.queryParams?.access_token as string;
           refreshToken = parsed.queryParams?.refresh_token as string;
           type = parsed.queryParams?.type as string;
