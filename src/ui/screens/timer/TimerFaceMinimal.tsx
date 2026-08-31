@@ -32,10 +32,10 @@ export function TimerFaceMinimal({ remainingSeconds, mode }: TimerFaceProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={[typography.timer, { color, fontSize: 80, fontWeight: '200', letterSpacing: 4 }]}>
+      <Text style={[typography.timer, { color, fontSize: 80, fontWeight: '200', letterSpacing: 4, textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 }]}>
         {formatDuration(remainingSeconds)}
       </Text>
-      <View style={[styles.labelBadge, { backgroundColor: `${color}20` }]}>
+      <View style={[styles.labelBadge, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: `${color}40`, borderWidth: 1 }]}>
         <Ionicons name="time-outline" size={16} color={color} style={{ marginRight: spacing.xs }} />
         <Text style={[typography.captionBold, { color, letterSpacing: 2 }]}>
           {modeLabel[mode]}

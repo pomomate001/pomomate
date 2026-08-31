@@ -239,8 +239,8 @@ export function TimerScreen() {
           </View>
 
           {/* Cycle indicator */}
-          <View style={[styles.cycleIndicator, { backgroundColor: 'rgba(255,255,255,0.08)' }]}>
-            <Text style={[typography.captionBold, { color: colors.textSecondary }]}>
+          <View style={[styles.cycleIndicator, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1 }]}>
+            <Text style={[typography.captionBold, { color: colors.textPrimary, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 3 }]}>
               DÖNGÜ {currentCycle}
             </Text>
           </View>
@@ -262,9 +262,10 @@ export function TimerScreen() {
           {/* Controls */}
           <View style={styles.controls}>
             <IconButton
-              icon={<Ionicons name="refresh" size={15} color={colors.textSecondary} />}
+              icon={<Ionicons name="refresh" size={15} color="#FFFFFF" />}
               onPress={reset}
-              size={30}
+              size={32}
+              style={{ backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)', borderWidth: 1 }}
             />
             <IconButton
               icon={
@@ -279,9 +280,10 @@ export function TimerScreen() {
               style={{ backgroundColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 6 }}
             />
             <IconButton
-              icon={<Ionicons name="play-skip-forward" size={15} color={colors.textSecondary} />}
+              icon={<Ionicons name="play-skip-forward" size={15} color="#FFFFFF" />}
               onPress={next}
-              size={30}
+              size={32}
+              style={{ backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)', borderWidth: 1 }}
             />
           </View>
 
@@ -289,7 +291,7 @@ export function TimerScreen() {
           <View style={styles.tasksSection}>
             {/* Header */}
             <View style={styles.tasksHeader}>
-              <Text style={[typography.h4, { color: colors.textPrimary }]}>📋 Görevlerim</Text>
+              <Text style={[typography.h4, { color: colors.textPrimary, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }]}>📋 Görevlerim</Text>
               <View style={[styles.taskCountBadge, { backgroundColor: colors.primaryLight }]}>
                 <Text style={[typography.captionBold, { color: colors.textInverse, fontSize: 10 }]}>
                   {uncompletedTasks.length}
@@ -302,15 +304,15 @@ export function TimerScreen() {
                 variant="outline" 
                 icon={<Ionicons name="add" size={14} color={colors.primary} />}
                 onPress={() => { setEditingTask(undefined); setShowAddTask(true); }}
-                style={{ minHeight: 32, paddingHorizontal: 12 }}
+                style={{ minHeight: 32, paddingHorizontal: 12, backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)' }}
               />
             </View>
             
             {/* Active / Primary Task Card */}
             {todayTasks.length === 0 ? (
-              <View style={[styles.emptyCard, { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.05)' }]}>
-                <Ionicons name="clipboard-outline" size={24} color={colors.textDisabled} />
-                <Text style={[typography.caption, { color: colors.textDisabled, textAlign: 'center', marginTop: spacing.xs }]}>
+              <View style={[styles.emptyCard, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
+                <Ionicons name="clipboard-outline" size={24} color={colors.textSecondary} />
+                <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
                   Henüz görev eklenmedi.
                 </Text>
               </View>
@@ -319,7 +321,7 @@ export function TimerScreen() {
                 {/* First (active) task */}
                 <View style={[
                   styles.activeTaskCard,
-                  { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: isRunning && mode === 'work' ? colors.primary : 'rgba(255,255,255,0.08)' }
+                  { backgroundColor: 'rgba(15, 18, 28, 0.78)', borderColor: isRunning && mode === 'work' ? colors.primary : 'rgba(255, 255, 255, 0.15)' }
                 ]}>
                   {isRunning && mode === 'work' && (
                     <View style={[styles.workingIndicator, { backgroundColor: colors.primary }]}>
@@ -341,20 +343,20 @@ export function TimerScreen() {
                 {remainingTaskList.length > 0 && (
                   <Pressable 
                     onPress={toggleTaskList} 
-                    style={[styles.expandBtn, { backgroundColor: 'rgba(255,255,255,0.03)' }]}
+                    style={[styles.expandBtn, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1 }]}
                   >
-                    <Text style={[typography.captionBold, { color: colors.textSecondary, fontSize: 11 }]}>
+                    <Text style={[typography.captionBold, { color: colors.textPrimary, fontSize: 11 }]}>
                       {isTaskListExpanded ? 'Görevleri Gizle' : `+${remainingTaskList.length} görev daha`}
                     </Text>
                     <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>
-                      <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
+                      <Ionicons name="chevron-down" size={14} color={colors.textPrimary} />
                     </Animated.View>
                   </Pressable>
                 )}
 
                 {/* Expanded task list */}
                 {isTaskListExpanded && (
-                  <View style={[styles.expandedList, { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.05)' }]}>
+                  <View style={[styles.expandedList, { backgroundColor: 'rgba(15, 18, 28, 0.78)', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
                     {remainingTaskList.map((task) => (
                       <View key={task.id} style={{ transform: [{ scale: 0.95 }] }}>
                         <TaskItem
@@ -404,7 +406,9 @@ const styles = StyleSheet.create({
     marginTop: 10, // Biraz aşağı indirildi
     marginBottom: spacing.xs,
     gap: spacing.xs,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(15, 18, 28, 0.72)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     padding: 4,
     borderRadius: 20,
   },

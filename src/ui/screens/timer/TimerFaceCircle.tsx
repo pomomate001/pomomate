@@ -77,8 +77,8 @@ export function TimerFaceCircle({ remainingSeconds, duration, mode }: TimerFaceP
       </Svg>
       <View style={styles.center}>
         <Ionicons name={modeIcon[mode]} size={32} color={color} style={{ marginBottom: 8 }} />
-        <Text style={[typography.timerSmall, { color, fontSize: 60, fontWeight: '200' }]}>{formatDuration(remainingSeconds)}</Text>
-        <Text style={[typography.subtitle, { color: colors.textSecondary, marginTop: 4 }]}>
+        <Text style={[typography.timerSmall, { color, fontSize: 60, fontWeight: '200', textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 }]}>{formatDuration(remainingSeconds)}</Text>
+        <Text style={[typography.subtitle, { color: '#FFFFFF', marginTop: 4, textShadowColor: 'rgba(0,0,0,0.7)', textShadowRadius: 4 }]}>
           {modeLabel[mode]}
         </Text>
       </View>

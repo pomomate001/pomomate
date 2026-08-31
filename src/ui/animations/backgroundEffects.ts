@@ -38,11 +38,11 @@ export const backgroundEffects: BackgroundEffectDef[] = [
   },
   {
     id: 'video_sky',
-    label: 'Süzülen Bulutlar',
+    label: 'Derin Uzay',
     category: 'video',
     free: true,
     icon: 'videocam',
-    description: 'Huzurlu gökyüzü ve süzülen bulutlar',
+    description: 'Sonsuz yıldızlar ve samanyolu manzarası',
   },
   {
     id: 'video_rain',
