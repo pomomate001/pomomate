@@ -263,118 +263,50 @@ export class FriendService {
     }
   }
 
-  /** Discover users in the same country, ranked by matching tags. */
-  async discoverUsers(userId: string, limit: number = 20): Promise<SuggestedUser[]> {
+  /** Discover users using the server-side RPC with multi-factor scoring. */
+  async discoverUsers(
+    _userId: string,
+    limit: number = 20,
+    offset: number = 0,
+    category: string | null = null,
+    search: string | null = null
+  ): Promise<SuggestedUser[]> {
     try {
-      // 1. Get current user's country and tags
-      const { data: currentUser } = await supabase
-        .from('users')
-        .select('country_code')
-        .eq('id', userId)
-        .single();
+      const { data, error } = await supabase.rpc('discover_users', {
+        p_limit: limit,
+        p_offset: offset,
+        p_category: category,
+        p_search: search,
+      });
 
-      if (!currentUser?.country_code) {
-        logger.warn('[FriendService] User has no country_code set');
+      if (error) {
+        logger.warn('[FriendService] discoverUsers RPC error:', error.message);
         return [];
       }
 
-      const { data: myTagRows } = await supabase
-        .from('user_tags')
-        .select('tag_id')
-        .eq('user_id', userId);
+      const suggestions: SuggestedUser[] = (data ?? []).map((row: any) => ({
+        userId: row.user_id,
+        displayName: row.display_name ?? 'Kullanıcı',
+        avatarUrl: row.avatar_url,
+        countryCode: row.country_code,
+        matchScore: row.match_score ?? 0,
+        matchingTagCount: row.matching_tag_count ?? 0,
+        tags: (row.tags ?? []).map((t: any) => ({
+          id: t.id,
+          slug: t.slug,
+          nameTr: t.nameTr,
+          nameEn: t.nameEn,
+          category: t.category,
+          icon: t.icon,
+        })),
+      }));
 
-      const myTagIds = new Set((myTagRows ?? []).map((r: any) => r.tag_id));
-
-      // 2. Get existing friends, blocked users, and pending requests
-      const { data: friendships } = await supabase
-        .from('friendships')
-        .select('user_a, user_b')
-        .or(`user_a.eq.${userId},user_b.eq.${userId}`);
-
-      const friendIds = new Set(
-        (friendships ?? []).map((f: any) => f.user_a === userId ? f.user_b : f.user_a)
-      );
-
-      const { data: blocks } = await supabase
-        .from('user_blocks')
-        .select('blocked_id')
-        .eq('blocker_id', userId);
-
-      const blockedIds = new Set((blocks ?? []).map((b: any) => b.blocked_id));
-
-      // Also get users who blocked us
-      const { data: blockedBy } = await supabase
-        .from('user_blocks')
-        .select('blocker_id')
-        .eq('blocked_id', userId);
-
-      const blockedByIds = new Set((blockedBy ?? []).map((b: any) => b.blocker_id));
-
-      // 3. Fetch candidates from same country
-      const { data: candidates } = await supabase
-        .from('users')
-        .select('id, display_name, avatar_url, country_code')
-        .eq('country_code', currentUser.country_code)
-        .neq('id', userId)
-        .limit(200);
-
-      if (!candidates || candidates.length === 0) return [];
-
-      // 4. Filter out friends, blocked
-      const filtered = candidates.filter((c: any) => 
-        !friendIds.has(c.id) && !blockedIds.has(c.id) && !blockedByIds.has(c.id)
-      );
-
-      // 5. Get tags for all candidates
-      const candidateIds = filtered.map((c: any) => c.id);
-      const { data: candidateTags } = await supabase
-        .from('user_tags')
-        .select('user_id, tag_id, tags(id, slug, name_tr, name_en, category, icon)')
-        .in('user_id', candidateIds);
-
-      // Build tag map per user
-      const tagMap = new Map<string, Tag[]>();
-      for (const row of (candidateTags ?? [])) {
-        const uid = (row as any).user_id;
-        if (!tagMap.has(uid)) tagMap.set(uid, []);
-        const t = (row as any).tags;
-        if (t) {
-          tagMap.get(uid)!.push({
-            id: t.id,
-            slug: t.slug,
-            nameTr: t.name_tr,
-            nameEn: t.name_en,
-            category: t.category,
-            icon: t.icon,
-          });
-        }
+      // Only update store if it's the first page (offset 0)
+      if (offset === 0) {
+        useFriendsStore.getState().setSuggestedUsers(suggestions);
       }
-
-      // 6. Score and rank
-      const suggestions: SuggestedUser[] = filtered.map((c: any) => {
-        const userTags = tagMap.get(c.id) ?? [];
-        const matchCount = userTags.filter((t) => myTagIds.has(t.id)).length;
-        return {
-          userId: c.id,
-          displayName: c.display_name ?? 'Kullanıcı',
-          avatarUrl: c.avatar_url,
-          countryCode: c.country_code,
-          tags: userTags,
-          matchingTagCount: matchCount,
-        };
-      });
-
-      // Sort by matching tag count (desc), then shuffle within same score
-      suggestions.sort((a, b) => {
-        if (b.matchingTagCount !== a.matchingTagCount) {
-          return b.matchingTagCount - a.matchingTagCount;
-        }
-        return Math.random() - 0.5;
-      });
-
-      const result = suggestions.slice(0, limit);
-      useFriendsStore.getState().setSuggestedUsers(result);
-      return result;
+      
+      return suggestions;
     } catch (err: any) {
       logger.warn('[FriendService] discoverUsers error:', err);
       return [];

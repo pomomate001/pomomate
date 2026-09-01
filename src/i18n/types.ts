@@ -400,6 +400,23 @@ export interface TranslationSchema {
     decline: string;
     waiting: string;
   };
+  discover: {
+    title: string;
+    subtitle: string;
+    searchPlaceholder: string;
+    allCategories: string;
+    matchScore: string;
+    matchingTagsCount: string;
+    sendRequest: string;
+    requestSent: string;
+    noResults: string;
+    noResultsHint: string;
+    addTagsFirst: string;
+    addTagsHint: string;
+    goToTags: string;
+    loadMore: string;
+    discoverButton: string;
+  };
 }
 
 export type NestedKeyOf<T> = {

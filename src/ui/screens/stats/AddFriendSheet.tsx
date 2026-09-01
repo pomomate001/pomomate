@@ -11,7 +11,6 @@ import { Avatar } from '../../components/Avatar';
 import { useUserStore, useFriendsStore } from '../../../state';
 import { friendService } from '../../../services/friends/FriendService';
 import { useTranslation } from '../../../i18n';
-import { DiscoverUsersTab } from './DiscoverUsersTab';
 
 interface AddFriendSheetProps {
   visible: boolean;
@@ -21,7 +20,7 @@ interface AddFriendSheetProps {
 export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
   const [friendIdInput, setFriendIdInput] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [activeTab, setActiveTab] = useState<'add' | 'requests' | 'discover'>('add');
+  const [activeTab, setActiveTab] = useState<'add' | 'requests'>('add');
   const { t } = useTranslation();
 
   const user = useUserStore((s) => s.user);
@@ -138,22 +137,6 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
             </View>
           </Pressable>
 
-          <Pressable
-            onPress={() => setActiveTab('discover')}
-            style={[
-              styles.tab,
-              activeTab === 'discover' && { borderBottomColor: colors.primary, borderBottomWidth: 2 },
-            ]}
-          >
-            <Text
-              style={[
-                typography.bodyBold,
-                { color: activeTab === 'discover' ? colors.primary : colors.textSecondary },
-              ]}
-            >
-              {t('friends.discoverTab')}
-            </Text>
-          </Pressable>
         </View>
 
         {activeTab === 'add' ? (
@@ -207,7 +190,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
               style={{ marginTop: spacing.md }}
             />
           </View>
-        ) : activeTab === 'requests' ? (
+        ) : (
           /* Incoming Requests Tab */
           <View style={styles.tabContent}>
             {incomingRequests.length === 0 ? (
@@ -247,10 +230,6 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
                 </View>
               ))
             )}
-          </View>
-        ) : (
-          <View style={styles.tabContent}>
-            <DiscoverUsersTab />
           </View>
         )}
       </View>

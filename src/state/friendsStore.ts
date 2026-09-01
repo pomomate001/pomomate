@@ -33,6 +33,7 @@ export interface SuggestedUser {
   countryCode?: string;
   tags: Tag[];
   matchingTagCount: number;
+  matchScore: number;
 }
 
 interface FriendsState {

@@ -14,6 +14,7 @@ import { UpdatePasswordModal } from '../ui/screens/auth';
 import type { RootTabParamList } from './types';
 import { useUserStore } from '../state';
 import { authService, supabase } from '../services/auth';
+import { countryService } from '../services/location/CountryService';
 import { useTranslation } from '../i18n';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -76,6 +77,10 @@ export function RootNavigator() {
       const currentUser = await authService.getCurrentUser();
       if (isMounted) {
         setUser(currentUser);
+        // Auto-detect and save country code for discovery
+        if (currentUser?.id) {
+          void countryService.detectAndSave(currentUser.id);
+        }
       }
     };
 
@@ -89,6 +94,10 @@ export function RootNavigator() {
 
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
+      // Auto-detect and save country code for discovery
+      if (currentUser?.id) {
+        void countryService.detectAndSave(currentUser.id);
+      }
     });
 
     return () => {

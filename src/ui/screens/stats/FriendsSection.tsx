@@ -16,11 +16,16 @@ import { friendService } from '../../../services/friends/FriendService';
 import type { FriendSummary } from '../../../state/friendsStore';
 import { useTranslation } from '../../../i18n';
 
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { StatsStackParamList } from '../../../navigation/types';
+
 export function FriendsSection() {
   const [expanded, setExpanded] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<FriendSummary | null>(null);
   const [showAddFriend, setShowAddFriend] = useState(false);
   const { t } = useTranslation();
+  const navigation = useNavigation<NativeStackNavigationProp<StatsStackParamList>>();
 
   const friends = useFriendsStore((s) => s.friends);
   const user = useUserStore((s) => s.user);
@@ -59,6 +64,17 @@ export function FriendsSection() {
         </View>
 
         <View style={styles.headerRight}>
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              navigation.navigate('Discover');
+            }}
+            hitSlop={10}
+            style={[styles.addIconBtn, { backgroundColor: colors.surfaceVariant, marginRight: 8 }]}
+          >
+            <Ionicons name="search" size={16} color={colors.primary} />
+          </Pressable>
+
           <Pressable
             onPress={(e) => {
               e.stopPropagation();

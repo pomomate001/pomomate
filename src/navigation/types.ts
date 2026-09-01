@@ -17,6 +17,7 @@ export type TimerStackParamList = {
 export type StatsStackParamList = {
   StatsHome: undefined;
   FriendDetail: { userId: string };
+  Discover: undefined;
 };
 
 export type RoomStackParamList = {
