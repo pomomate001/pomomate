@@ -145,6 +145,7 @@ export function TimerScreen() {
     } else if (!isRunning) {
       notificationService.cancelAllScheduled();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning, mode, t]);
 
   // When timer hits 0, auto-advance and notify

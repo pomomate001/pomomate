@@ -6,7 +6,6 @@
 import { supabase } from '../auth/supabaseClient';
 import { useFriendsStore, FriendSummary, FriendRequest } from '../../state/friendsStore';
 import { logger } from '../../utils/logger';
-import type { Tag } from '../../types';
 import type { SuggestedUser } from '../../state/friendsStore';
 
 export class FriendService {

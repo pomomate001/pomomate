@@ -56,7 +56,7 @@ export function DiscoverScreen({ navigation }: Props) {
   const userTags = useTagStore((s) => s.userTags);
   const suggestedUsers = useFriendsStore((s) => s.suggestedUsers);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -77,58 +77,72 @@ export function DiscoverScreen({ navigation }: Props) {
 
   // Initial load & when filters change
   useEffect(() => {
-    loadUsers(true);
-  }, [debouncedSearch, activeCategory, userTags.length]);
-
-  const loadUsers = async (reset = false) => {
-    if (!user?.id) return;
-    
-    // If user has no tags, don't load suggestions (enforce adding tags first)
-    if (userTags.length === 0) {
-      setIsLoading(false);
-      setIsRefreshing(false);
+    if (!user?.id || userTags.length === 0) {
       return;
     }
 
-    if (reset) {
-      setIsLoading(true);
-      setHasMore(true);
-    } else {
-      if (!hasMore || isLoadingMore) return;
-      setIsLoadingMore(true);
-    }
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) setIsLoading(true);
+    }, 0);
 
-    const currentOffset = reset ? 0 : suggestedUsers.length;
     const cat = activeCategory === 'all' ? null : activeCategory;
     const search = debouncedSearch.trim() || null;
 
+    friendService
+      .discoverUsers(user.id, PAGE_SIZE, 0, cat, search)
+      .then((results) => {
+        if (isMounted) {
+          setIsLoading(false);
+          setHasMore(results.length >= PAGE_SIZE);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [user?.id, userTags.length, activeCategory, debouncedSearch]);
+
+  const handleRefresh = async () => {
+    if (!user?.id || userTags.length === 0) return;
+    setIsRefreshing(true);
+    const cat = activeCategory === 'all' ? null : activeCategory;
+    const search = debouncedSearch.trim() || null;
+    try {
+      const results = await friendService.discoverUsers(user.id, PAGE_SIZE, 0, cat, search);
+      setHasMore(results.length >= PAGE_SIZE);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (!user?.id || !hasMore || isLoadingMore || isLoading || userTags.length === 0) return;
+    setIsLoadingMore(true);
+    const current = useFriendsStore.getState().suggestedUsers;
+    const cat = activeCategory === 'all' ? null : activeCategory;
+    const search = debouncedSearch.trim() || null;
     try {
       const results = await friendService.discoverUsers(
         user.id,
         PAGE_SIZE,
-        currentOffset,
+        current.length,
         cat,
         search
       );
-
       if (results.length < PAGE_SIZE) {
         setHasMore(false);
       }
-
-      if (!reset) {
-        // Append to store if we're loading more
-        useFriendsStore.getState().setSuggestedUsers([...suggestedUsers, ...results]);
-      }
+      useFriendsStore.getState().setSuggestedUsers([...current, ...results]);
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
       setIsLoadingMore(false);
     }
-  };
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    loadUsers(true);
   };
 
   const handleSendRequest = async (targetUserId: string) => {
@@ -359,11 +373,7 @@ export function DiscoverScreen({ navigation }: Props) {
               tintColor={colors.primary}
             />
           }
-          onEndReached={() => {
-            if (hasMore && !isLoading && !isLoadingMore && suggestedUsers.length > 0) {
-              loadUsers(false);
-            }
-          }}
+          onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
         />
       )}

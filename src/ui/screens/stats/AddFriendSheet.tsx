@@ -44,6 +44,9 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
       });
     } catch {
       // User cancelled
+    }
+  };
+
   const handleCopyCode = async () => {
     await Clipboard.setStringAsync(myCode);
     Alert.alert(t('common.copied'), myCode);
