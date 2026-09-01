@@ -11,6 +11,7 @@ import { Avatar } from '../../components/Avatar';
 import { useUserStore, useFriendsStore } from '../../../state';
 import { friendService } from '../../../services/friends/FriendService';
 import { useTranslation } from '../../../i18n';
+import * as Clipboard from 'expo-clipboard';
 
 interface AddFriendSheetProps {
   visible: boolean;
@@ -43,11 +44,9 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
       });
     } catch {
       // User cancelled
-    }
-  };
-
-  const handleCopyCode = () => {
-    Alert.alert(t('friends.yourCodeAlertTitle'), t('friends.yourCodeAlertBody', { code: myCode }));
+  const handleCopyCode = async () => {
+    await Clipboard.setStringAsync(myCode);
+    Alert.alert(t('common.copied'), myCode);
   };
 
   const handleSendRequest = async () => {

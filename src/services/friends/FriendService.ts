@@ -73,9 +73,18 @@ export class FriendService {
       return { success: false, message: 'Geçersiz kullanıcı ID veya kodu.' };
     }
 
-    const cleanToUserId = toUserId.trim();
+    // Try to extract a UUID from the input string in case user pasted the whole share message
+    const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+    const match = toUserId.match(uuidRegex);
+    const cleanToUserId = match ? match[0].toLowerCase() : toUserId.trim();
+
     if (cleanToUserId === fromUserId) {
       return { success: false, message: 'Kendinize arkadaşlık isteği gönderemezsiniz.' };
+    }
+
+    // Validate if it's a valid UUID
+    if (!uuidRegex.test(cleanToUserId)) {
+      return { success: false, message: 'Geçersiz arkadaşlık kodu formatı.' };
     }
 
     try {
