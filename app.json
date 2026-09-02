@@ -172,8 +172,17 @@
       ],
       "expo-web-browser",
       "expo-video",
-      "expo-splash-screen",
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.facebook.react.** { *; }\n-keep class com.facebook.jni.** { *; }\n-keep class com.swmansion.reanimated.** { *; }\n-keep class com.facebook.react.turbomodule.** { *; }\n-keep class com.pomomate.app.** { *; }\n-keep class com.oney.WebRTCModule.** { *; }\n-keep class com.revenuecat.purchases.** { *; }\n-keepclassmembers class * {\n    @com.facebook.react.bridge.ReactMethod <methods>;\n    @com.facebook.react.uimanager.annotations.ReactProp <methods>;\n    @com.facebook.react.uimanager.annotations.ReactPropGroup <methods>;\n}"
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {
@@ -186,8 +195,7 @@
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0,
       "url": "https://u.expo.dev/c9c3a47f-7c88-446d-af51-256026508e8a"
-    },
-    "scheme": "pomomate"
+    }
   },
   "react-native-google-mobile-ads": {
     "android_app_id": "ca-app-pub-1530810645169749~1975999982",
