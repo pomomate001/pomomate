@@ -12,6 +12,7 @@ import { validateConfig } from './src/config';
 import { notificationService } from './src/services/mobile';
 import { adMobService, revenueCatService } from './src/services/monetization';
 import { authService } from './src/services/auth';
+import { friendService } from './src/services/friends/FriendService';
 import { roomService, roomInviteService } from './src/services/room';
 import { useTimerStore, useUserStore, useSettingsStore, useTaskStore, useRoomStore } from './src/state';
 import * as WebBrowser from 'expo-web-browser';
@@ -100,6 +101,18 @@ export default function App() {
               useRoomStore.getState().setCurrentRoom(room);
             }
           });
+        }
+
+        const friendCode = parsed.queryParams?.friend as string;
+        if (friendCode) {
+          const user = useUserStore.getState().user;
+          if (user?.id && user.id !== friendCode) {
+            friendService.sendFriendRequest(user.id, friendCode).then((res) => {
+              if (res.success) {
+                Alert.alert('Arkadaşlık İsteği Gönderildi 🤝', res.message);
+              }
+            });
+          }
         }
         
         if (accessToken && refreshToken) {

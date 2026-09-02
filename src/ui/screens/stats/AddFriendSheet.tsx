@@ -18,6 +18,18 @@ interface AddFriendSheetProps {
   onClose: () => void;
 }
 
+function extractFriendCode(raw: string): string {
+  if (!raw) return '';
+  const trimmed = raw.trim();
+  // Check if string contains a UUID (8-4-4-4-12 hex chars)
+  const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+  const match = trimmed.match(uuidRegex);
+  if (match) {
+    return match[0];
+  }
+  return trimmed;
+}
+
 export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
   const [friendIdInput, setFriendIdInput] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -38,9 +50,13 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
 
   const handleShareMyCode = async () => {
     try {
+      const shareUrl = `https://pomomate.app/join?friend=${myCode}`;
+      const message = `PomoMate'de birlikte odaklanalım! Beni arkadaş olarak eklemek için aşağıdaki bağlantıya tıkla:\n${shareUrl}\n\nVeya arkadaşlık kodum:\n${myCode}`;
+
       await Share.share({
-        message: t('friends.shareCodeMessage', { code: myCode }),
-        title: t('friends.shareCodeTitle'),
+        message,
+        url: shareUrl,
+        title: 'PomoMate Arkadaşlık Daveti',
       });
     } catch {
       // User cancelled
@@ -49,11 +65,26 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
 
   const handleCopyCode = async () => {
     await Clipboard.setStringAsync(myCode);
-    Alert.alert(t('common.copied'), myCode);
+    Alert.alert('Kopyalandı', `Arkadaşlık kodun (${myCode}) panoya kopyalandı.`);
+  };
+
+  const handlePasteFromClipboard = async () => {
+    const text = await Clipboard.getStringAsync();
+    if (text) {
+      const extracted = extractFriendCode(text);
+      setFriendIdInput(extracted);
+      Alert.alert('Yapıştırıldı', 'Arkadaşlık kodu panodan başarıyla yapıştırıldı.');
+    }
+  };
+
+  const handleInputChange = (text: string) => {
+    const extracted = extractFriendCode(text);
+    setFriendIdInput(extracted);
   };
 
   const handleSendRequest = async () => {
-    if (!friendIdInput.trim()) {
+    const cleanCode = extractFriendCode(friendIdInput);
+    if (!cleanCode) {
       Alert.alert(t('common.warning'), t('friends.enterCodeWarning'));
       return;
     }
@@ -64,7 +95,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
     }
 
     setIsSending(true);
-    const result = await friendService.sendFriendRequest(user.id, friendIdInput.trim());
+    const result = await friendService.sendFriendRequest(user.id, cleanCode);
     setIsSending(false);
 
     if (result.success) {
@@ -173,13 +204,18 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
                   placeholder={t('friends.codePlaceholder')}
                   placeholderTextColor={colors.textDisabled}
                   value={friendIdInput}
-                  onChangeText={setFriendIdInput}
+                  onChangeText={handleInputChange}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
-                {friendIdInput.length > 0 && (
-                  <Pressable onPress={() => setFriendIdInput('')}>
+                {friendIdInput.length > 0 ? (
+                  <Pressable onPress={() => setFriendIdInput('')} style={{ padding: 4 }}>
                     <Ionicons name="close-circle" size={18} color={colors.textDisabled} />
+                  </Pressable>
+                ) : (
+                  <Pressable onPress={handlePasteFromClipboard} style={{ padding: 4, flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="clipboard-outline" size={18} color={colors.primary} />
+                    <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 3 }]}>Yapıştır</Text>
                   </Pressable>
                 )}
               </View>
