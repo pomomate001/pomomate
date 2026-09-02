@@ -48,6 +48,8 @@ class MainActivity : ReactActivity() {
   }
 
   override fun onDestroy() {
+    autoPiPEnabled = false
+    isInPiPMode = false
     if (instance == this) {
       instance = null
     }

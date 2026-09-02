@@ -43,7 +43,11 @@
     <meta-data android:name="expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH" android:value="ALWAYS"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATES_LAUNCH_WAIT_MS" android:value="0"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATE_URL" android:value="https://u.expo.dev/c9c3a47f-7c88-446d-af51-256026508e8a"/>
-    <service android:name="expo.modules.audio.service.AudioControlsService" android:exported="false" android:foregroundServiceType="mediaPlayback">
+    <service
+      android:name="expo.modules.audio.service.AudioControlsService"
+      android:exported="false"
+      android:stopWithTask="true"
+      android:foregroundServiceType="mediaPlayback">
       <intent-filter>
         <action android:name="androidx.media3.session.MediaSessionService"/>
       </intent-filter>
@@ -51,6 +55,7 @@
     <service
       android:name="com.oney.WebRTCModule.MediaProjectionService"
       android:exported="false"
+      android:stopWithTask="true"
       android:foregroundServiceType="mediaProjection"/>
     <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode|smallestScreenSize|assetsPaths|locale|layoutDirection" android:launchMode="singleTask" android:windowSoftInputMode="adjustPan" android:theme="@style/Theme.App.SplashScreen" android:exported="true" android:screenOrientation="portrait" android:supportsPictureInPicture="true">
       <intent-filter>
@@ -63,7 +68,7 @@
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="pomomate"/>
       </intent-filter>
-      <intent-filter android:autoVerify="false" data-generated="true">
+      <intent-filter android:autoVerify="true" data-generated="true">
         <action android:name="android.intent.action.VIEW"/>
         <data android:scheme="https" android:host="pomomate.app" android:pathPrefix="/join"/>
         <category android:name="android.intent.category.BROWSABLE"/>
