@@ -16,6 +16,7 @@ import { RoomBottomBar } from './RoomBottomBar';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
 import { useRoomStore, useUserStore, useTaskStore } from '../../../state';
 import { mediaService } from '../../../services/mobile/media/MediaService';
+import { permissionManager } from '../../../services/mobile/permissions/PermissionManager';
 import { pipService } from '../../../services/mobile/pip/PiPService';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
@@ -176,6 +177,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
     if (!screenShareOn) {
       try {
+        if (Platform.OS === 'android') {
+          // Medya projeksiyonu için Foreground Service gereklidir, bu da bildirim izni ister (Android 13+).
+          await permissionManager.requestNotifications();
+        }
+        
         const stream = await mediaService.getDisplayMedia();
         if (stream) {
           setScreenShareOn(true);
