@@ -114,7 +114,8 @@ export function RoomInviteSheet({
           title="Diğer Uygulamalarla Paylaş (WhatsApp, vb.)"
           variant="outline"
           icon={<Ionicons name="share-social-outline" size={20} color={colors.primary} />}
-          onPress={() => {
+          onPress={async () => {
+            await Clipboard.setStringAsync(inviteCode);
             onSystemShare();
             onClose();
           }}
@@ -127,33 +128,36 @@ export function RoomInviteSheet({
 
         <FlatList
           data={friends}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={[styles.friendItem, { borderBottomColor: colors.border }]}>
-              <View style={styles.friendInfo}>
-                <View style={[styles.avatarPlaceholder, { backgroundColor: colors.surfaceVariant }]}>
+          keyExtractor={(item) => item.userId || (item as any).id}
+          renderItem={({ item }) => {
+            const fId = item.userId || (item as any).id;
+            return (
+              <View style={[styles.friendItem, { borderBottomColor: colors.border }]}>
+                <View style={styles.friendInfo}>
+                  <View style={[styles.avatarPlaceholder, { backgroundColor: colors.surfaceVariant }]}>
+                    <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>
+                      {item.displayName?.charAt(0).toUpperCase() || 'P'}
+                    </Text>
+                  </View>
                   <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>
-                    {item.displayName?.charAt(0).toUpperCase() || 'P'}
+                    {item.displayName}
                   </Text>
                 </View>
-                <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>
-                  {item.displayName}
-                </Text>
+                <Pressable
+                  style={[
+                    styles.inviteBtn,
+                    { backgroundColor: invitingId === fId ? colors.surfaceVariant : `${colors.primary}20` },
+                  ]}
+                  onPress={() => handleInviteFriend(fId, item.displayName)}
+                  disabled={invitingId === fId}
+                >
+                  <Text style={[typography.captionBold, { color: colors.primary }]}>
+                    {invitingId === fId ? 'Gönderiliyor...' : 'Davet Et'}
+                  </Text>
+                </Pressable>
               </View>
-              <Pressable
-                style={[
-                  styles.inviteBtn,
-                  { backgroundColor: invitingId === item.id ? colors.surfaceVariant : `${colors.primary}20` },
-                ]}
-                onPress={() => handleInviteFriend(item.id, item.displayName)}
-                disabled={invitingId === item.id}
-              >
-                <Text style={[typography.captionBold, { color: colors.primary }]}>
-                  {invitingId === item.id ? 'Gönderiliyor...' : 'Davet Et'}
-                </Text>
-              </Pressable>
-            </View>
-          )}
+            );
+          }}
           ListEmptyComponent={
             <Text style={[typography.body, { color: colors.textDisabled, textAlign: 'center', marginTop: spacing.md }]}>
               Henüz ekli bir arkadaşın bulunmuyor.

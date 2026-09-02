@@ -1,4 +1,4 @@
-export { AppNavigator } from './AppNavigator';
+export { AppNavigator, navigationRef } from './AppNavigator';
 export { RootNavigator } from './RootNavigator';
 export { AuthNavigator } from './AuthNavigator';
 export type {

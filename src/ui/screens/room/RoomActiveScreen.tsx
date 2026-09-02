@@ -458,12 +458,13 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const handleSystemShare = useCallback(async () => {
     try {
       const roomName = room?.name ?? 'PomoMate Çalışma Odası';
-      const shareUrl = `https://pomomate.app/join?room=${inviteCode}`;
-      const message = `🎯 PomoMate Çalışma Odama Davetlisin!\n\nOda: ${roomName}\nOda Kodu: ${inviteCode}\n\nUygulamadan 'Odaya Katıl' diyerek bu kodu girebilir veya doğrudan bağlantıya tıklayabilirsin:\n${shareUrl}`;
+      const webUrl = `https://pomomate.app/join?room=${inviteCode}`;
+      const appUrl = `pomomate://join?room=${inviteCode}`;
+      const message = `🎯 PomoMate Çalışma Odama Davetlisin!\n\nOda: ${roomName}\n\n📋 Katılım Kodu:\n${inviteCode}\n\nUygulamadan 'Odaya Katıl' diyerek bu kodu girebilir veya doğrudan bağlantıya tıklayabilirsin:\n${webUrl}\n\n(Uygulama yüklüyse doğrudan aç: ${appUrl})`;
 
       await Share.share({
         message,
-        url: shareUrl,
+        url: webUrl,
         title: `${roomName} - PomoMate`,
       });
     } catch {

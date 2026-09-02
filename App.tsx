@@ -6,7 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Linking from 'expo-linking';
 import { supabase } from './src/services/auth/supabaseClient';
-import { AppNavigator } from './src/navigation';
+import { AppNavigator, navigationRef } from './src/navigation';
 import { ThemeProvider } from './src/ui/theme';
 import { validateConfig } from './src/config';
 import { notificationService } from './src/services/mobile';
@@ -97,10 +97,18 @@ export default function App() {
         const roomCode = parsed.queryParams?.room as string;
         if (roomCode) {
           const user = useUserStore.getState().user;
-          roomService.joinRoom(roomCode, user?.id || 'guest').then(({ room }) => {
+          roomService.joinRoom(roomCode, user?.id || 'guest').then(({ room, error }) => {
             if (room) {
               useRoomStore.getState().addRoom(room);
               useRoomStore.getState().setCurrentRoom(room);
+              if (navigationRef.isReady()) {
+                navigationRef.navigate('RoomTab', {
+                  screen: 'RoomActive',
+                  params: { roomId: room.id },
+                });
+              }
+            } else if (error) {
+              Alert.alert('Oda Bulunamadı', error);
             }
           });
         }
@@ -147,6 +155,12 @@ export default function App() {
                   }
                   useRoomStore.getState().addRoom(room);
                   useRoomStore.getState().setCurrentRoom(room);
+                  if (navigationRef.isReady()) {
+                    navigationRef.navigate('RoomTab', {
+                      screen: 'RoomActive',
+                      params: { roomId: room.id },
+                    });
+                  }
                 },
               },
             ]
