@@ -11,6 +11,7 @@ import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { revenueCatService } from '../../../services/monetization/RevenueCatService';
 import { useTranslation } from '../../../i18n';
+import { useUserStore, useSettingsStore } from '../../../state';
 
 interface PremiumPaywallSheetProps {
   visible: boolean;
@@ -63,10 +64,15 @@ export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetPro
     if (!selectedPackage) return;
     
     setPurchasing(true);
-    const success = await revenueCatService.purchasePackage(selectedPackage);
+    const userId = useUserStore.getState().user?.id;
+    const success = await revenueCatService.purchasePackage(selectedPackage, userId);
     setPurchasing(false);
     
     if (success) {
+      useSettingsStore.getState().setIsPremium(true);
+      if (userId) {
+        useUserStore.getState().updateUser({ subscriptionTier: 'premium' });
+      }
       Alert.alert(t('premium.successTitle'), t('premium.successMessage'), [
         { text: t('common.ok'), onPress: onClose }
       ]);
@@ -77,10 +83,15 @@ export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetPro
 
   const handleRestore = async () => {
     setPurchasing(true);
-    const success = await revenueCatService.restorePurchases();
+    const userId = useUserStore.getState().user?.id;
+    const success = await revenueCatService.restorePurchases(userId);
     setPurchasing(false);
     
     if (success) {
+      useSettingsStore.getState().setIsPremium(true);
+      if (userId) {
+        useUserStore.getState().updateUser({ subscriptionTier: 'premium' });
+      }
       Alert.alert(t('premium.restoreSuccessTitle'), t('premium.restoreSuccessMessage'), [
         { text: t('common.ok'), onPress: onClose }
       ]);

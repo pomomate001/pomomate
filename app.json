@@ -2,7 +2,7 @@
   "expo": {
     "name": "PomoMate – Birlikte Çalış",
     "slug": "pomomate",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -20,7 +20,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.pomomate.app",
-      "buildNumber": "9",
+      "buildNumber": "10",
       "infoPlist": {
         "NSCameraUsageDescription": "Profil fotoğrafı eklemek için kamera erişimi gerekiyor.",
         "NSMicrophoneUsageDescription": "Sesli görüşme özelliği için mikrofon erişimi gerekiyor.",
@@ -39,7 +39,7 @@
     },
     "android": {
       "package": "com.pomomate.app",
-      "versionCode": 9,
+      "versionCode": 10,
       "adaptiveIcon": {
         "backgroundColor": "#121212",
         "foregroundImage": "./assets/android-icon-foreground.png",

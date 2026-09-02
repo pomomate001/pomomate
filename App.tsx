@@ -97,6 +97,76 @@ export default function App() {
         }
       };
 
+      let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+
+      const setupUserSubscription = async (currentUser: any) => {
+        useUserStore.getState().setUser(currentUser);
+
+        // Initialize RevenueCat
+        await revenueCatService.initialize(currentUser.id);
+
+        // Check subscription status from RevenueCat and Supabase
+        const rcTier = await revenueCatService.checkSubscription();
+        const isPro = currentUser.subscriptionTier === 'premium' || rcTier === 'premium';
+        setIsPremium(isPro);
+
+        // If RevenueCat is premium but Supabase record is free, sync to Supabase
+        if (rcTier === 'premium' && currentUser.subscriptionTier !== 'premium') {
+          await revenueCatService.syncSupabaseTier(currentUser.id, 'premium');
+          useUserStore.getState().updateUser({ subscriptionTier: 'premium' });
+        }
+
+        // Listen for live RevenueCat updates (e.g. promotional grants, store renewals)
+        await revenueCatService.onCustomerInfoUpdate((customerInfo) => {
+          const isEntitled = revenueCatService.checkEntitlement(customerInfo);
+          const currentSupabaseTier = useUserStore.getState().user?.subscriptionTier;
+          if (isEntitled) {
+            setIsPremium(true);
+            if (currentSupabaseTier !== 'premium') {
+              revenueCatService.syncSupabaseTier(currentUser.id, 'premium');
+              useUserStore.getState().updateUser({ subscriptionTier: 'premium' });
+            }
+          } else if (currentSupabaseTier !== 'premium') {
+            setIsPremium(false);
+          }
+        });
+
+        // Supabase Realtime listener for user profile / subscription_tier changes
+        if (realtimeChannel) {
+          supabase.removeChannel(realtimeChannel);
+        }
+        realtimeChannel = supabase
+          .channel(`user-sync-${currentUser.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'users',
+              filter: `id=eq.${currentUser.id}`,
+            },
+            (payload) => {
+              const updated = payload.new as any;
+              if (updated && updated.subscription_tier) {
+                const newTier = updated.subscription_tier as 'free' | 'premium';
+                useUserStore.getState().updateUser({ subscriptionTier: newTier });
+                if (newTier === 'premium') {
+                  setIsPremium(true);
+                } else {
+                  // If revoked in Supabase, verify if an active Store subscription exists
+                  revenueCatService.checkSubscription().then((tier) => {
+                    setIsPremium(tier === 'premium');
+                  });
+                }
+              }
+            }
+          )
+          .subscribe();
+
+        // Generate recurring tasks for today
+        useTaskStore.getState().generateRecurringTasks();
+      };
+
       const initialUrl = await Linking.getInitialURL();
       await handleDeepLink(initialUrl);
 
@@ -104,7 +174,7 @@ export default function App() {
         handleDeepLink(url).then(async () => {
           const currentUser = await authService.getCurrentUser();
           if (currentUser) {
-            useUserStore.getState().setUser(currentUser);
+            await setupUserSubscription(currentUser);
           }
         });
       });
@@ -112,28 +182,18 @@ export default function App() {
       // Load current user
       const currentUser = await authService.getCurrentUser();
       if (currentUser) {
-        useUserStore.getState().setUser(currentUser);
-
-        // Initialize RevenueCat
-        await revenueCatService.initialize(currentUser.id);
-
-        // Check subscription status
-        const tier = await revenueCatService.checkSubscription();
-        setIsPremium(tier === 'premium');
-
-        // Generate recurring tasks for today
-        useTaskStore.getState().generateRecurringTasks();
+        await setupUserSubscription(currentUser);
       }
       
-      return urlSub;
+      return { urlSub, realtimeChannel };
     };
 
-    let urlSub: { remove: () => void } | null = null;
+    let cleanupRefs: { urlSub?: { remove: () => void }; realtimeChannel?: ReturnType<typeof supabase.channel> | null } | null = null;
     
-    // Patch init to capture urlSub and hide splash screen when ready
+    // Patch init to capture cleanup refs and hide splash screen when ready
     const startInit = async () => {
       try {
-        urlSub = await init();
+        cleanupRefs = await init();
       } catch (err) {
         console.warn('Initialization error:', err);
       } finally {
@@ -144,7 +204,10 @@ export default function App() {
     startInit();
 
     return () => {
-      if (urlSub) urlSub.remove();
+      if (cleanupRefs?.urlSub) cleanupRefs.urlSub.remove();
+      if (cleanupRefs?.realtimeChannel) {
+        supabase.removeChannel(cleanupRefs.realtimeChannel);
+      }
     };
   }, [setIsPremium]);
 

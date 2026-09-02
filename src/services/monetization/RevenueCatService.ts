@@ -4,6 +4,7 @@
  * Handles monthly/yearly premium plans and entitlement checks.
  */
 import Purchases, { PurchasesPackage, CustomerInfo } from 'react-native-purchases';
+import { supabase } from '../auth/supabaseClient';
 import { logger } from '../../utils/logger';
 
 export type SubscriptionTier = 'free' | 'premium';
@@ -43,22 +44,30 @@ export class RevenueCatService {
     }
   }
 
-  async purchasePackage(pkg: PurchasesPackage): Promise<boolean> {
+  async purchasePackage(pkg: PurchasesPackage, userId?: string): Promise<boolean> {
     try {
       const result = await Purchases.purchasePackage(pkg);
       logger.info('[RevenueCat] Purchase successful');
-      return this.checkEntitlement(result.customerInfo);
+      const isEntitled = this.checkEntitlement(result.customerInfo);
+      if (isEntitled && userId) {
+        await this.syncSupabaseTier(userId, 'premium');
+      }
+      return isEntitled;
     } catch (err) {
       logger.warn('[RevenueCat] Purchase failed:', err);
       return false;
     }
   }
 
-  async restorePurchases(): Promise<boolean> {
+  async restorePurchases(userId?: string): Promise<boolean> {
     try {
       const customerInfo = await Purchases.restorePurchases();
       logger.info('[RevenueCat] Purchases restored');
-      return this.checkEntitlement(customerInfo);
+      const isEntitled = this.checkEntitlement(customerInfo);
+      if (isEntitled && userId) {
+        await this.syncSupabaseTier(userId, 'premium');
+      }
+      return isEntitled;
     } catch (err) {
       logger.warn('[RevenueCat] Restore failed:', err);
       return false;
@@ -75,9 +84,25 @@ export class RevenueCatService {
     }
   }
 
-  private checkEntitlement(customerInfo: CustomerInfo): boolean {
+  public checkEntitlement(customerInfo: CustomerInfo): boolean {
     // Check if user has active "premium" entitlement
     return customerInfo.entitlements.active['premium'] !== undefined;
+  }
+
+  async syncSupabaseTier(userId: string, tier: SubscriptionTier): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ subscription_tier: tier })
+        .eq('id', userId);
+      if (error) {
+        logger.warn('[RevenueCat] Failed to sync subscription_tier with Supabase:', error);
+      } else {
+        logger.info(`[RevenueCat] Synced subscription_tier (${tier}) to Supabase for user:`, userId);
+      }
+    } catch (err) {
+      logger.warn('[RevenueCat] syncSupabaseTier exception:', err);
+    }
   }
 
   async onCustomerInfoUpdate(
@@ -88,3 +113,4 @@ export class RevenueCatService {
 }
 
 export const revenueCatService = new RevenueCatService();
+
