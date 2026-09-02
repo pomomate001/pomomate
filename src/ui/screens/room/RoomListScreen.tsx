@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet, Alert } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '../../theme';
@@ -34,9 +35,10 @@ function RoomCard({
   const colors = useColors();
   const { t } = useTranslation();
 
-  const handleCopyCode = () => {
+  const handleCopyCode = async () => {
     const code = room.inviteCode ?? room.id.slice(-6).toUpperCase();
-    Alert.alert(t('rooms.roomCodeAlertTitle'), t('rooms.roomCodeAlertBody', { code }));
+    await Clipboard.setStringAsync(code);
+    Alert.alert(t('common.success'), t('common.copied'));
   };
 
   return (

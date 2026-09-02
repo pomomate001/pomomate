@@ -4,3 +4,4 @@ export { RoomJoinSheet } from './RoomJoinSheet';
 export { RoomActiveScreen } from './RoomActiveScreen';
 export { ParticipantsBar } from './ParticipantsBar';
 export { RoomBottomBar } from './RoomBottomBar';
+export { RoomInviteSheet } from './RoomInviteSheet';

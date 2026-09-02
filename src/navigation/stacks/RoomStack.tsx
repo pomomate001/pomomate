@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Alert } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RoomListScreen, RoomActiveScreen, RoomCreateSheet, RoomJoinSheet } from '../../ui/screens/room';
 import { PremiumPaywallSheet } from '../../ui/screens/profile/PremiumPaywallSheet';
@@ -58,7 +59,7 @@ function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamLi
       (r) =>
         r.id.toLowerCase() === code.toLowerCase() ||
         r.inviteCode?.toUpperCase() === normalizedCode ||
-        r.id.slice(-6).toUpperCase() === normalizedCode,
+        r.id.slice(-6).toUpperCase() === normalizedCode
     );
 
     if (existing) {
@@ -68,7 +69,7 @@ function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamLi
       const joinedRoom: Room = {
         id: `room-${normalizedCode}`,
         name: `Oda ${normalizedCode}`,
-        hostId: 'remote-host',
+        hostId: 'remote-host', // we don't know the host yet
         maxMembers: 6,
         isActive: true,
         createdAt: nowIso(),

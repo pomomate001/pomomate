@@ -46,7 +46,7 @@ export class RoomClient {
     this.isHost = options.isHost;
 
     // Signaling
-    this.signaling = new SignalingClient(options.signalingUrl, options.token);
+    this.signaling = new SignalingClient(options.roomId);
 
     // Peer management
     this.peerManager = new PeerManager(

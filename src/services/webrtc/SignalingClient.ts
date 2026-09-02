@@ -6,55 +6,59 @@
  */
 import { logger } from '../../utils/logger';
 import type { SignalingMessage } from './types';
+import { supabase } from '../auth/supabaseClient';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 type MessageHandler = (msg: SignalingMessage) => void;
 
 export class SignalingClient {
-  private ws: WebSocket | null = null;
-  private url: string;
+  private channel: RealtimeChannel | null = null;
+  private roomId: string;
   private handlers = new Set<MessageHandler>();
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private shouldReconnect = true;
+  private isConnectedFlag = false;
 
-  constructor(url: string, token: string) {
-    // Append token as query parameter
-    const urlObj = new URL(url);
-    urlObj.searchParams.set('token', token);
-    this.url = urlObj.toString();
+  constructor(roomId: string) {
+    this.roomId = roomId;
   }
 
   connect(): void {
-    this.shouldReconnect = true;
-    this.ws = new WebSocket(this.url);
+    if (this.channel) return;
 
-    this.ws.onopen = () => {
-      logger.info('[Signaling] Connected');
-    };
+    this.channel = supabase.channel(`room_signaling_${this.roomId}`, {
+      config: {
+        broadcast: { ack: false },
+      },
+    });
 
-    this.ws.onmessage = (event) => {
-      try {
-        const msg: SignalingMessage = JSON.parse(event.data as string);
-        this.handlers.forEach((h) => h(msg));
-      } catch {
-        logger.warn('[Signaling] Failed to parse message');
-      }
-    };
-
-    this.ws.onclose = () => {
-      logger.info('[Signaling] Disconnected');
-      if (this.shouldReconnect) {
-        this.scheduleReconnect();
-      }
-    };
-
-    this.ws.onerror = () => {
-      logger.warn('[Signaling] WebSocket error');
-    };
+    this.channel
+      .on('broadcast', { event: 'signaling' }, (payload) => {
+        try {
+          const msg = payload.payload as SignalingMessage;
+          this.handlers.forEach((h) => h(msg));
+        } catch {
+          logger.warn('[Signaling] Failed to parse broadcast message');
+        }
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          this.isConnectedFlag = true;
+          logger.info(`[Signaling] Connected to Supabase channel for room ${this.roomId}`);
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          this.isConnectedFlag = false;
+          logger.warn(`[Signaling] Disconnected from Supabase channel for room ${this.roomId}, status: ${status}`);
+        }
+      });
   }
 
   send(msg: SignalingMessage): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(msg));
+    if (this.isConnectedFlag && this.channel) {
+      this.channel.send({
+        type: 'broadcast',
+        event: 'signaling',
+        payload: msg,
+      });
+    } else {
+      logger.warn('[Signaling] Cannot send message, not connected.');
     }
   }
 
@@ -64,20 +68,15 @@ export class SignalingClient {
   }
 
   disconnect(): void {
-    this.shouldReconnect = false;
-    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
-    this.ws?.close();
-    this.ws = null;
+    if (this.channel) {
+      supabase.removeChannel(this.channel);
+      this.channel = null;
+    }
+    this.isConnectedFlag = false;
+    logger.info(`[Signaling] Disconnected from room ${this.roomId}`);
   }
 
   get isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN;
-  }
-
-  private scheduleReconnect(): void {
-    this.reconnectTimer = setTimeout(() => {
-      logger.info('[Signaling] Attempting reconnect…');
-      this.connect();
-    }, 3000);
+    return this.isConnectedFlag;
   }
 }

@@ -13,6 +13,7 @@ import { RoomCameraGrid } from './features/RoomCameraGrid';
 import { RoomScreenPanel } from './features/RoomScreenPanel';
 import { RoomViewToggles } from './features/RoomViewToggles';
 import { RoomBottomBar } from './RoomBottomBar';
+import { RoomInviteSheet } from './RoomInviteSheet';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
 import { useRoomStore, useUserStore, useTaskStore, useTimerStore } from '../../../state';
 import { mediaService } from '../../../services/mobile/media/MediaService';
@@ -37,6 +38,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [showAddTask, setShowAddTask] = useState(false);
   const [isScreenShrunk, setIsScreenShrunk] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
   const [isInPiP, setIsInPiP] = useState(false);
   const remainingSeconds = useTimerStore((s) => s.remainingSeconds);
   const isTimerRunning = useTimerStore((s) => s.isRunning);
@@ -69,10 +71,13 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const handleEnterPiP = useCallback(async () => {
     const supported = await pipService.isPiPSupported();
     if (!supported) {
-      Alert.alert('Desteklenmiyor', 'Cihazınız mini mod (PiP) özelliğini desteklemiyor.');
+      setIsInPiP(true);
       return;
     }
-    await pipService.enterPiP();
+    const success = await pipService.enterPiP();
+    if (!success) {
+      setIsInPiP(true);
+    }
   }, []);
 
   const insets = useSafeAreaInsets();
@@ -294,13 +299,13 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   /* ─── Share Handler ─── */
 
-  const handleShare = useCallback(async () => {
+  const handleSystemShare = useCallback(async () => {
     try {
       await Share.share({
         message: t('rooms.shareRoomMessage', {
           name: room?.name ?? t('rooms.defaultRoomName'),
           code: inviteCode,
-        }),
+        }) + `\n\nOdama katılmak için tıkla: pomomate://room/${inviteCode}`,
         title: t('rooms.shareMessageTitle'),
       });
     } catch {
@@ -413,6 +418,12 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           >
             <Ionicons name={screenShareOn ? 'desktop' : 'desktop-outline'} size={18} color="#FFF" />
           </Pressable>
+          <Pressable
+            style={[styles.pipButton, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+            onPress={() => setIsInPiP(false)}
+          >
+            <Ionicons name="expand" size={18} color="#FFF" />
+          </Pressable>
         </View>
       </View>
     );
@@ -425,6 +436,13 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         visible={showAddTask}
         onClose={() => setShowAddTask(false)}
         onAdd={handleAddTask}
+      />
+
+      <RoomInviteSheet
+        visible={showInvite}
+        onClose={() => setShowInvite(false)}
+        onSystemShare={handleSystemShare}
+        inviteCode={inviteCode}
       />
 
       {/* ─── Dynamic Island Timer Bar (highest z-index) ─── */}
@@ -546,7 +564,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         onToggleMic={handleToggleMic}
         onToggleCam={handleToggleCam}
         onToggleScreen={handleToggleScreen}
-        onShare={handleShare}
+        onShare={() => setShowInvite(true)}
         onLeave={onLeave}
         onPickFile={handlePickFile}
       />

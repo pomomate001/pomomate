@@ -102,11 +102,21 @@ export class PeerManager {
   /** Set the local media stream (audio/video). */
   setLocalStream(stream: MediaStream | null): void {
     this.localStream = stream;
-    // Add tracks to existing connections
+    // Replace tracks or add them to existing connections
     if (stream) {
       for (const peer of this.peers.values()) {
+        const senders = peer.connection.getSenders();
         for (const track of stream.getTracks()) {
-          peer.connection.addTrack(track, stream);
+          const kind = track.kind;
+          const sender = senders.find((s) => s.track && s.track.kind === kind);
+          if (sender) {
+            if (sender.track && sender.track !== track) {
+              sender.track.stop();
+            }
+            sender.replaceTrack(track);
+          } else {
+            peer.connection.addTrack(track, stream);
+          }
         }
       }
     }

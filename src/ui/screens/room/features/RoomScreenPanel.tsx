@@ -149,44 +149,34 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   });
 
   if (isScreenSharing) {
-    const streamURL = screenStream && screenStream.toURL ? screenStream.toURL() : null;
+    // Local screen share shouldn't render RTCView (causes black screen/mirror tunnel on some devices)
+    // We just show the placeholder and actions.
+    const hasStream = !!screenStream;
 
     return (
-      <View style={[styles.broadcastContainer, streamURL ? { padding: 0 } : {}]}>
-        {streamURL ? (
-          <RTCView
-            streamURL={streamURL}
-            style={StyleSheet.absoluteFill}
-            objectFit="contain"
-          />
-        ) : (
-          <View style={styles.broadcastIconBox}>
-            <Ionicons name="desktop" size={54} color="#A855F7" />
-          </View>
-        )}
+      <View style={styles.broadcastContainer}>
+        <View style={styles.broadcastIconBox}>
+          <Ionicons name="desktop" size={54} color="#A855F7" />
+        </View>
 
-        <View style={[styles.broadcastOverlay, streamURL ? { backgroundColor: 'transparent', justifyContent: 'flex-end', paddingBottom: 40 } : {}]}>
+        <View style={styles.broadcastOverlay}>
           {/* Top Live Pill */}
-          <View style={[styles.liveBadge, streamURL ? { position: 'absolute', top: 20 } : {}]}>
+          <View style={styles.liveBadge}>
             <View style={styles.liveDot} />
             <Text style={styles.liveText}>CANLI EKRAN YAYINI</Text>
           </View>
 
-          {!streamURL && (
-            <>
-              <Text style={styles.broadcastTitle}>Ekranınız Odaya Paylaşılıyor</Text>
-              <Text style={styles.broadcastDesc}>
-                Katılımcılar şu anda ekranınızı canlı olarak izliyor. Uygulamayı arka plana aldığınızda ekran paylaşımı devam eder.
-              </Text>
-            </>
-          )}
+          <Text style={styles.broadcastTitle}>Ekranınız Odaya Paylaşılıyor</Text>
+          <Text style={styles.broadcastDesc}>
+            Katılımcılar şu anda ekranınızı canlı olarak izliyor. Uygulamayı arka plana aldığınızda ekran paylaşımı devam eder.
+          </Text>
 
           {/* Action Controls */}
           <View style={styles.broadcastActions}>
             {onEnterPiP && (
               <Pressable style={styles.pipActionBtn} onPress={onEnterPiP}>
                 <Ionicons name="contract-outline" size={20} color="#FFF" />
-                <Text style={styles.pipActionBtnText}>Mini Moda Geç (Dinamik Ada)</Text>
+                <Text style={styles.pipActionBtnText}>Mini Moda Geç</Text>
               </Pressable>
             )}
 
