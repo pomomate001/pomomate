@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import { authService } from './src/services/auth';
 import { friendService } from './src/services/friends/FriendService';
 import { roomService, roomInviteService } from './src/services/room';
 import { useTimerStore, useUserStore, useSettingsStore, useTaskStore, useRoomStore } from './src/state';
+import { JoinLandingScreen } from './src/ui/screens/JoinLandingScreen';
 import * as WebBrowser from 'expo-web-browser';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -268,6 +269,10 @@ export default function App() {
       deactivateKeepAwake();
     }
   }, [isTimerRunning]);
+
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location.pathname.startsWith('/join')) {
+    return <JoinLandingScreen />;
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

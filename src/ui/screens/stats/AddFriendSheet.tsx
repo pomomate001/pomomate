@@ -51,7 +51,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
   const handleShareMyCode = async () => {
     try {
       const shareUrl = `https://pomomate.app/join?friend=${myCode}`;
-      const message = `PomoMate'de birlikte odaklanalım! Beni arkadaş olarak eklemek için aşağıdaki bağlantıya tıkla:\n${shareUrl}\n\nVeya arkadaşlık kodum:\n${myCode}`;
+      const message = `PomoMate'de birlikte odaklanalım! Beni arkadaş olarak eklemek için aşağıdaki bağlantıya tıkla:\n${shareUrl}\n\nVeya arkadaşlık kodum (kopyalamak için üzerine dokun):\n\`\`\`${myCode}\`\`\``;
 
       await Share.share({
         message,

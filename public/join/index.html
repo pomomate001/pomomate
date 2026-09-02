@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PomoMate'e Katıl</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background: #121212;
+      color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px;
+      text-align: center;
+    }
+    .card {
+      background: #1E1E1E;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 36px 28px;
+      max-width: 420px;
+      width: 100%;
+    }
+    .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 24px;
+      margin: 0 0 8px 0;
+      color: #FFF;
+    }
+    p {
+      color: #A1A1AA;
+      font-size: 15px;
+      margin: 0 0 24px 0;
+      line-height: 1.5;
+    }
+    .code-box {
+      background: #27272A;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 24px;
+      word-break: break-all;
+    }
+    .code-label {
+      font-size: 11px;
+      color: #A1A1AA;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 6px;
+    }
+    .code-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #A855F7;
+      margin-bottom: 10px;
+    }
+    .copy-btn {
+      background: #A855F7;
+      color: #FFF;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary {
+      display: block;
+      background: #A855F7;
+      color: #FFF;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 14px;
+      border-radius: 14px;
+      margin-bottom: 12px;
+    }
+    .btn-secondary {
+      display: block;
+      background: transparent;
+      color: #A855F7;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 12px;
+      border-radius: 14px;
+      margin-bottom: 16px;
+    }
+    .hint {
+      font-size: 12px;
+      color: #71717A;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🎯</div>
+    <h1>PomoMate</h1>
+    <p id="subTitle">Birlikte odaklanmaya davet edildin!</p>
+    
+    <div class="code-box" id="codeBox" style="display: none;">
+      <div class="code-label" id="codeLabel">Davet Kodu</div>
+      <div class="code-value" id="codeValue"></div>
+      <button class="copy-btn" id="copyBtn" onclick="copyCode()">Kodu Kopyala</button>
+    </div>
+
+    <a id="openBtn" href="#" class="btn-primary">Uygulamada Aç</a>
+    <a href="https://play.google.com/store/apps/details?id=com.pomomate.app" class="btn-secondary">Google Play'den İndir</a>
+    <div class="hint">Uygulama telefonunuzda yüklüyse otomatik olarak açılacaktır.</div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const friend = params.get('friend');
+    const room = params.get('room');
+    let code = '';
+
+    if (friend) {
+      code = friend;
+      document.getElementById('subTitle').innerText = 'Bir arkadaşın seni PomoMate\'de birlikte çalışmaya davet etti!';
+      document.getElementById('codeLabel').innerText = 'Arkadaşlık Kodu';
+      document.getElementById('codeValue').innerText = friend;
+      document.getElementById('codeBox').style.display = 'block';
+    } else if (room) {
+      code = room;
+      document.getElementById('subTitle').innerText = 'Bir çalışma odasına katılmaya davet edildin!';
+      document.getElementById('codeLabel').innerText = 'Oda Kodu';
+      document.getElementById('codeValue').innerText = room;
+      document.getElementById('codeBox').style.display = 'block';
+    }
+
+    const appUrl = 'pomomate://join' + window.location.search;
+    document.getElementById('openBtn').href = appUrl;
+
+    function copyCode() {
+      if (!code) return;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.innerText = 'Kopyalandı!';
+        setTimeout(() => { btn.innerText = 'Kodu Kopyala'; }, 2000);
+      });
+    }
+
+    // Auto-redirect to app scheme
+    setTimeout(() => {
+      window.location.href = appUrl;
+    }, 400);
+  </script>
+</body>
+</html>
