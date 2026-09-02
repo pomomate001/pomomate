@@ -19,7 +19,9 @@ import { AdPlacement } from '../../ads';
 import { useTranslation } from '../../../i18n';
 import { TagSelectionSheet } from './TagSelectionSheet';
 import { EditNameSheet } from './EditNameSheet';
+import { ManageSubscriptionSheet } from './ManageSubscriptionSheet';
 import { tagService } from '../../../services/tags';
+import { useSettingsStore } from '../../../state/settingsStore';
 
 interface ProfileScreenProps {
   onNavigateAppearance: () => void;
@@ -65,7 +67,9 @@ export function ProfileScreen({
   const [showLanguage, setShowLanguage] = React.useState(false);
   const [showTagSelection, setShowTagSelection] = React.useState(false);
   const [showEditName, setShowEditName] = React.useState(false);
+  const [showManageSubscription, setShowManageSubscription] = React.useState(false);
   const userTags = useTagStore((s) => s.userTags);
+  const isPremium = useSettingsStore((s) => s.isPremium);
 
   // Load user tags
   React.useEffect(() => {
@@ -156,6 +160,17 @@ export function ProfileScreen({
 
           {/* Settings */}
           <View style={[styles.settingsSection, shadows.sm, { backgroundColor: colors.surface }]}>
+            <SettingRow 
+              icon="star-outline" 
+              label="Abonelikler" 
+              onPress={() => {
+                if (isPremium) {
+                  setShowManageSubscription(true);
+                } else {
+                  setShowPaywall(true);
+                }
+              }} 
+            />
             <SettingRow icon="color-palette-outline" label={t('profile.appearance')} onPress={onNavigateAppearance} />
             <SettingRow icon="timer-outline" label={t('profile.timerSettings')} onPress={onNavigateTimer} />
             <SettingRow icon="volume-high-outline" label={t('profile.soundSettings')} onPress={onNavigateSounds} />
@@ -212,6 +227,11 @@ export function ProfileScreen({
       <EditNameSheet
         visible={showEditName}
         onClose={() => setShowEditName(false)}
+      />
+
+      <ManageSubscriptionSheet
+        visible={showManageSubscription}
+        onClose={() => setShowManageSubscription(false)}
       />
     </>
   );

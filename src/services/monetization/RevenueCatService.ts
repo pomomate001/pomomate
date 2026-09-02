@@ -89,6 +89,38 @@ export class RevenueCatService {
     return customerInfo.entitlements.active['premium'] !== undefined;
   }
 
+  async getSubscriptionDetails(): Promise<{ planName: string; expirationDate: string | null } | null> {
+    try {
+      const customerInfo = await Purchases.getCustomerInfo();
+      const premiumEntitlement = customerInfo.entitlements.active['premium'];
+      
+      if (!premiumEntitlement) return null;
+
+      // Extract details
+      const productId = premiumEntitlement.productIdentifier;
+      let planName = 'Pro Plan';
+      if (productId.includes('monthly')) planName = 'Pro Plan (Aylık)';
+      else if (productId.includes('yearly') || productId.includes('annual')) planName = 'Pro Plan (Yıllık)';
+      else planName = `Pro Plan (${productId})`;
+
+      return {
+        planName,
+        expirationDate: premiumEntitlement.expirationDate, // ISO String
+      };
+    } catch (err) {
+      logger.warn('[RevenueCat] Failed to get subscription details:', err);
+      return null;
+    }
+  }
+
+  async manageSubscriptions(): Promise<void> {
+    try {
+      await Purchases.showManageSubscriptions();
+    } catch (err) {
+      logger.warn('[RevenueCat] Failed to open manage subscriptions:', err);
+    }
+  }
+
   async syncSupabaseTier(userId: string, tier: SubscriptionTier): Promise<void> {
     try {
       const { error } = await supabase
