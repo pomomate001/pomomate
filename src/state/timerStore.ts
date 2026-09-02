@@ -20,9 +20,10 @@ interface TimerStore extends TimerState {
   tick: () => void;
   syncWithCurrentTime: () => void;
   setMode: (mode: TimerMode) => void;
-  setTimerState: (state: Partial<TimerState> & { targetEndTime?: number | null }) => void;
+  setTimerState: (state: Partial<TimerState> & { targetEndTime?: number | null; isRemoteUpdate?: boolean }) => void;
   /** Advances to the next mode in the pomodoro sequence. */
   next: () => void;
+  clearRemoteUpdateFlag: () => void;
 }
 
 const initialState: TimerState & { completedWorkCycles: number; targetEndTime: number | null } = {
@@ -35,8 +36,9 @@ const initialState: TimerState & { completedWorkCycles: number; targetEndTime: n
   targetEndTime: null,
 };
 
-export const useTimerStore = create<TimerStore>((set, get) => ({
+export const useTimerStore = create<TimerStore & { isRemoteUpdate?: boolean }>((set, get) => ({
   ...initialState,
+  isRemoteUpdate: false,
 
   start: () =>
     set((state) => ({
@@ -94,6 +96,8 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
     }),
 
   setTimerState: (newState) => set((state) => ({ ...state, ...newState })),
+  
+  clearRemoteUpdateFlag: () => set({ isRemoteUpdate: false }),
 
   next: () => {
     const { mode, completedWorkCycles, currentCycle } = get();

@@ -243,7 +243,7 @@ export class BuddyService {
         
         // Also update local timerStore for guest
         const state = payload.payload;
-        const updates: any = {};
+        const updates: any = { isRemoteUpdate: true };
         if (state.timerMode !== undefined) updates.mode = state.timerMode;
         if (state.timerRemainingSeconds !== undefined) updates.remainingSeconds = state.timerRemainingSeconds;
         if (state.timerIsRunning !== undefined) updates.isRunning = state.timerIsRunning;

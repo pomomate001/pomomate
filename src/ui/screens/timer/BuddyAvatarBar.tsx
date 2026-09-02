@@ -49,17 +49,17 @@ export function BuddyAvatarBar({
   // Interpolations
   const gapSize = animValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [32, 12], // starts far, moves closer
+    outputRange: [32, 2], // starts far, moves very close
   });
 
   const lineWidth = animValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [40, 12], // line shrinks
+    outputRange: [40, 0], // line shrinks completely
   });
 
   const lineOpacity = animValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.5, 0.15],
+    outputRange: [0.5, 0], // line fades out completely when connected
   });
 
   // Get the latest emoji for animation

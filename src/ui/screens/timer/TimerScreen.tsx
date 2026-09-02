@@ -200,8 +200,14 @@ export function TimerScreen() {
 
   // Sync timer with buddy session
   useEffect(() => {
-    if (activeSession && myRole === 'host') {
-      const state = useTimerStore.getState();
+    if (activeSession) {
+      const state = useTimerStore.getState() as any;
+      if (state.isRemoteUpdate) {
+        // Clear flag and skip broadcast
+        useTimerStore.getState().clearRemoteUpdateFlag();
+        return;
+      }
+      
       buddyService.updateTimerState(activeSession.id, {
         timerMode: state.mode,
         timerRemainingSeconds: state.remainingSeconds,
@@ -210,7 +216,7 @@ export function TimerScreen() {
         targetEndTime: state.targetEndTime,
       });
     }
-  }, [activeSession, myRole, isRunning, mode, currentCycle]);
+  }, [activeSession, isRunning, mode, currentCycle]);
 
   const handleSendEmoji = useCallback((code: BuddyEmojiCode) => {
     if (activeSession && user?.id) {
