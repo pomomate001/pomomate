@@ -87,6 +87,22 @@ export function PixelArtPreview() {
   );
 }
 
+export function WinterVillagePreview() {
+  return (
+    <View style={styles.previewContainer}>
+      <Image
+        source={require('../../../assets/picture/winter_village.jpg')}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+      />
+      <View style={styles.imageOverlay} />
+      <View style={styles.centerIconWrap}>
+        <Ionicons name="snow-outline" size={24} color="#FFFFFF" />
+      </View>
+    </View>
+  );
+}
+
 /* ─── 3. PARTICLE & AMBIENT EFFECT PREVIEWS ─── */
 
 export function EffectNonePreview() {

@@ -18,6 +18,7 @@ import {
   VideoSkyPreview,
   VideoRainPreview,
   PixelArtPreview,
+  WinterVillagePreview,
   EffectNonePreview,
   EffectParticlesPreview,
   EffectRainPreview,
@@ -102,6 +103,8 @@ export function AppearanceSettings() {
         return <VideoRainPreview />;
       case 'image_pixel_art':
         return <PixelArtPreview />;
+      case 'image_winter_village':
+        return <WinterVillagePreview />;
       case 'particles':
         return <EffectParticlesPreview />;
       case 'rain':

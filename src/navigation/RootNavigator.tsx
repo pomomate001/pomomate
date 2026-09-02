@@ -13,7 +13,7 @@ import { TimerStack, StatsStack, RoomStack, ProfileStack } from './stacks';
 import { AuthNavigator } from './AuthNavigator';
 import { UpdatePasswordModal } from '../ui/screens/auth';
 import type { RootTabParamList } from './types';
-import { useUserStore, useFriendsStore, usePiPStore, useRoomStore } from '../state';
+import { useUserStore, useFriendsStore, usePiPStore, useRoomStore, useSettingsStore } from '../state';
 import { authService, supabase } from '../services/auth';
 import { countryService } from '../services/location/CountryService';
 import { PiPFloatingBar } from '../ui/screens/pip/PiPFloatingBar';
@@ -42,6 +42,8 @@ function MainTabs() {
   const user = useUserStore((s) => s.user);
   const incomingRequests = useFriendsStore((s) => s.incomingRequests);
   const isInPiP = usePiPStore((s) => s.isInPiP);
+  const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
+  const isVisualWallpaper = backgroundEffectId.startsWith('video_') || backgroundEffectId.startsWith('image_');
 
   useEffect(() => {
     if (user?.id) {
@@ -73,8 +75,13 @@ function MainTabs() {
         tabBarActiveTintColor: colors.tabBarActive,
         tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarStyle: {
-          backgroundColor: colors.tabBarBackground,
-          borderTopColor: colors.divider,
+          backgroundColor: isVisualWallpaper ? 'rgba(15, 18, 28, 0.72)' : colors.tabBarBackground,
+          borderTopColor: isVisualWallpaper ? 'rgba(255, 255, 255, 0.12)' : colors.divider,
+          position: isVisualWallpaper ? 'absolute' : undefined,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          elevation: 0,
           ...(isInPiP ? { display: 'none' } : {}),
         },
       })}

@@ -3,7 +3,7 @@
     "name": "PomoMate – Birlikte Çalış",
     "slug": "pomomate",
     "scheme": "pomomate",
-    "version": "1.3.16",
+    "version": "1.3.17",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -21,7 +21,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.pomomate.app",
-      "buildNumber": "24",
+      "buildNumber": "25",
       "scheme": "pomomate",
       "infoPlist": {
         "NSCameraUsageDescription": "Profil fotoğrafı eklemek için kamera erişimi gerekiyor.",
@@ -41,7 +41,7 @@
     },
     "android": {
       "package": "com.pomomate.app",
-      "versionCode": 24,
+      "versionCode": 25,
       "adaptiveIcon": {
         "backgroundColor": "#121212",
         "foregroundImage": "./assets/android-icon-foreground.png",

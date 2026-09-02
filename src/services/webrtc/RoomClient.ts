@@ -39,6 +39,7 @@ export class RoomClient {
   private userId: string;
   private isHost: boolean;
   private syncInterval: ReturnType<typeof setInterval> | null = null;
+  private screenStream: MediaStream | null = null;
 
   constructor(options: RoomClientOptions) {
     this.roomId = options.roomId;
@@ -48,19 +49,19 @@ export class RoomClient {
     // Signaling
     this.signaling = new SignalingClient(options.roomId);
 
-    // Peer management
+    // Peer Manager
     this.peerManager = new PeerManager(
       this.signaling,
-      this.userId,
-      this.roomId,
-      this.isHost,
+      options.userId,
+      options.roomId,
+      options.isHost,
     );
 
-    // Feature registry
+    // Feature Registry
     this.featureRegistry = new RoomFeatureRegistry();
     this.registerDefaultFeatures();
 
-    // Route data channel messages through feature registry
+    // Wire data channel messages to feature registry
     this.peerManager.onDataMessage((msg) => {
       this.featureRegistry.dispatch(msg);
     });
@@ -85,6 +86,7 @@ export class RoomClient {
 
   disconnect(): void {
     if (this.syncInterval) clearInterval(this.syncInterval);
+    this.stopScreenShare();
     this.peerManager.leaveRoom();
     this.signaling.disconnect();
     logger.info(`[RoomClient] Disconnected from room ${this.roomId}`);
@@ -130,6 +132,7 @@ export class RoomClient {
     try {
       const stream = await mediaService.getDisplayMedia();
       if (stream) {
+        this.screenStream = stream;
         this.peerManager.setLocalStream(stream);
       }
       return stream;
@@ -139,7 +142,24 @@ export class RoomClient {
     }
   }
 
+  stopScreenShare(): void {
+    if (this.screenStream) {
+      try {
+        for (const track of this.screenStream.getTracks()) {
+          track.stop();
+        }
+      } catch (err) {
+        logger.warn('[RoomClient] Error stopping screen tracks:', err);
+      }
+      this.screenStream = null;
+    }
+    // Restore local camera/mic stream if available
+    const camStream = mediaService.getLocalStream();
+    this.peerManager.setLocalStream(camStream);
+  }
+
   stopMedia(): void {
+    this.stopScreenShare();
     mediaService.stopUserMedia();
     this.peerManager.setLocalStream(null);
   }

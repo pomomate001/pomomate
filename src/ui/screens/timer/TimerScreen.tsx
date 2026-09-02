@@ -343,7 +343,10 @@ export function TimerScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.container,
-          { paddingTop: Math.max(insets.top, 16) + 12 }
+          { 
+            paddingTop: Math.max(insets.top, 16) + 12,
+            paddingBottom: (isVisualWallpaperActive ? 84 : 16) + insets.bottom,
+          }
         ]}
         showsVerticalScrollIndicator={false}
       >

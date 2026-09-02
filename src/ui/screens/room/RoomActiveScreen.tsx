@@ -408,6 +408,14 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           const videoTrack = stream.getVideoTracks()[0];
           if (videoTrack) {
             videoTrack.onended = () => {
+              try {
+                stream.getTracks().forEach((t) => t.stop());
+              } catch {
+                // ignore
+              }
+              if (roomClientRef.current) {
+                roomClientRef.current.stopScreenShare();
+              }
               setScreenShareOn(false);
               setScreenStream(null);
               setIsScreenShrunk(false); // Reset shrink when screen ends
@@ -432,10 +440,17 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         Alert.alert(t('rooms.screenShareTitle'), t('rooms.screenShareError'));
       }
     } else {
+      if (screenStream) {
+        try {
+          screenStream.getTracks().forEach((t) => t.stop());
+        } catch {
+          // ignore
+        }
+      }
       if (roomClientRef.current) {
-         roomClientRef.current.stopMedia();
+        roomClientRef.current.stopScreenShare();
       } else {
-         mediaService.stopUserMedia();
+        mediaService.stopUserMedia();
       }
       setScreenShareOn(false);
       setScreenStream(null);
@@ -451,7 +466,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         },
       });
     }
-  }, [screenShareOn, isHost, viewToggles.screen, toggleView, t, roomId, user]);
+  }, [screenShareOn, isHost, viewToggles.screen, toggleView, t, roomId, user, screenStream]);
 
   /* ─── Share Handler ─── */
 

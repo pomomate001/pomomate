@@ -106,7 +106,14 @@ export class PeerManager {
       for (const peer of this.peers.values()) {
         const senders = peer.connection.getSenders();
         for (const s of senders) {
-          if (s.track) s.track.stop();
+          if (s.track) {
+            try {
+              s.track.stop();
+              await s.replaceTrack(null);
+            } catch (err) {
+              logger.warn('[PeerManager] Error clearing sender track:', err);
+            }
+          }
         }
       }
       return;
