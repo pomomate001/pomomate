@@ -1,24 +1,14 @@
 import React, { useState } from 'react';
+import { Alert } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RoomListScreen, RoomActiveScreen, RoomCreateSheet, RoomJoinSheet } from '../../ui/screens/room';
 import { PremiumPaywallSheet } from '../../ui/screens/profile/PremiumPaywallSheet';
 import { useRoomStore, useUserStore, useSettingsStore } from '../../state';
-import { nowIso } from '../../utils/datetime';
-import type { Room } from '../../types';
+import { roomService } from '../../services/room';
 import type { RoomStackParamList } from '../types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 const Stack = createNativeStackNavigator<RoomStackParamList>();
-
-/** Generate a 6-char invite code (excludes confusing chars like O/0/1/I). */
-function generateLocalInviteCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return code;
-}
 
 function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamList, 'RoomList'>) {
   const [showCreate, setShowCreate] = useState(false);
@@ -31,53 +21,30 @@ function RoomListWrapper({ navigation }: NativeStackScreenProps<RoomStackParamLi
   const user = useUserStore((s) => s.user);
   const isPremium = useSettingsStore((s) => s.isPremium);
 
-  const handleCreateRoom = (name: string) => {
-    const inviteCode = generateLocalInviteCode();
-    const roomId = `room-${inviteCode}`;
-    const newRoom: Room = {
-      id: roomId,
-      name,
-      hostId: user?.id ?? 'host',
-      maxMembers: 6,
-      isActive: true,
-      createdAt: nowIso(),
-      inviteCode,
-    };
-    addRoom(newRoom);
-    setCurrentRoom(newRoom);
+  const handleCreateRoom = async (name: string) => {
     setShowCreate(false);
-    navigation.navigate('RoomActive', { roomId });
+    const hostId = user?.id || 'host';
+    const { room, error } = await roomService.createRoom(name, hostId);
+    if (error || !room) {
+      Alert.alert('Hata', error || 'Oda oluşturulamadı.');
+      return;
+    }
+    addRoom(room);
+    setCurrentRoom(room);
+    navigation.navigate('RoomActive', { roomId: room.id });
   };
 
-  const handleJoinRoom = (code: string) => {
+  const handleJoinRoom = async (code: string) => {
     setShowJoin(false);
-    const normalizedCode = code.trim().toUpperCase();
-
-    // Match by id, inviteCode, or last 6 chars of id
-    const existing = rooms.find(
-      (r) =>
-        r.id.toLowerCase() === code.toLowerCase() ||
-        r.inviteCode?.toUpperCase() === normalizedCode ||
-        r.id.slice(-6).toUpperCase() === normalizedCode
-    );
-
-    if (existing) {
-      setCurrentRoom(existing);
-      navigation.navigate('RoomActive', { roomId: existing.id });
-    } else {
-      const joinedRoom: Room = {
-        id: `room-${normalizedCode}`,
-        name: `Oda ${normalizedCode}`,
-        hostId: 'remote-host', // we don't know the host yet
-        maxMembers: 6,
-        isActive: true,
-        createdAt: nowIso(),
-        inviteCode: normalizedCode,
-      };
-      addRoom(joinedRoom);
-      setCurrentRoom(joinedRoom);
-      navigation.navigate('RoomActive', { roomId: joinedRoom.id });
+    const userId = user?.id || 'user';
+    const { room, error } = await roomService.joinRoom(code, userId);
+    if (error || !room) {
+      Alert.alert('Oda Bulunamadı', error || 'Bu koda sahip aktif bir çalışma odası bulunamadı.');
+      return;
     }
+    addRoom(room);
+    setCurrentRoom(room);
+    navigation.navigate('RoomActive', { roomId: room.id });
   };
 
   const handleEnterRoom = (roomId: string) => {

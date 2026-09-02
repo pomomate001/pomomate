@@ -16,6 +16,7 @@ export class SignalingClient {
   private roomId: string;
   private handlers = new Set<MessageHandler>();
   private isConnectedFlag = false;
+  private pendingQueue: SignalingMessage[] = [];
 
   constructor(roomId: string) {
     this.roomId = roomId;
@@ -43,6 +44,18 @@ export class SignalingClient {
         if (status === 'SUBSCRIBED') {
           this.isConnectedFlag = true;
           logger.info(`[Signaling] Connected to Supabase channel for room ${this.roomId}`);
+          
+          // Drain pending queue
+          while (this.pendingQueue.length > 0) {
+            const nextMsg = this.pendingQueue.shift();
+            if (nextMsg && this.channel) {
+              this.channel.send({
+                type: 'broadcast',
+                event: 'signaling',
+                payload: nextMsg,
+              });
+            }
+          }
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           this.isConnectedFlag = false;
           logger.warn(`[Signaling] Disconnected from Supabase channel for room ${this.roomId}, status: ${status}`);
@@ -58,7 +71,8 @@ export class SignalingClient {
         payload: msg,
       });
     } else {
-      logger.warn('[Signaling] Cannot send message, not connected.');
+      // Buffer until connection is established
+      this.pendingQueue.push(msg);
     }
   }
 
@@ -68,6 +82,7 @@ export class SignalingClient {
   }
 
   disconnect(): void {
+    this.pendingQueue = [];
     if (this.channel) {
       supabase.removeChannel(this.channel);
       this.channel = null;

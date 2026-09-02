@@ -7,7 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { type MediaStream } from 'react-native-webrtc';
+import { RTCView, type MediaStream } from 'react-native-webrtc';
 
 interface SharedFile {
   id: string;
@@ -149,14 +149,22 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   });
 
   if (isScreenSharing) {
-    // Local screen share shouldn't render RTCView (causes black screen/mirror tunnel on some devices)
-    // We just show the placeholder and actions.
+    const streamUrl = screenStream ? screenStream.toURL() : null;
 
     return (
       <View style={styles.broadcastContainer}>
-        <View style={styles.broadcastIconBox}>
-          <Ionicons name="desktop" size={54} color="#A855F7" />
-        </View>
+        {streamUrl ? (
+          <RTCView
+            streamURL={streamUrl}
+            style={StyleSheet.absoluteFill}
+            objectFit="contain"
+            mirror={false}
+          />
+        ) : (
+          <View style={styles.broadcastIconBox}>
+            <Ionicons name="desktop" size={54} color="#A855F7" />
+          </View>
+        )}
 
         <View style={styles.broadcastOverlay}>
           {/* Top Live Pill */}
@@ -165,10 +173,14 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
             <Text style={styles.liveText}>CANLI EKRAN YAYINI</Text>
           </View>
 
-          <Text style={styles.broadcastTitle}>Ekranınız Odaya Paylaşılıyor</Text>
-          <Text style={styles.broadcastDesc}>
-            Katılımcılar şu anda ekranınızı canlı olarak izliyor. Uygulamayı arka plana aldığınızda ekran paylaşımı devam eder.
-          </Text>
+          {!streamUrl && (
+            <>
+              <Text style={styles.broadcastTitle}>Ekranınız Odaya Paylaşılıyor</Text>
+              <Text style={styles.broadcastDesc}>
+                Katılımcılar şu anda ekranınızı canlı olarak izliyor. Uygulamayı arka plana aldığınızda ekran paylaşımı devam eder.
+              </Text>
+            </>
+          )}
 
           {/* Action Controls */}
           <View style={styles.broadcastActions}>

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Alert } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -11,7 +12,8 @@ import { validateConfig } from './src/config';
 import { notificationService } from './src/services/mobile';
 import { adMobService, revenueCatService } from './src/services/monetization';
 import { authService } from './src/services/auth';
-import { useTimerStore, useUserStore, useSettingsStore, useTaskStore } from './src/state';
+import { roomService, roomInviteService } from './src/services/room';
+import { useTimerStore, useUserStore, useSettingsStore, useTaskStore, useRoomStore } from './src/state';
 import * as WebBrowser from 'expo-web-browser';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -88,6 +90,17 @@ export default function App() {
         if (type === 'recovery') {
           useUserStore.getState().setNeedsPasswordReset(true);
         }
+
+        const roomCode = parsed.queryParams?.room as string;
+        if (roomCode) {
+          const user = useUserStore.getState().user;
+          roomService.joinRoom(roomCode, user?.id || 'guest').then(({ room }) => {
+            if (room) {
+              useRoomStore.getState().addRoom(room);
+              useRoomStore.getState().setCurrentRoom(room);
+            }
+          });
+        }
         
         if (accessToken && refreshToken) {
           await supabase.auth.setSession({
@@ -101,6 +114,29 @@ export default function App() {
 
       const setupUserSubscription = async (currentUser: any) => {
         useUserStore.getState().setUser(currentUser);
+
+        // Listen for real-time room invitations
+        roomInviteService.listenForInvites(currentUser.id, (invite) => {
+          Alert.alert(
+            'Çalışma Odası Daveti 🎯',
+            `${invite.senderName} seni "${invite.roomName}" çalışma odasına davet etti!\n\nOda Kodu: ${invite.inviteCode}`,
+            [
+              { text: 'Daha Sonra', style: 'cancel' },
+              {
+                text: 'Odaya Katıl',
+                onPress: async () => {
+                  const { room, error } = await roomService.joinRoom(invite.inviteCode, currentUser.id);
+                  if (error || !room) {
+                    Alert.alert('Oda Bulunamadı', error || 'Bu odaya bağlanılamadı.');
+                    return;
+                  }
+                  useRoomStore.getState().addRoom(room);
+                  useRoomStore.getState().setCurrentRoom(room);
+                },
+              },
+            ]
+          );
+        });
 
         // Initialize RevenueCat
         await revenueCatService.initialize(currentUser.id);

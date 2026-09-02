@@ -73,6 +73,10 @@ jobs:
         run: |
           npx expo prebuild --platform android --clean
           
+          # Restore custom native code (MainActivity with WebRTC projection, PiPModule, AndroidManifest)
+          git checkout android/app/src/main/AndroidManifest.xml
+          git checkout android/app/src/main/java/com/pomomate/app/
+          
           # C++ derlemelerinde bellek taşmasını önlemek için mimarileri ve Gradle bellek limitlerini optimize ediyoruz
           echo "" >> android/gradle.properties
           echo "reactNativeArchitectures=armeabi-v7a,arm64-v8a" >> android/gradle.properties

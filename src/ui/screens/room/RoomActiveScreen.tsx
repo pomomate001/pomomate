@@ -71,12 +71,15 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const handleEnterPiP = useCallback(async () => {
     const supported = await pipService.isPiPSupported();
     if (!supported) {
-      setIsInPiP(true);
+      Alert.alert('Mini Mod Desteklenmiyor', 'Cihazınız Picture-in-Picture (Mini Mod) özelliğini desteklemiyor.');
       return;
     }
     const success = await pipService.enterPiP();
     if (!success) {
-      setIsInPiP(true);
+      Alert.alert(
+        'Mini Mod Başlatılamadı',
+        'Lütfen telefonunuzun Ayarlar > Uygulamalar > PomoMate > Resim İçinde Resim (PiP) izninin açık olduğundan emin olun.'
+      );
     }
   }, []);
 
@@ -301,17 +304,19 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const handleSystemShare = useCallback(async () => {
     try {
+      const roomName = room?.name ?? 'PomoMate Çalışma Odası';
+      const shareUrl = `https://pomomate.app/join?room=${inviteCode}`;
+      const message = `🎯 PomoMate Çalışma Odama Davetlisin!\n\nOda: ${roomName}\nOda Kodu: ${inviteCode}\n\nUygulamadan 'Odaya Katıl' diyerek bu kodu girebilir veya doğrudan bağlantıya tıklayabilirsin:\n${shareUrl}`;
+
       await Share.share({
-        message: t('rooms.shareRoomMessage', {
-          name: room?.name ?? t('rooms.defaultRoomName'),
-          code: inviteCode,
-        }) + `\n\nOdama katılmak için tıkla: pomomate://room/${inviteCode}`,
-        title: t('rooms.shareMessageTitle'),
+        message,
+        url: shareUrl,
+        title: `${roomName} - PomoMate`,
       });
     } catch {
       // User cancelled share
     }
-  }, [room, inviteCode, t]);
+  }, [room, inviteCode]);
 
   /* ─── File Pick Handler ─── */
 
@@ -443,6 +448,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         onClose={() => setShowInvite(false)}
         onSystemShare={handleSystemShare}
         inviteCode={inviteCode}
+        roomId={roomId}
+        roomName={room?.name}
       />
 
       {/* ─── Dynamic Island Timer Bar (highest z-index) ─── */}
