@@ -72,7 +72,7 @@ export function DiscoverScreen({ navigation }: Props) {
 
     friendService
       .discoverUsers(user.id, PAGE_SIZE, 0, null, search)
-      .then((results) => {
+      .then(() => {
         if (isMounted) {
           setIsLoading(false);
         }
@@ -94,7 +94,7 @@ export function DiscoverScreen({ navigation }: Props) {
     setIsRefreshing(true);
     const search = debouncedSearch.trim() || null;
     try {
-      const results = await friendService.discoverUsers(user.id, PAGE_SIZE, 0, null, search);
+      await friendService.discoverUsers(user.id, PAGE_SIZE, 0, null, search);
     } finally {
       setIsRefreshing(false);
     }

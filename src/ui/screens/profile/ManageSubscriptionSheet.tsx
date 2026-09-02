@@ -6,7 +6,6 @@ import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
-import { useTranslation } from '../../../i18n';
 import { revenueCatService } from '../../../services/monetization/RevenueCatService';
 
 interface ManageSubscriptionSheetProps {
@@ -16,7 +15,6 @@ interface ManageSubscriptionSheetProps {
 
 export function ManageSubscriptionSheet({ visible, onClose }: ManageSubscriptionSheetProps) {
   const colors = useColors();
-  const { t } = useTranslation();
   
   const [loading, setLoading] = useState(true);
   const [planName, setPlanName] = useState<string>('Pro Plan');
