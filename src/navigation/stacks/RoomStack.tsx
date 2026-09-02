@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Alert } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RoomListScreen, RoomActiveScreen, RoomCreateSheet, RoomJoinSheet } from '../../ui/screens/room';
 import { PremiumPaywallSheet } from '../../ui/screens/profile/PremiumPaywallSheet';

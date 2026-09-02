@@ -7,7 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { RTCView, type MediaStream } from 'react-native-webrtc';
+import { type MediaStream } from 'react-native-webrtc';
 
 interface SharedFile {
   id: string;
@@ -151,7 +151,6 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   if (isScreenSharing) {
     // Local screen share shouldn't render RTCView (causes black screen/mirror tunnel on some devices)
     // We just show the placeholder and actions.
-    const hasStream = !!screenStream;
 
     return (
       <View style={styles.broadcastContainer}>

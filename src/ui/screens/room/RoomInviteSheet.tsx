@@ -7,7 +7,6 @@ import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
-import { useTranslation } from '../../../i18n';
 import { useFriendsStore } from '../../../state';
 
 interface RoomInviteSheetProps {
@@ -19,7 +18,6 @@ interface RoomInviteSheetProps {
 
 export function RoomInviteSheet({ visible, onClose, onSystemShare, inviteCode }: RoomInviteSheetProps) {
   const colors = useColors();
-  const { t } = useTranslation();
   const friends = useFriendsStore((s: any) => s.friends);
 
   const handleInviteFriend = (friendId: string, friendName: string) => {
