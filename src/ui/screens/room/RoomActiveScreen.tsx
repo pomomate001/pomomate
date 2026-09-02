@@ -22,6 +22,7 @@ import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
 import { formatDuration } from '../../../core/pomodoro';
 import { useTranslation } from '../../../i18n';
+import { RoomClient } from '../../../services/webrtc/RoomClient';
 
 interface RoomActiveScreenProps {
   roomId: string;
@@ -63,37 +64,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     };
   }, []);
 
-  const [remoteStreams, setRemoteStreams] = useState<Record<string, MediaStream>>({});
-  const roomClientRef = React.useRef<any>(null);
 
-  useEffect(() => {
-    if (!roomId || !user) return;
-    
-    // Lazy import to avoid circular dependency issues
-    const { RoomClient } = require('../../../services/webrtc/RoomClient');
-    const signalingUrl = process.env.EXPO_PUBLIC_WEBRTC_SIGNALING_URL || 'wss://api.pomomate.app/ws/signaling';
-    
-    const client = new RoomClient({
-      signalingUrl,
-      token: 'temp-token',
-      roomId,
-      userId: user.id,
-      isHost: !room?.hostId || room.hostId === user.id
-    });
-    
-    roomClientRef.current = client;
-    client.connect();
-    
-    const cleanupStream = client.onRemoteStream((peerId: string, stream: MediaStream) => {
-      setRemoteStreams(prev => ({ ...prev, [peerId]: stream }));
-    });
-    
-    return () => {
-      cleanupStream();
-      client.disconnect();
-      roomClientRef.current = null;
-    };
-  }, [roomId, user?.id, room?.hostId]);
 
   const handleEnterPiP = useCallback(async () => {
     const supported = await pipService.isPiPSupported();
@@ -125,6 +96,36 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const isHost = !room?.hostId || room.hostId === (user?.id ?? 'host');
   const inviteCode = room?.inviteCode ?? roomId.slice(-6).toUpperCase();
+
+  const [remoteStreams, setRemoteStreams] = useState<Record<string, MediaStream>>({});
+  const roomClientRef = React.useRef<RoomClient | null>(null);
+
+  useEffect(() => {
+    if (!roomId || !user) return;
+    
+    const signalingUrl = process.env.EXPO_PUBLIC_WEBRTC_SIGNALING_URL || 'wss://api.pomomate.app/ws/signaling';
+    
+    const client = new RoomClient({
+      signalingUrl,
+      token: 'temp-token',
+      roomId,
+      userId: user.id,
+      isHost: !room?.hostId || room.hostId === user.id
+    });
+    
+    roomClientRef.current = client;
+    client.connect();
+    
+    const cleanupStream = client.onRemoteStream((peerId: string, stream: MediaStream) => {
+      setRemoteStreams(prev => ({ ...prev, [peerId]: stream }));
+    });
+    
+    return () => {
+      cleanupStream();
+      client.disconnect();
+      roomClientRef.current = null;
+    };
+  }, [roomId, user, room?.hostId]);
 
   const participants = [
     {

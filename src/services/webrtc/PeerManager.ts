@@ -10,6 +10,8 @@
 import { logger } from '../../utils/logger';
 import { SignalingClient } from './SignalingClient';
 import type { PeerInfo, DataChannelMessage, ConnectionState, SignalingMessage } from './types';
+import { RTCPeerConnection, RTCIceCandidate, RTCSessionDescription, type MediaStream } from 'react-native-webrtc';
+
 
 const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
@@ -148,15 +150,15 @@ export class PeerManager {
         break;
 
       case 'offer':
-        if (msg.userId) await this.handleOffer(msg.userId, msg.payload as RTCSessionDescriptionInit);
+        if (msg.userId) await this.handleOffer(msg.userId, msg.payload);
         break;
 
       case 'answer':
-        if (msg.userId) await this.handleAnswer(msg.userId, msg.payload as RTCSessionDescriptionInit);
+        if (msg.userId) await this.handleAnswer(msg.userId, msg.payload);
         break;
 
       case 'ice-candidate':
-        if (msg.userId) await this.handleIceCandidate(msg.userId, msg.payload as RTCIceCandidateInit);
+        if (msg.userId) await this.handleIceCandidate(msg.userId, msg.payload);
         break;
 
       case 'presence':
@@ -184,7 +186,7 @@ export class PeerManager {
     this.notifyStateChange(userId, 'connecting');
 
     // ICE candidates
-    connection.onicecandidate = (e) => {
+    connection.onicecandidate = (e: any) => {
       if (e.candidate) {
         this.signaling.send({
           type: 'ice-candidate',
@@ -198,37 +200,29 @@ export class PeerManager {
 
     // Connection state
     connection.onconnectionstatechange = () => {
-      const state = connection.connectionState;
-      if (state === 'connected') this.notifyStateChange(userId, 'connected');
-      else if (state === 'disconnected') this.notifyStateChange(userId, 'reconnecting');
-      else if (state === 'failed') {
-        this.notifyStateChange(userId, 'failed');
-        this.handleReconnect(userId);
+      const state = connection.connectionState as ConnectionState;
+      this.notifyStateChange(userId, state);
+
+      if (state === 'disconnected' || state === 'failed') {
+        this.removePeer(userId);
       }
     };
 
-    // Remote media
-    connection.ontrack = (e) => {
+    // Remote stream
+    connection.ontrack = (e: any) => {
       peerInfo.mediaStream = e.streams[0] ?? null;
       if (peerInfo.mediaStream) {
         this.mediaHandlers.forEach((h) => h(userId, peerInfo.mediaStream!));
       }
     };
 
-    // Add local media if available
-    if (this.localStream) {
-      for (const track of this.localStream.getTracks()) {
-        connection.addTrack(track, this.localStream);
-      }
-    }
-
-    if (createOffer) {
-      // Create data channel
-      const dc = connection.createDataChannel('pomomate', { ordered: true });
-      peerInfo.dataChannel = dc;
+    // Data Channel (Host creates it)
+    if (this.isHost && createOffer) {
+      const dc = connection.createDataChannel('pomo-sync');
+      peerInfo.dataChannel = dc as any;
       this.setupDataChannel(dc, userId);
 
-      const offer = await connection.createOffer();
+      const offer = await connection.createOffer({});
       await connection.setLocalDescription(offer);
       this.signaling.send({
         type: 'offer',
@@ -239,17 +233,17 @@ export class PeerManager {
       });
     } else {
       // Wait for data channel from remote
-      connection.ondatachannel = (e) => {
-        peerInfo.dataChannel = e.channel;
-        this.setupDataChannel(e.channel, userId);
+      connection.ondatachannel = (e: any) => {
+        peerInfo.dataChannel = e.channel as any;
+        this.setupDataChannel(e.channel as any, userId);
       };
     }
 
     return peerInfo;
   }
 
-  private setupDataChannel(dc: RTCDataChannel, userId: string): void {
-    dc.onmessage = (e) => {
+  private setupDataChannel(dc: any, userId: string): void {
+    dc.onmessage = (e: any) => {
       try {
         const msg: DataChannelMessage = JSON.parse(e.data);
         this.dataHandlers.forEach((h) => h(msg));
@@ -267,7 +261,7 @@ export class PeerManager {
     };
   }
 
-  private async handleOffer(userId: string, sdp: RTCSessionDescriptionInit): Promise<void> {
+  private async handleOffer(userId: string, sdp: any): Promise<void> {
     const peer = await this.createPeerConnection(userId, false);
     await peer.connection.setRemoteDescription(new RTCSessionDescription(sdp));
     const answer = await peer.connection.createAnswer();
@@ -277,17 +271,17 @@ export class PeerManager {
       roomId: this.roomId,
       userId: this.localUserId,
       targetUserId: userId,
-      payload: answer,
+      payload: answer as any,
     });
   }
 
-  private async handleAnswer(userId: string, sdp: RTCSessionDescriptionInit): Promise<void> {
+  private async handleAnswer(userId: string, sdp: any): Promise<void> {
     const peer = this.peers.get(userId);
     if (!peer) return;
     await peer.connection.setRemoteDescription(new RTCSessionDescription(sdp));
   }
 
-  private async handleIceCandidate(userId: string, candidate: RTCIceCandidateInit): Promise<void> {
+  private async handleIceCandidate(userId: string, candidate: any): Promise<void> {
     const peer = this.peers.get(userId);
     if (!peer) return;
     await peer.connection.addIceCandidate(new RTCIceCandidate(candidate));

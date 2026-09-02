@@ -1,6 +1,7 @@
 /**
  * WebRTC + signaling type definitions.
  */
+import type { RTCPeerConnection, MediaStream } from 'react-native-webrtc';
 
 /* ─── Signaling ─── */
 
@@ -22,6 +23,7 @@ export interface SignalingMessage {
 }
 
 /* ─── WebRTC ─── */
+type RTCDataChannel = any;
 
 export interface PeerInfo {
   userId: string;

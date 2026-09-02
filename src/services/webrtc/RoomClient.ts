@@ -20,6 +20,8 @@ import { useRoomStore, useChatStore } from '../../state';
 import { logger } from '../../utils/logger';
 import type { ConnectionState } from './types';
 import type { Message } from '../../types';
+import { mediaService } from '../mobile/media/MediaService';
+import type { MediaStream } from 'react-native-webrtc';
 
 interface RoomClientOptions {
   signalingUrl: string;
@@ -113,7 +115,6 @@ export class RoomClient {
 
   async enableAudioVideo(audio: boolean, video: boolean): Promise<MediaStream | null> {
     try {
-      const { mediaService } = require('../../../services/mobile/media/MediaService');
       const stream = await mediaService.getUserMedia({ audio, video });
       if (stream) {
         this.peerManager.setLocalStream(stream);
@@ -127,7 +128,6 @@ export class RoomClient {
 
   async enableScreenShare(): Promise<MediaStream | null> {
     try {
-      const { mediaService } = require('../../../services/mobile/media/MediaService');
       const stream = await mediaService.getDisplayMedia();
       if (stream) {
         this.peerManager.setLocalStream(stream);
@@ -140,7 +140,6 @@ export class RoomClient {
   }
 
   stopMedia(): void {
-    const { mediaService } = require('../../../services/mobile/media/MediaService');
     mediaService.stopUserMedia();
     this.peerManager.setLocalStream(null);
   }
