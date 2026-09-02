@@ -100,6 +100,19 @@ export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetPro
     }
   };
 
+  const getPackageTitle = (pkg: PurchasesPackage, index: number): string => {
+    const id = (pkg.identifier + ' ' + pkg.product.identifier).toLowerCase();
+    if (pkg.packageType === 'MONTHLY' || id.includes('monthly') || id.includes('month')) {
+      return 'PomoMate Pro Monthly';
+    }
+    if (pkg.packageType === 'ANNUAL' || id.includes('yearly') || id.includes('annual') || id.includes('year')) {
+      return 'PomoMate Pro Yearly';
+    }
+    if (index === 0) return 'PomoMate Pro Monthly';
+    if (index === 1) return 'PomoMate Pro Yearly';
+    return pkg.product.title.replace(/\s*\(.*?\)\s*/g, '').trim() || 'PomoMate Pro';
+  };
+
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.header}>
@@ -145,8 +158,9 @@ export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetPro
               {t('premium.noPackages')}
             </Text>
           ) : (
-            packages.map((pkg) => {
+            packages.map((pkg, index) => {
               const isSelected = selectedPackage?.identifier === pkg.identifier;
+              const title = getPackageTitle(pkg, index);
               return (
                 <Pressable
                   key={pkg.identifier}
@@ -162,7 +176,7 @@ export function PremiumPaywallSheet({ visible, onClose }: PremiumPaywallSheetPro
                 >
                   <View style={styles.pkgInfo}>
                     <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>
-                      {pkg.product.title.replace('(PomoMate)', '').trim()}
+                      {title}
                     </Text>
                     <Text style={[typography.caption, { color: colors.textSecondary }]}>
                       {pkg.product.description}

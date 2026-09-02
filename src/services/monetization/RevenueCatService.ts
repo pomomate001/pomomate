@@ -98,11 +98,11 @@ export class RevenueCatService {
       if (!premiumEntitlement) return null;
 
       // Extract details
-      const productId = premiumEntitlement.productIdentifier;
-      let planName = 'Pro Plan';
-      if (productId.includes('monthly')) planName = 'Pro Plan (Aylık)';
-      else if (productId.includes('yearly') || productId.includes('annual')) planName = 'Pro Plan (Yıllık)';
-      else planName = `Pro Plan (${productId})`;
+      const productId = premiumEntitlement.productIdentifier.toLowerCase();
+      let planName = 'PomoMate Pro';
+      if (productId.includes('monthly') || productId.includes('month')) planName = 'PomoMate Pro Monthly';
+      else if (productId.includes('yearly') || productId.includes('annual') || productId.includes('year')) planName = 'PomoMate Pro Yearly';
+      else planName = `PomoMate Pro (${premiumEntitlement.productIdentifier})`;
 
       return {
         planName,
