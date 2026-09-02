@@ -250,7 +250,7 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
           <View style={styles.tabContentArea}>
             {activeTab === 'chat' && <RoomChat roomId={roomId} isHost={isHost} />}
             {activeTab === 'files' && <RoomFilesBoard isHost={isHost} onPickFile={onPickFile} />}
-            {activeTab === 'settings' && isHost && <RoomSettingsPanel />}
+            {activeTab === 'settings' && isHost && <RoomSettingsPanel roomId={roomId} />}
           </View>
         </Animated.View>
       </Animated.View>

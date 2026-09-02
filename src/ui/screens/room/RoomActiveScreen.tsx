@@ -24,6 +24,8 @@ import { nowIso } from '../../../utils/datetime';
 import { formatDuration } from '../../../core/pomodoro';
 import { useTranslation } from '../../../i18n';
 import { RoomClient } from '../../../services/webrtc/RoomClient';
+import { supabase } from '../../../services/auth/supabaseClient';
+import { roomService } from '../../../services/room';
 
 interface RoomActiveScreenProps {
   roomId: string;
@@ -127,13 +129,99 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     const cleanupStream = client.onRemoteStream((peerId: string, stream: MediaStream) => {
       setRemoteStreams(prev => ({ ...prev, [peerId]: stream }));
     });
+
+    const cleanupState = client.onPeerStateChange((peerId: string, state) => {
+      if (state === 'disconnected' || state === 'failed') {
+        setRemoteStreams((prev) => {
+          if (!prev[peerId]) return prev;
+          const next = { ...prev };
+          delete next[peerId];
+          return next;
+        });
+      }
+    });
     
     return () => {
       cleanupStream();
+      cleanupState();
+      mediaService.stopUserMedia();
       client.disconnect();
       roomClientRef.current = null;
+      setRemoteStreams({});
+      if (user?.id) {
+        void roomService.leaveRoom(roomId, user.id, isHost);
+      }
     };
-  }, [roomId, user, room?.hostId]);
+  }, [roomId, user, room?.hostId, isHost]);
+
+  // Synchronize room permissions from database and real-time host updates
+  useEffect(() => {
+    if (!roomId) return;
+
+    // Fetch persisted room settings
+    void roomService.getRoomSettings(roomId).then((settings) => {
+      if (settings) {
+        useRoomStore.getState().setRoomSettings(settings);
+      }
+    });
+
+    // Listen for live permission updates from admin
+    const channel = supabase.channel(`room_settings_${roomId}`, {
+      config: { broadcast: { ack: false } },
+    });
+
+    channel
+      .on('broadcast', { event: 'settings_update' }, ({ payload }) => {
+        if (payload) {
+          useRoomStore.getState().setRoomSettings(payload);
+
+          if (!isHost) {
+            if (payload.allowMic === false && micOn) {
+              if (camOn) {
+                if (roomClientRef.current) {
+                  void roomClientRef.current.enableAudioVideo(false, true);
+                } else {
+                  void mediaService.getUserMedia({ audio: false, video: true });
+                }
+              } else {
+                if (roomClientRef.current) {
+                  roomClientRef.current.stopMedia();
+                } else {
+                  mediaService.stopUserMedia();
+                }
+                setLocalStream(null);
+              }
+              setMicOn(false);
+              Alert.alert('Yetki Güncellendi', 'Oda yöneticisi mikrofon kullanımını kapattı.');
+            }
+
+            if (payload.allowCamera === false && camOn) {
+              if (micOn) {
+                if (roomClientRef.current) {
+                  void roomClientRef.current.enableAudioVideo(true, false);
+                } else {
+                  void mediaService.getUserMedia({ audio: true, video: false });
+                }
+              } else {
+                if (roomClientRef.current) {
+                  roomClientRef.current.stopMedia();
+                } else {
+                  mediaService.stopUserMedia();
+                }
+              }
+              setCamOn(false);
+              setLocalStream(null);
+              Alert.alert('Yetki Güncellendi', 'Oda yöneticisi kamera kullanımını kapattı.');
+            }
+          }
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId, isHost, micOn, camOn]);
 
   const participants = [
     {

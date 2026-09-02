@@ -5,16 +5,39 @@ import { useColors } from '../../../theme';
 import { typography } from '../../../theme/typography';
 import { spacing } from '../../../theme/spacing';
 import { useRoomStore } from '../../../../state';
+import { roomService } from '../../../../services/room';
+import { supabase } from '../../../../services/auth/supabaseClient';
 import { useTranslation } from '../../../../i18n';
 
-export function RoomSettingsPanel() {
+interface RoomSettingsPanelProps {
+  roomId?: string;
+}
+
+export function RoomSettingsPanel({ roomId }: RoomSettingsPanelProps) {
   const colors = useColors();
   const { t } = useTranslation();
   const roomSettings = useRoomStore((s: any) => s.roomSettings);
   const setRoomSettings = useRoomStore((s: any) => s.setRoomSettings);
 
-  const toggleSetting = (key: keyof typeof roomSettings) => {
-    setRoomSettings({ [key]: !roomSettings[key] });
+  const toggleSetting = async (key: keyof typeof roomSettings) => {
+    const updated = {
+      ...roomSettings,
+      [key]: !roomSettings[key],
+    };
+    setRoomSettings(updated);
+
+    if (roomId) {
+      // 1. Broadcast update to all room participants immediately
+      const channel = supabase.channel(`room_settings_${roomId}`);
+      channel.send({
+        type: 'broadcast',
+        event: 'settings_update',
+        payload: updated,
+      });
+
+      // 2. Persist in database
+      await roomService.updateRoomSettings(roomId, updated);
+    }
   };
 
   return (

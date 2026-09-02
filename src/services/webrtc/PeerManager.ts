@@ -187,7 +187,10 @@ export class PeerManager {
     switch (msg.type) {
       case 'join':
         if (msg.userId && msg.userId !== this.localUserId) {
-          // New peer joined — initiate connection
+          // If previous peer connection exists for this user, clean up first
+          if (this.peers.has(msg.userId)) {
+            this.removePeer(msg.userId);
+          }
           await this.createPeerConnection(msg.userId, true);
         }
         break;
@@ -224,7 +227,14 @@ export class PeerManager {
   /* ─── Peer connection lifecycle ─── */
 
   private async createPeerConnection(userId: string, createOffer: boolean): Promise<PeerInfo> {
-    if (this.peers.has(userId)) return this.peers.get(userId)!;
+    if (this.peers.has(userId)) {
+      const existing = this.peers.get(userId)!;
+      const state = existing.connection.connectionState;
+      if (state === 'connected' && !createOffer) {
+        return existing;
+      }
+      this.removePeer(userId);
+    }
 
     const connection = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     const peerInfo: PeerInfo = { userId, connection, dataChannel: null, mediaStream: null };
@@ -348,8 +358,12 @@ export class PeerManager {
   private removePeer(userId: string): void {
     const peer = this.peers.get(userId);
     if (!peer) return;
-    peer.dataChannel?.close();
-    peer.connection.close();
+    try {
+      peer.dataChannel?.close();
+    } catch {}
+    try {
+      peer.connection.close();
+    } catch {}
     this.peers.delete(userId);
     this.notifyStateChange(userId, 'disconnected');
   }

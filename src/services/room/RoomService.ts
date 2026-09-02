@@ -175,6 +175,48 @@ export class RoomService {
       logger.warn('[RoomService] leaveRoom error:', err);
     }
   }
+
+  /**
+   * Update room permissions/settings in Supabase.
+   */
+  async updateRoomSettings(roomId: string, settings: Record<string, boolean>): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('rooms')
+        .update({ settings })
+        .eq('id', roomId);
+
+      if (error) {
+        logger.warn('[RoomService] updateRoomSettings error:', error.message);
+        return false;
+      }
+      return true;
+    } catch (err: any) {
+      logger.warn('[RoomService] updateRoomSettings exception:', err?.message || err);
+      return false;
+    }
+  }
+
+  /**
+   * Fetch current room settings from Supabase.
+   */
+  async getRoomSettings(roomId: string): Promise<Record<string, boolean> | null> {
+    try {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('settings')
+        .eq('id', roomId)
+        .maybeSingle();
+
+      if (error || !data?.settings) {
+        return null;
+      }
+      return data.settings as Record<string, boolean>;
+    } catch (err: any) {
+      logger.warn('[RoomService] getRoomSettings exception:', err?.message || err);
+      return null;
+    }
+  }
 }
 
 export const roomService = new RoomService();

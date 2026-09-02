@@ -148,6 +148,10 @@ export class RoomClient {
     return this.peerManager.onMediaStream(handler);
   }
 
+  onPeerStateChange(handler: (userId: string, state: ConnectionState) => void): () => void {
+    return this.peerManager.onStateChange(handler);
+  }
+
   /* ─── Feature management ─── */
 
   getFeatureRegistry(): RoomFeatureRegistry {
