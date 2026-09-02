@@ -16,7 +16,7 @@ import { soundService } from '../../../../services/mobile/sound/SoundService';
 import type { TimerMode } from '../../../../types';
 
 const modeLabel: Record<TimerMode, { label: string; icon: string; emoji: string }> = {
-  work: { label: 'Odaklanma', icon: 'flame', emoji: '🍅' },
+  work: { label: 'Odaklanma', icon: 'flame', emoji: '🎯' },
   shortBreak: { label: 'Kısa Mola', icon: 'cafe', emoji: '☕' },
   longBreak: { label: 'Uzun Mola', icon: 'sunny', emoji: '🌴' },
 };

@@ -7,6 +7,7 @@ import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { useUserStore } from '../../../state';
+import { friendService } from '../../../services/friends/FriendService';
 
 interface EditNameSheetProps {
   visible: boolean;
@@ -32,9 +33,18 @@ export function EditNameSheet({ visible, onClose }: EditNameSheetProps) {
     if (!trimmed) return;
     
     setLoading(true);
-    await updateUser({ displayName: trimmed });
-    setLoading(false);
-    onClose();
+    try {
+      await updateUser({ displayName: trimmed });
+      if (user?.id) {
+        await Promise.allSettled([
+          friendService.fetchFriends(user.id),
+          friendService.discoverUsers(user.id),
+        ]);
+      }
+    } finally {
+      setLoading(false);
+      onClose();
+    }
   };
 
   return (

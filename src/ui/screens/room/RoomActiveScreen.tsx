@@ -14,12 +14,13 @@ import { RoomScreenPanel } from './features/RoomScreenPanel';
 import { RoomViewToggles } from './features/RoomViewToggles';
 import { RoomBottomBar } from './RoomBottomBar';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
-import { useRoomStore, useUserStore, useTaskStore } from '../../../state';
+import { useRoomStore, useUserStore, useTaskStore, useTimerStore } from '../../../state';
 import { mediaService } from '../../../services/mobile/media/MediaService';
 import { permissionManager } from '../../../services/mobile/permissions/PermissionManager';
 import { pipService } from '../../../services/mobile/pip/PiPService';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
+import { formatDuration } from '../../../core/pomodoro';
 import { useTranslation } from '../../../i18n';
 
 interface RoomActiveScreenProps {
@@ -38,36 +39,45 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [isInPiP, setIsInPiP] = useState(false);
   const [pipSupported, setPipSupported] = useState(false);
 
+  const remainingSeconds = useTimerStore((s) => s.remainingSeconds);
+  const isTimerRunning = useTimerStore((s) => s.isRunning);
+  const timerMode = useTimerStore((s) => s.mode);
+
   // Check PiP support on mount
   useEffect(() => {
     pipService.isPiPSupported().then(setPipSupported);
   }, []);
 
-  // Detect PiP mode changes via AppState
+  // Detect PiP mode changes via native listener & AppState
   useEffect(() => {
     if (Platform.OS !== 'android') return;
-    const sub = AppState.addEventListener('change', async () => {
+
+    const removePiPListener = pipService.addPiPListener((inPiP) => {
+      setIsInPiP(inPiP);
+    });
+
+    const appStateSub = AppState.addEventListener('change', async () => {
       const inPiP = await pipService.isInPiPMode();
       setIsInPiP(inPiP);
     });
 
-    // Buralara gelince auto PiP modunu aktif ediyoruz,
-    // Çıkınca kapatıyoruz.
     pipService.setAutoPiPEnabled(true);
 
     return () => {
-      sub.remove();
+      removePiPListener();
+      appStateSub.remove();
       pipService.setAutoPiPEnabled(false);
     };
   }, []);
 
   const handleEnterPiP = useCallback(async () => {
-    if (!pipSupported) {
+    const supported = await pipService.isPiPSupported();
+    if (!supported) {
       Alert.alert('Desteklenmiyor', 'Cihazınız mini mod (PiP) özelliğini desteklemiyor.');
       return;
     }
     await pipService.enterPiP();
-  }, [pipSupported]);
+  }, []);
 
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -297,29 +307,40 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const activeSharedFile = sharedFiles.find(f => f.id === activeSharedFileId) || null;
 
-  /* ─── PiP Compact View ─── */
+  /* ─── PiP Compact View (Dynamic Island Mini Floating Bar) ─── */
   if (isInPiP) {
+    const formattedTime = formatDuration(remainingSeconds);
+    const modeLabel = timerMode === 'work' ? 'Odak' : timerMode === 'shortBreak' ? 'Kısa Mola' : 'Uzun Mola';
+    const modeColor = timerMode === 'work' ? '#A855F7' : '#22C55E';
+
     return (
       <View style={styles.pipContainer}>
-        <Text style={styles.pipLabel}>PomoMate</Text>
+        <View style={styles.pipHeaderRow}>
+          <View style={[styles.pipModeBadge, { backgroundColor: `${modeColor}30`, borderColor: modeColor }]}>
+            <View style={[styles.pipDot, { backgroundColor: isTimerRunning ? '#22C55E' : '#EAB308' }]} />
+            <Text style={[styles.pipModeText, { color: modeColor }]}>{modeLabel}</Text>
+          </View>
+          <Text style={styles.pipTimerText}>{formattedTime}</Text>
+        </View>
+
         <View style={styles.pipControls}>
           <Pressable
             style={[styles.pipButton, micOn && styles.pipButtonActive]}
             onPress={handleToggleMic}
           >
-            <Ionicons name={micOn ? 'mic' : 'mic-off'} size={20} color="#FFF" />
+            <Ionicons name={micOn ? 'mic' : 'mic-off'} size={18} color="#FFF" />
           </Pressable>
           <Pressable
             style={[styles.pipButton, camOn && styles.pipButtonActive]}
             onPress={handleToggleCam}
           >
-            <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={20} color="#FFF" />
+            <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={18} color="#FFF" />
           </Pressable>
           <Pressable
-            style={[styles.pipButton, screenShareOn && { backgroundColor: '#ef4435' }]}
+            style={[styles.pipButton, screenShareOn && { backgroundColor: '#A855F7' }]}
             onPress={handleToggleScreen}
           >
-            <Ionicons name={screenShareOn ? 'stop-circle' : 'desktop-outline'} size={20} color="#FFF" />
+            <Ionicons name={screenShareOn ? 'desktop' : 'desktop-outline'} size={18} color="#FFF" />
           </Pressable>
         </View>
       </View>
@@ -396,6 +417,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
               onRemoveFile={() => {
                 if (activeSharedFile) handleRemoveFile(activeSharedFile.id);
               }}
+              onEnterPiP={handleEnterPiP}
+              onStopScreenShare={handleToggleScreen}
             />
           </View>
         )}
@@ -424,10 +447,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         showShrinkToggle={showShrinkToggle}
         isShrunk={isScreenShrunk}
         onToggleShrink={() => setIsScreenShrunk(!isScreenShrunk)}
+        onEnterPiP={handleEnterPiP}
       />
 
       {/* ─── Mini Mod (PiP) Floating Button — only when screen sharing ─── */}
-      {screenShareOn && pipSupported && (
+      {screenShareOn && (
         <Pressable
           style={styles.miniModButton}
           onPress={handleEnterPiP}
@@ -494,32 +518,55 @@ const styles = StyleSheet.create({
   /* ─── PiP compact view styles ─── */
   pipContainer: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#0F0F1A',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 12,
+    gap: 8,
   },
-  pipLabel: {
-    color: '#FFF',
-    fontSize: 11,
+  pipHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pipModeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 4,
+  },
+  pipDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  pipModeText: {
+    fontSize: 10,
     fontWeight: '700',
-    marginBottom: 8,
-    opacity: 0.7,
+  },
+  pipTimerText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
   },
   pipControls: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
   pipButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   pipButtonActive: {
-    backgroundColor: '#22c55e',
+    backgroundColor: '#22C55E',
   },
   /* ─── Mini Mod floating button ─── */
   miniModButton: {
@@ -529,16 +576,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(147, 51, 234, 0.85)',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     zIndex: 100,
+    shadowColor: '#9333EA',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 5,
   },
   miniModText: {
     color: '#FFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });
 

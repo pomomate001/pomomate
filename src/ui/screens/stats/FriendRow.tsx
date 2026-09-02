@@ -31,7 +31,7 @@ export function FriendRow({ friend, onPress }: FriendRowProps) {
           {friend.displayName}
         </Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>
-          {formatHours(friend.totalWorkSeconds)} · 🍅 {friend.totalPomodoros} · 🔥 {friend.streak}
+          {formatHours(friend.totalWorkSeconds)} · 🎯 {friend.totalPomodoros} · 🔥 {friend.streak}
         </Text>
       </View>
     </Pressable>

@@ -20,6 +20,7 @@ interface TimerStore extends TimerState {
   tick: () => void;
   syncWithCurrentTime: () => void;
   setMode: (mode: TimerMode) => void;
+  setTimerState: (state: Partial<TimerState> & { targetEndTime?: number | null }) => void;
   /** Advances to the next mode in the pomodoro sequence. */
   next: () => void;
 }
@@ -91,6 +92,8 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       isRunning: false,
       targetEndTime: null,
     }),
+
+  setTimerState: (newState) => set((state) => ({ ...state, ...newState })),
 
   next: () => {
     const { mode, completedWorkCycles, currentCycle } = get();

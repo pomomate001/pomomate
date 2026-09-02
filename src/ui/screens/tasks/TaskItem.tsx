@@ -68,7 +68,7 @@ export function TaskItem({ task, onToggle, onDelete, onPress }: TaskItemProps) {
           )}
           {task.pomodoroCount > 0 && (
             <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: spacing.xs }]}>
-              🍅 {task.pomodoroCount}
+              🎯 {task.pomodoroCount}
             </Text>
           )}
         </View>

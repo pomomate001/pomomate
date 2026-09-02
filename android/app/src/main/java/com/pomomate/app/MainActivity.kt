@@ -73,10 +73,22 @@ class MainActivity : ReactActivity() {
    */
   fun enterPiPMode() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val builder = PictureInPictureParams.Builder()
+        .setAspectRatio(Rational(16, 9))
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        builder.setAutoEnterEnabled(autoPiPEnabled)
+      }
+      enterPictureInPictureMode(builder.build())
+    }
+  }
+
+  fun updateAutoPiP(enabled: Boolean) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
       val params = PictureInPictureParams.Builder()
         .setAspectRatio(Rational(16, 9))
+        .setAutoEnterEnabled(enabled)
         .build()
-      enterPictureInPictureMode(params)
+      setPictureInPictureParams(params)
     }
   }
 
@@ -86,6 +98,7 @@ class MainActivity : ReactActivity() {
   ) {
     super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
     isInPiPMode = isInPictureInPictureMode
+    PiPModule.notifyPiPChanged(isInPictureInPictureMode)
   }
 
   /**

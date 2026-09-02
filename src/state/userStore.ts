@@ -6,6 +6,8 @@
  */
 import { create } from 'zustand';
 import type { User } from '../types';
+import { authService } from '../services/auth/SupabaseAuthService';
+import { logger } from '../utils/logger';
 
 interface UserStore {
   user: User | null;
@@ -15,14 +17,14 @@ interface UserStore {
   needsPasswordReset: boolean;
 
   setUser: (user: User | null) => void;
-  updateUser: (patch: Partial<User>) => void;
+  updateUser: (patch: Partial<User>) => Promise<void>;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   setNeedsPasswordReset: (needsReset: boolean) => void;
   signOut: () => void;
 }
 
-export const useUserStore = create<UserStore>((set) => ({
+export const useUserStore = create<UserStore>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
@@ -31,10 +33,26 @@ export const useUserStore = create<UserStore>((set) => ({
 
   setUser: (user) => set({ user, isAuthenticated: user !== null }),
 
-  updateUser: (patch) =>
-    set((state) =>
-      state.user ? { user: { ...state.user, ...patch } } : state,
-    ),
+  updateUser: async (patch) => {
+    const currentUser = get().user;
+    if (!currentUser) return;
+
+    // 1. Update state immediately for instant UI responsiveness
+    const updatedUser = { ...currentUser, ...patch };
+    set({ user: updatedUser });
+
+    // 2. Persist profile changes to Supabase database & auth
+    if (currentUser.id && (patch.displayName !== undefined || patch.avatarUrl !== undefined)) {
+      try {
+        await authService.updateProfile(currentUser.id, {
+          displayName: patch.displayName,
+          avatarUrl: patch.avatarUrl,
+        });
+      } catch (e) {
+        logger.warn('[UserStore] Failed to persist profile changes to Supabase:', e);
+      }
+    }
+  },
 
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
@@ -43,3 +61,4 @@ export const useUserStore = create<UserStore>((set) => ({
   signOut: () =>
     set({ user: null, isAuthenticated: false, isLoading: false, error: null, needsPasswordReset: false }),
 }));
+

@@ -176,6 +176,55 @@ export class SupabaseAuthService implements AuthService {
     logger.info('[Auth] Signed out');
   }
 
+  async updateProfile(userId: string, patch: { displayName?: string; avatarUrl?: string | null }): Promise<void> {
+    try {
+      const updatePayload: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+      if (patch.displayName !== undefined) {
+        updatePayload.display_name = patch.displayName;
+      }
+      if (patch.avatarUrl !== undefined) {
+        updatePayload.avatar_url = patch.avatarUrl;
+      }
+
+      // 1. Update database users table
+      const { error: dbError } = await supabase
+        .from('users')
+        .update(updatePayload)
+        .eq('id', userId);
+
+      if (dbError) {
+        logger.warn('[Auth] Failed to update user in database:', dbError.message);
+      } else {
+        logger.info('[Auth] User profile updated in database successfully:', updatePayload);
+      }
+
+      // 2. Also update auth user_metadata so session reflects it immediately
+      try {
+        const metadataPatch: Record<string, any> = {};
+        if (patch.displayName !== undefined) {
+          metadataPatch.display_name = patch.displayName;
+          metadataPatch.name = patch.displayName;
+          metadataPatch.full_name = patch.displayName;
+        }
+        if (patch.avatarUrl !== undefined) {
+          metadataPatch.avatar_url = patch.avatarUrl;
+          metadataPatch.picture = patch.avatarUrl;
+        }
+        if (Object.keys(metadataPatch).length > 0) {
+          await supabase.auth.updateUser({
+            data: metadataPatch,
+          });
+        }
+      } catch (authMetaErr) {
+        logger.warn('[Auth] Failed to update auth metadata:', authMetaErr);
+      }
+    } catch (err) {
+      logger.warn('[Auth] updateProfile error:', err);
+    }
+  }
+
   async getAccessToken(): Promise<string | null> {
     const { data } = await supabase.auth.getSession();
     return data.session?.access_token ?? null;

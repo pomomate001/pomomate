@@ -23,6 +23,7 @@ export interface AuthService {
   signInWithGoogle(): Promise<User>;
   resetPassword(email: string): Promise<void>;
   signOut(): Promise<void>;
+  updateProfile(userId: string, patch: { displayName?: string; avatarUrl?: string | null }): Promise<void>;
   /** Returns the current access token, or null if unauthenticated (M08). */
   getAccessToken(): Promise<string | null>;
 }

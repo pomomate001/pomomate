@@ -32,7 +32,7 @@ const modeColor: Record<TimerMode, string> = {
 };
 
 const modeEmoji: Record<TimerMode, string> = {
-  work: '🍅',
+  work: '🎯',
   shortBreak: '☕',
   longBreak: '🌴',
 };

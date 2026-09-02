@@ -3,6 +3,7 @@
  * 
  * Handles monthly/yearly premium plans and entitlement checks.
  */
+import { Linking, Platform } from 'react-native';
 import Purchases, { PurchasesPackage, CustomerInfo } from 'react-native-purchases';
 import { supabase } from '../auth/supabaseClient';
 import { logger } from '../../utils/logger';
@@ -115,9 +116,54 @@ export class RevenueCatService {
 
   async manageSubscriptions(): Promise<void> {
     try {
-      await Purchases.showManageSubscriptions();
+      // 1. Check if RevenueCat provides a direct management URL
+      try {
+        const customerInfo = await Purchases.getCustomerInfo();
+        if (customerInfo?.managementURL) {
+          const canOpen = await Linking.canOpenURL(customerInfo.managementURL);
+          if (canOpen) {
+            await Linking.openURL(customerInfo.managementURL);
+            return;
+          }
+        }
+      } catch (e) {
+        logger.warn('[RevenueCat] Failed to fetch customerInfo for managementURL:', e);
+      }
+
+      // 2. Try native RevenueCat helper
+      try {
+        await Purchases.showManageSubscriptions();
+        return;
+      } catch (innerErr) {
+        logger.warn('[RevenueCat] showManageSubscriptions failed, falling back to direct store link:', innerErr);
+      }
+
+      // 3. Fallback: Direct platform subscription URL
+      if (Platform.OS === 'android') {
+        const url = 'https://play.google.com/store/account/subscriptions?package=com.pomomate.app';
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        } else {
+          await Linking.openURL('https://play.google.com/store/account/subscriptions');
+        }
+      } else if (Platform.OS === 'ios') {
+        await Linking.openURL('https://apps.apple.com/account/subscriptions');
+      } else {
+        await Linking.openURL('https://play.google.com/store/account/subscriptions');
+      }
     } catch (err) {
       logger.warn('[RevenueCat] Failed to open manage subscriptions:', err);
+      // Last-ditch generic fallback
+      try {
+        if (Platform.OS === 'android') {
+          await Linking.openURL('https://play.google.com/store/account/subscriptions');
+        } else if (Platform.OS === 'ios') {
+          await Linking.openURL('https://apps.apple.com/account/subscriptions');
+        }
+      } catch {
+        // Ignored
+      }
     }
   }
 

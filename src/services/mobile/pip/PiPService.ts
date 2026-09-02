@@ -5,7 +5,7 @@
  * When screen sharing is active, the user can minimize the app
  * into a floating window to use other apps while continuing to share.
  */
-import { NativeModules, Platform } from 'react-native';
+import { NativeModules, Platform, DeviceEventEmitter, NativeEventEmitter } from 'react-native';
 
 const { PiPModule } = NativeModules;
 
@@ -20,7 +20,7 @@ export class PiPService {
       return false;
     }
 
-    if (!PiPModule) {
+    if (!PiPModule?.enterPiPMode) {
       console.warn('[PiP] PiPModule native module not found');
       return false;
     }
@@ -38,12 +38,14 @@ export class PiPService {
    */
   async isPiPSupported(): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
-    if (!PiPModule) return false;
+    if (!PiPModule?.isPiPSupported) {
+      return (Platform.Version as number) >= 26;
+    }
 
     try {
       return await PiPModule.isPiPSupported();
     } catch {
-      return false;
+      return (Platform.Version as number) >= 26;
     }
   }
 
@@ -52,7 +54,7 @@ export class PiPService {
    */
   async isInPiPMode(): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
-    if (!PiPModule) return false;
+    if (!PiPModule?.isInPiPMode) return false;
 
     try {
       return await PiPModule.isInPiPMode();
@@ -74,6 +76,28 @@ export class PiPService {
       return false;
     }
   }
+
+  /**
+   * Listen to native PiP state changes.
+   */
+  addPiPListener(callback: (isInPiP: boolean) => void): () => void {
+    if (Platform.OS !== 'android') return () => {};
+
+    if (PiPModule) {
+      try {
+        const emitter = new NativeEventEmitter(PiPModule);
+        const sub = emitter.addListener('onPiPModeChanged', callback);
+        return () => sub.remove();
+      } catch {
+        const sub = DeviceEventEmitter.addListener('onPiPModeChanged', callback);
+        return () => sub.remove();
+      }
+    }
+
+    const sub = DeviceEventEmitter.addListener('onPiPModeChanged', callback);
+    return () => sub.remove();
+  }
 }
 
 export const pipService = new PiPService();
+

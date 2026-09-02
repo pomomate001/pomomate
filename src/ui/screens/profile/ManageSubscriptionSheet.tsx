@@ -39,8 +39,15 @@ export function ManageSubscriptionSheet({ visible, onClose }: ManageSubscription
     setLoading(false);
   };
 
+  const [manageLoading, setManageLoading] = useState(false);
+
   const handleManage = async () => {
-    await revenueCatService.manageSubscriptions();
+    try {
+      setManageLoading(true);
+      await revenueCatService.manageSubscriptions();
+    } finally {
+      setTimeout(() => setManageLoading(false), 800);
+    }
   };
 
   return (
@@ -81,14 +88,22 @@ export function ManageSubscriptionSheet({ visible, onClose }: ManageSubscription
             <Pressable
               style={({ pressed }) => [
                 styles.manageBtn,
-                { backgroundColor: pressed ? `${colors.error}20` : `${colors.error}15` }
+                { backgroundColor: pressed ? `${colors.error}20` : `${colors.error}15` },
+                manageLoading && { opacity: 0.7 }
               ]}
               onPress={handleManage}
+              disabled={manageLoading}
             >
-              <Ionicons name="open-outline" size={20} color={colors.error} />
-              <Text style={[typography.bodyBold, { color: colors.error, marginLeft: spacing.sm }]}>
-                Aboneliği Yönet / İptal Et
-              </Text>
+              {manageLoading ? (
+                <ActivityIndicator size="small" color={colors.error} />
+              ) : (
+                <>
+                  <Ionicons name="open-outline" size={20} color={colors.error} />
+                  <Text style={[typography.bodyBold, { color: colors.error, marginLeft: spacing.sm }]}>
+                    Aboneliği Yönet / İptal Et
+                  </Text>
+                </>
+              )}
             </Pressable>
           </View>
         )}

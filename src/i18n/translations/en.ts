@@ -86,7 +86,7 @@ export const en: TranslationSchema = {
     workingOn: 'WORKING ON',
     hideTasks: 'Hide Tasks',
     moreTasks: '+{count} more tasks',
-    pomodoroCompletedTitle: 'Pomodoro Completed! 🍅',
+    pomodoroCompletedTitle: 'Pomodoro Completed! 🎯',
     pomodoroCompletedBody: 'Break time. Enjoy your rest!',
     breakCompletedTitle: 'Break Finished! ⏰',
     breakCompletedBody: 'Back to work.',

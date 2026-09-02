@@ -266,7 +266,7 @@ export class FriendService {
     }
   }
 
-  /** Discover users using the server-side RPC with multi-factor scoring. */
+  /** Discover users using the server-side RPC with direct database fallback. */
   async discoverUsers(
     _userId: string,
     limit: number = 20,
@@ -282,14 +282,41 @@ export class FriendService {
         p_search: search,
       });
 
-      if (error) {
-        logger.warn('[FriendService] discoverUsers RPC error:', error.message);
-        return [];
+      let userRows = data;
+
+      // Fallback: If RPC errors or returns empty, query users table directly
+      if (error || !userRows || userRows.length === 0) {
+        if (error) {
+          logger.warn('[FriendService] discoverUsers RPC error, trying direct table fallback:', error.message);
+        }
+
+        let query = supabase
+          .from('users')
+          .select('id, display_name, avatar_url, country_code')
+          .neq('id', _userId)
+          .range(offset, offset + limit - 1);
+
+        if (search && search.trim().length > 0) {
+          query = query.ilike('display_name', `%${search.trim()}%`);
+        }
+
+        const { data: directUsers, error: dErr } = await query;
+        if (!dErr && directUsers) {
+          userRows = directUsers.map((u: any) => ({
+            user_id: u.id,
+            display_name: u.display_name,
+            avatar_url: u.avatar_url,
+            country_code: u.country_code,
+            match_score: 50,
+            matching_tag_count: 0,
+            tags: [],
+          }));
+        }
       }
 
-      const suggestions: SuggestedUser[] = (data ?? []).map((row: any) => ({
+      const suggestions: SuggestedUser[] = (userRows ?? []).map((row: any) => ({
         userId: row.user_id,
-        displayName: row.display_name ?? 'Kullanıcı',
+        displayName: (row.display_name && row.display_name.trim().length > 0) ? row.display_name : 'Kullanıcı',
         avatarUrl: row.avatar_url,
         countryCode: row.country_code,
         matchScore: row.match_score ?? 0,

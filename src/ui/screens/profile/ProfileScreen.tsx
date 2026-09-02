@@ -88,12 +88,12 @@ export function ProfileScreen({
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      updateUser({ avatarUrl: result.assets[0].uri });
+      await updateUser({ avatarUrl: result.assets[0].uri });
     }
   };
 
-  const handleRemoveAvatar = () => {
-    updateUser({ avatarUrl: undefined });
+  const handleRemoveAvatar = async () => {
+    await updateUser({ avatarUrl: undefined });
   };
 
   return (

@@ -198,13 +198,19 @@ export function TimerScreen() {
     });
   }, [user?.id]);
 
-  // Sync timer with buddy session (for guest role)
+  // Sync timer with buddy session
   useEffect(() => {
-    if (activeSession && myRole === 'guest') {
-      // Guest receives timer updates from host via realtime
-      // No need to manually sync here - BuddyService handles it
+    if (activeSession && myRole === 'host') {
+      const state = useTimerStore.getState();
+      buddyService.updateTimerState(activeSession.id, {
+        timerMode: state.mode,
+        timerRemainingSeconds: state.remainingSeconds,
+        timerIsRunning: state.isRunning,
+        currentCycle: state.currentCycle,
+        targetEndTime: state.targetEndTime,
+      });
     }
-  }, [activeSession, myRole]);
+  }, [activeSession, myRole, isRunning, mode, currentCycle]);
 
   const handleSendEmoji = useCallback((code: BuddyEmojiCode) => {
     if (activeSession && user?.id) {
@@ -256,13 +262,19 @@ export function TimerScreen() {
         createdAt: nowIso(),
       };
       addTask(task);
+      if (activeSession) {
+        buddyService.broadcastTask(activeSession.id, 'add', task);
+      }
     },
-    [addTask]
+    [addTask, activeSession]
   );
   
   const handleEditTask = useCallback((id: string, updates: Partial<Task>) => {
     useTaskStore.getState().updateTask(id, updates);
-  }, []);
+    if (activeSession) {
+      buddyService.broadcastTask(activeSession.id, 'update', { id, updates });
+    }
+  }, [activeSession]);
 
   const openEditTask = useCallback((task: Task) => {
     setEditingTask(task);
@@ -281,8 +293,22 @@ export function TimerScreen() {
         recordTaskCompleted();
       }
       toggleCompleted(id);
+      
+      if (activeSession && task) {
+        buddyService.broadcastTask(activeSession.id, 'update', { id, updates: { completed: !task.completed } });
+      }
     },
-    [tasks, toggleCompleted, recordTaskCompleted]
+    [tasks, toggleCompleted, recordTaskCompleted, activeSession]
+  );
+  
+  const handleRemoveTask = useCallback(
+    (id: string) => {
+      removeTask(id);
+      if (activeSession) {
+        buddyService.broadcastTask(activeSession.id, 'delete', id);
+      }
+    },
+    [removeTask, activeSession]
   );
 
   const modeButtons: TimerMode[] = ['work', 'shortBreak', 'longBreak'];
@@ -466,7 +492,7 @@ export function TimerScreen() {
                     <TaskItem
                       task={todayTasks[0]}
                       onToggle={handleToggleTask}
-                      onDelete={removeTask}
+                      onDelete={handleRemoveTask}
                       onPress={openEditTask}
                     />
                   </View>
@@ -492,12 +518,12 @@ export function TimerScreen() {
                   <View style={[styles.expandedList, { backgroundColor: 'rgba(15, 18, 28, 0.78)', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
                     {remainingTaskList.map((task) => (
                       <View key={task.id} style={{ transform: [{ scale: 0.95 }] }}>
-                        <TaskItem
-                          task={task}
-                          onToggle={handleToggleTask}
-                          onDelete={removeTask}
-                          onPress={openEditTask}
-                        />
+                      <TaskItem
+                        task={task}
+                        onToggle={handleToggleTask}
+                        onDelete={handleRemoveTask}
+                        onPress={openEditTask}
+                      />
                       </View>
                     ))}
                   </View>

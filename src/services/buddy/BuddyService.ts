@@ -84,6 +84,16 @@ export class BuddyService {
         return null;
       }
 
+      // Broadcast guest_joined so the host is notified
+      const channel = supabase.channel(`buddy:${sessionId}`);
+      await channel.subscribe();
+      await channel.send({
+        type: 'broadcast',
+        event: 'guest_joined',
+        payload: { guestId },
+      });
+      supabase.removeChannel(channel);
+
       const session = this.mapSession(data);
       useBuddyStore.getState().setActiveSession(session);
       useBuddyStore.getState().setMyRole('guest');
@@ -142,6 +152,7 @@ export class BuddyService {
       timerIsRunning?: boolean;
       currentCycle?: number;
       activeTaskTitle?: string | null;
+      targetEndTime?: number | null;
     },
   ): Promise<void> {
     try {
@@ -151,6 +162,7 @@ export class BuddyService {
       if (state.timerIsRunning !== undefined) dbPatch.timer_is_running = state.timerIsRunning;
       if (state.currentCycle !== undefined) dbPatch.current_cycle = state.currentCycle;
       if (state.activeTaskTitle !== undefined) dbPatch.active_task_title = state.activeTaskTitle;
+      // targetEndTime doesn't need to be in DB, it's just for realtime sync
 
       await supabase
         .from('buddy_sessions')
@@ -193,6 +205,17 @@ export class BuddyService {
     }
   }
 
+  /** Broadcast a task sync event to keep tasks in sync between buddies. */
+  async broadcastTask(sessionId: string, action: 'add' | 'update' | 'delete', taskOrId: any): Promise<void> {
+    if (this.channel) {
+      await this.channel.send({
+        type: 'broadcast',
+        event: 'task_sync',
+        payload: { action, taskOrId },
+      });
+    }
+  }
+
   /** Subscribe to a buddy session's realtime channel. */
   subscribeToSession(
     sessionId: string,
@@ -215,6 +238,34 @@ export class BuddyService {
       .on('broadcast', { event: 'timer_update' }, (payload) => {
         callbacks.onTimerUpdate?.(payload.payload);
         useBuddyStore.getState().updateTimerState(payload.payload);
+        
+        // Also update local timerStore for guest
+        const { useTimerStore } = require('../../state/timerStore');
+        const state = payload.payload;
+        const updates: any = {};
+        if (state.timerMode !== undefined) updates.mode = state.timerMode;
+        if (state.timerRemainingSeconds !== undefined) updates.remainingSeconds = state.timerRemainingSeconds;
+        if (state.timerIsRunning !== undefined) updates.isRunning = state.timerIsRunning;
+        if (state.currentCycle !== undefined) updates.currentCycle = state.currentCycle;
+        if (state.targetEndTime !== undefined) updates.targetEndTime = state.targetEndTime;
+        
+        useTimerStore.getState().setTimerState(updates);
+      })
+      .on('broadcast', { event: 'task_sync' }, (payload) => {
+        const { action, taskOrId } = payload.payload as { action: string, taskOrId: any };
+        const { useTaskStore } = require('../../state/taskStore');
+        const store = useTaskStore.getState();
+        
+        if (action === 'add') {
+          // Check if it already exists
+          if (!store.tasks.find((t: any) => t.id === taskOrId.id)) {
+            store.addTask(taskOrId);
+          }
+        } else if (action === 'update') {
+          store.updateTask(taskOrId.id, taskOrId.updates);
+        } else if (action === 'delete') {
+          store.removeTask(taskOrId);
+        }
       })
       .on('broadcast', { event: 'emoji_sent' }, (payload) => {
         const data = payload.payload as { senderId: string; emojiCode: BuddyEmojiCode };
@@ -238,7 +289,16 @@ export class BuddyService {
         callbacks.onInviteDeclined?.();
       })
       .on('broadcast', { event: 'guest_joined' }, (payload) => {
-        callbacks.onGuestJoined?.(payload.payload?.guestId);
+        const guestId = payload.payload?.guestId;
+        const currentSession = useBuddyStore.getState().activeSession;
+        if (currentSession) {
+          useBuddyStore.getState().setActiveSession({
+            ...currentSession,
+            guestId,
+            status: 'active'
+          });
+        }
+        callbacks.onGuestJoined?.(guestId);
       })
       .subscribe();
   }

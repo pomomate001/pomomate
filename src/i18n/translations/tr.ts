@@ -86,7 +86,7 @@ export const tr: TranslationSchema = {
     workingOn: 'ÜZERİNDE ÇALIŞILIYOR',
     hideTasks: 'Görevleri Gizle',
     moreTasks: '+{count} görev daha',
-    pomodoroCompletedTitle: 'Pomodoro Tamamlandı! 🍅',
+    pomodoroCompletedTitle: 'Pomodoro Tamamlandı! 🎯',
     pomodoroCompletedBody: 'Mola zamanı. İyi dinlenmeler!',
     breakCompletedTitle: 'Mola Bitti! ⏰',
     breakCompletedBody: 'Çalışmaya geri dön.',

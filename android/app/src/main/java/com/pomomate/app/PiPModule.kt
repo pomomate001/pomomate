@@ -5,8 +5,30 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.modules.core.DeviceEventManagerModule
 
-class PiPModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+class PiPModule(private val reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+
+  companion object {
+    var instance: PiPModule? = null
+
+    fun notifyPiPChanged(isInPiP: Boolean) {
+      instance?.let { module ->
+        try {
+          if (module.reactContext.hasActiveReactInstance()) {
+            module.reactContext
+              .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+              ?.emit("onPiPModeChanged", isInPiP)
+          }
+        } catch (_: Exception) {
+        }
+      }
+    }
+  }
+
+  init {
+    instance = this
+  }
 
   override fun getName(): String = "PiPModule"
 
@@ -46,6 +68,21 @@ class PiPModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMod
   @ReactMethod
   fun setAutoPiPEnabled(enabled: Boolean, promise: Promise) {
     MainActivity.autoPiPEnabled = enabled
+    val activity = currentActivity as? MainActivity
+    activity?.runOnUiThread {
+      activity.updateAutoPiP(enabled)
+    }
     promise.resolve(true)
   }
+
+  @ReactMethod
+  fun addListener(eventName: String) {
+    // Required for React Native event emitter
+  }
+
+  @ReactMethod
+  fun removeListeners(count: Int) {
+    // Required for React Native event emitter
+  }
 }
+

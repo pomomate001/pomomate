@@ -200,7 +200,7 @@ export function StatsScreen() {
           />
           <View style={{ width: spacing.sm }} />
           <StatCard
-            icon={<Text style={{ fontSize: 22 }}>🍅</Text>}
+            icon={<Ionicons name="disc-outline" size={24} color={colors.primary} />}
             label={t('stats.pomodoro')}
             value={String(totalPomodoros)}
           />
@@ -214,7 +214,7 @@ export function StatsScreen() {
           />
           <View style={{ width: spacing.sm }} />
           <StatCard
-            icon={<Text style={{ fontSize: 22 }}>🔥</Text>}
+            icon={<Ionicons name="flame" size={24} color={colors.warning} />}
             label={t('stats.streak')}
             value={`${streak} ${streak === 1 ? t('stats.dayUnit') : t('stats.daysUnit')}`}
           />

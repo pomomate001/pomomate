@@ -26,6 +26,8 @@ interface RoomScreenPanelProps {
   allowFiles: boolean;
   onPickFile: () => void;
   onRemoveFile: () => void;
+  onEnterPiP?: () => void;
+  onStopScreenShare?: () => void;
 }
 
 export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
@@ -36,6 +38,8 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   allowFiles,
   onPickFile,
   onRemoveFile,
+  onEnterPiP,
+  onStopScreenShare,
 }) => {
   // Rotation logic
   const [rotationMultiplier, setRotationMultiplier] = useState(0);
@@ -146,22 +150,40 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   });
 
   if (isScreenSharing) {
-    if (screenStream && screenStream.toURL) {
-      return (
-        <View style={[styles.container, { backgroundColor: '#000' }]}>
-          <RTCView
-            streamURL={screenStream.toURL()}
-            style={styles.imageContent}
-            objectFit="contain"
-            mirror={false}
-          />
-        </View>
-      );
-    }
     return (
-      <View style={styles.container}>
-        <Ionicons name="desktop-outline" size={48} color="rgba(255,255,255,0.5)" />
-        <Text style={styles.statusText}>Ekran paylaşılıyor...</Text>
+      <View style={styles.broadcastContainer}>
+        {/* Top Live Pill */}
+        <View style={styles.liveBadge}>
+          <View style={styles.liveDot} />
+          <Text style={styles.liveText}>CANLI EKRAN YAYINI</Text>
+        </View>
+
+        {/* Central Icon & Information */}
+        <View style={styles.broadcastIconBox}>
+          <Ionicons name="desktop" size={54} color="#A855F7" />
+        </View>
+
+        <Text style={styles.broadcastTitle}>Ekranınız Odaya Paylaşılıyor</Text>
+        <Text style={styles.broadcastDesc}>
+          Katılımcılar şu anda ekranınızı canlı olarak izliyor. Uygulamayı arka plana aldığınızda ekran paylaşımı devam eder.
+        </Text>
+
+        {/* Action Controls */}
+        <View style={styles.broadcastActions}>
+          {onEnterPiP && (
+            <Pressable style={styles.pipActionBtn} onPress={onEnterPiP}>
+              <Ionicons name="contract-outline" size={20} color="#FFF" />
+              <Text style={styles.pipActionBtnText}>Mini Moda Geç (Dinamik Ada)</Text>
+            </Pressable>
+          )}
+
+          {onStopScreenShare && (
+            <Pressable style={styles.stopActionBtn} onPress={onStopScreenShare}>
+              <Ionicons name="stop-circle-outline" size={20} color="#FF4D4D" />
+              <Text style={styles.stopActionBtnText}>Ekran Paylaşımını Durdur</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
     );
   }
@@ -245,6 +267,105 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
+  broadcastContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: 'rgba(18, 18, 28, 0.95)',
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 20,
+    gap: 6,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+  },
+  liveText: {
+    color: '#EF4444',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  broadcastIconBox: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(168, 85, 247, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  broadcastTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  broadcastDesc: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+    maxWidth: 280,
+    marginBottom: 24,
+  },
+  broadcastActions: {
+    width: '100%',
+    maxWidth: 280,
+    gap: 10,
+  },
+  pipActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#9333EA',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    gap: 8,
+    shadowColor: '#9333EA',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  pipActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  stopActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    gap: 8,
+  },
+  stopActionBtnText: {
+    color: '#FF6B6B',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   statusText: {
     color: '#FFF',
     marginTop: 16,
@@ -303,3 +424,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
