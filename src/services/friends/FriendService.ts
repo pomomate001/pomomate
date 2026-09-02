@@ -214,19 +214,14 @@ export class FriendService {
   /** Accept a friendship request. */
   async acceptRequest(requestId: string, fromUserId: string, currentUserId: string): Promise<boolean> {
     try {
-      // 1. Update request status
-      const { error: updErr } = await supabase
-        .from('friendship_requests')
-        .update({ status: 'accepted' })
-        .eq('id', requestId);
+      const { data, error } = await supabase.rpc('accept_friend_request', {
+        req_id: requestId,
+      });
 
-      if (updErr) throw updErr;
+      if (error) throw error;
+      if (!data) return false; // Returns true if successful
 
-      // 2. Insert friendship (ordered pair)
-      const [a, b] = [fromUserId, currentUserId].sort();
-      await supabase.from('friendships').insert({ user_a: a, user_b: b });
-
-      // 3. Refresh friends and requests
+      // Refresh friends and requests
       await this.fetchFriends(currentUserId);
       await this.fetchIncomingRequests(currentUserId);
       return true;

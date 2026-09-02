@@ -27,25 +27,11 @@ import { friendService } from '../../../services/friends/FriendService';
 import { useTranslation } from '../../../i18n';
 import type { StatsStackParamList } from '../../../navigation/types';
 import type { SuggestedUser } from '../../../state/friendsStore';
-import type { TagCategory } from '../../../types';
+
 
 type Props = NativeStackScreenProps<StatsStackParamList, 'Discover'>;
 
-const CATEGORIES: { id: TagCategory | 'all'; labelKey: string }[] = [
-  { id: 'all', labelKey: 'discover.allCategories' },
-  { id: 'game', labelKey: 'tags.categories.game' },
-  { id: 'music', labelKey: 'tags.categories.music' },
-  { id: 'language', labelKey: 'tags.categories.language' },
-  { id: 'subject', labelKey: 'tags.categories.subject' },
-  { id: 'tech', labelKey: 'tags.categories.tech' },
-  { id: 'creative', labelKey: 'tags.categories.creative' },
-  { id: 'sport', labelKey: 'tags.categories.sport' },
-  { id: 'entertainment', labelKey: 'tags.categories.entertainment' },
-  { id: 'lifestyle', labelKey: 'tags.categories.lifestyle' },
-  { id: 'hobby', labelKey: 'tags.categories.hobby' },
-];
-
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 export function DiscoverScreen({ navigation }: Props) {
   const colors = useColors();
@@ -58,14 +44,10 @@ export function DiscoverScreen({ navigation }: Props) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [sendingRequests, setSendingRequests] = useState<Record<string, boolean>>({});
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState<TagCategory | 'all'>('all');
-  
-  const [sendingRequests, setSendingRequests] = useState<Record<string, boolean>>({});
 
   // Debounce search
   useEffect(() => {
@@ -86,15 +68,13 @@ export function DiscoverScreen({ navigation }: Props) {
       if (isMounted) setIsLoading(true);
     }, 0);
 
-    const cat = activeCategory === 'all' ? null : activeCategory;
     const search = debouncedSearch.trim() || null;
 
     friendService
-      .discoverUsers(user.id, PAGE_SIZE, 0, cat, search)
+      .discoverUsers(user.id, PAGE_SIZE, 0, null, search)
       .then((results) => {
         if (isMounted) {
           setIsLoading(false);
-          setHasMore(results.length >= PAGE_SIZE);
         }
       })
       .catch(() => {
@@ -107,43 +87,20 @@ export function DiscoverScreen({ navigation }: Props) {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [user?.id, userTags.length, activeCategory, debouncedSearch]);
+  }, [user?.id, userTags.length, debouncedSearch]);
 
   const handleRefresh = async () => {
     if (!user?.id || userTags.length === 0) return;
     setIsRefreshing(true);
-    const cat = activeCategory === 'all' ? null : activeCategory;
     const search = debouncedSearch.trim() || null;
     try {
-      const results = await friendService.discoverUsers(user.id, PAGE_SIZE, 0, cat, search);
-      setHasMore(results.length >= PAGE_SIZE);
+      const results = await friendService.discoverUsers(user.id, PAGE_SIZE, 0, null, search);
     } finally {
       setIsRefreshing(false);
     }
   };
 
-  const handleLoadMore = async () => {
-    if (!user?.id || !hasMore || isLoadingMore || isLoading || userTags.length === 0) return;
-    setIsLoadingMore(true);
-    const current = useFriendsStore.getState().suggestedUsers;
-    const cat = activeCategory === 'all' ? null : activeCategory;
-    const search = debouncedSearch.trim() || null;
-    try {
-      const results = await friendService.discoverUsers(
-        user.id,
-        PAGE_SIZE,
-        current.length,
-        cat,
-        search
-      );
-      if (results.length < PAGE_SIZE) {
-        setHasMore(false);
-      }
-      useFriendsStore.getState().setSuggestedUsers([...current, ...results]);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
+
 
   const handleSendRequest = async (targetUserId: string) => {
     if (!user?.id) return;
@@ -204,41 +161,7 @@ export function DiscoverScreen({ navigation }: Props) {
     </View>
   );
 
-  const renderCategoryPills = () => (
-    <View style={{ backgroundColor: colors.background, zIndex: 10 }}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryScroll}
-      >
-        {CATEGORIES.map((cat) => {
-          const isActive = activeCategory === cat.id;
-          return (
-            <Pressable
-              key={cat.id}
-              onPress={() => setActiveCategory(cat.id)}
-              style={[
-                styles.categoryPill,
-                {
-                  backgroundColor: isActive ? colors.primary : colors.surfaceVariant,
-                  borderColor: isActive ? colors.primary : colors.border,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  typography.captionBold,
-                  { color: isActive ? '#FFF' : colors.textPrimary },
-                ]}
-              >
-                {t(cat.labelKey as any)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-    </View>
-  );
+
 
   const renderUserCard = ({ item }: { item: SuggestedUser }) => (
     <View style={[styles.userCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -340,10 +263,16 @@ export function DiscoverScreen({ navigation }: Props) {
   };
 
   const renderFooter = () => {
-    if (!isLoadingMore) return <View style={{ height: spacing.xxxl }} />;
+    if (isLoading || suggestedUsers.length === 0) return <View style={{ height: spacing.xxxl }} />;
     return (
-      <View style={{ paddingVertical: spacing.lg, alignItems: 'center' }}>
-        <ActivityIndicator size="small" color={colors.primary} />
+      <View style={{ paddingVertical: spacing.xl, paddingBottom: spacing.xxxl, alignItems: 'center' }}>
+        <Button
+          title={t('discover.refresh' as any) || "Yenile"}
+          variant="outline"
+          icon={<Ionicons name="refresh" size={16} color={colors.primary} />}
+          onPress={handleRefresh}
+          loading={isRefreshing}
+        />
       </View>
     );
   };
@@ -351,7 +280,6 @@ export function DiscoverScreen({ navigation }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {renderHeader()}
-      {renderCategoryPills()}
 
       {isLoading && !isRefreshing ? (
         <View style={styles.loadingCenter}>
@@ -373,8 +301,6 @@ export function DiscoverScreen({ navigation }: Props) {
               tintColor={colors.primary}
             />
           }
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
         />
       )}
     </View>

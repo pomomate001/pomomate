@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { AdPlacement } from '../../ads';
 import { useTranslation } from '../../../i18n';
 import { TagSelectionSheet } from './TagSelectionSheet';
+import { EditNameSheet } from './EditNameSheet';
 import { tagService } from '../../../services/tags';
 
 interface ProfileScreenProps {
@@ -63,6 +64,7 @@ export function ProfileScreen({
   const [showAbout, setShowAbout] = React.useState(false);
   const [showLanguage, setShowLanguage] = React.useState(false);
   const [showTagSelection, setShowTagSelection] = React.useState(false);
+  const [showEditName, setShowEditName] = React.useState(false);
   const userTags = useTagStore((s) => s.userTags);
 
   // Load user tags
@@ -108,9 +110,14 @@ export function ProfileScreen({
               onPick={handlePickAvatar}
               onRemove={handleRemoveAvatar}
             />
-            <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center', marginTop: spacing.md }]}>
-              {user?.displayName ?? t('profile.userDefault')}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: spacing.md }}>
+              <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center' }]}>
+                {user?.displayName ?? t('profile.userDefault')}
+              </Text>
+              <Pressable onPress={() => setShowEditName(true)} style={{ marginLeft: 8, padding: 4 }}>
+                <Ionicons name="pencil" size={16} color={colors.textSecondary} />
+              </Pressable>
+            </View>
             <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center' }]}>
               {user?.email ?? ''}
             </Text>
@@ -200,6 +207,11 @@ export function ProfileScreen({
       <TagSelectionSheet
         visible={showTagSelection}
         onClose={() => setShowTagSelection(false)}
+      />
+
+      <EditNameSheet
+        visible={showEditName}
+        onClose={() => setShowEditName(false)}
       />
     </>
   );

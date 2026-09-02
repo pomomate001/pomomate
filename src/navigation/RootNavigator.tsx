@@ -12,7 +12,7 @@ import { TimerStack, StatsStack, RoomStack, ProfileStack } from './stacks';
 import { AuthNavigator } from './AuthNavigator';
 import { UpdatePasswordModal } from '../ui/screens/auth';
 import type { RootTabParamList } from './types';
-import { useUserStore } from '../state';
+import { useUserStore, useFriendsStore } from '../state';
 import { authService, supabase } from '../services/auth';
 import { countryService } from '../services/location/CountryService';
 import { useTranslation } from '../i18n';
@@ -37,6 +37,20 @@ function MainTabs() {
     ProfileTab: t('tabs.profile'),
   };
 
+  const user = useUserStore((s) => s.user);
+  const incomingRequests = useFriendsStore((s) => s.incomingRequests);
+
+  useEffect(() => {
+    if (user?.id) {
+      // Background fetch for badges
+      import('../services/friends/FriendService').then(({ friendService }) => {
+        friendService.fetchIncomingRequests(user.id);
+      });
+    }
+  }, [user?.id]);
+
+  const reqCount = incomingRequests.length;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -59,7 +73,14 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="TimerTab" component={TimerStack} />
-      <Tab.Screen name="StatsTab" component={StatsStack} />
+      <Tab.Screen 
+        name="StatsTab" 
+        component={StatsStack}
+        options={{
+          tabBarBadge: reqCount > 0 ? reqCount : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.error, color: '#FFF' },
+        }} 
+      />
       <Tab.Screen name="RoomTab" component={RoomStack} />
       <Tab.Screen name="ProfileTab" component={ProfileStack} />
     </Tab.Navigator>

@@ -28,6 +28,7 @@ export function FriendsSection() {
   const navigation = useNavigation<NativeStackNavigationProp<StatsStackParamList>>();
 
   const friends = useFriendsStore((s) => s.friends);
+  const incomingRequests = useFriendsStore((s) => s.incomingRequests);
   const user = useUserStore((s) => s.user);
   const colors = useColors();
 
@@ -81,9 +82,14 @@ export function FriendsSection() {
               setShowAddFriend(true);
             }}
             hitSlop={10}
-            style={[styles.addIconBtn, { backgroundColor: colors.surfaceVariant }]}
+            style={[styles.addIconBtn, { backgroundColor: colors.surfaceVariant, position: 'relative' }]}
           >
             <Ionicons name="person-add" size={16} color={colors.primary} />
+            {incomingRequests.length > 0 && (
+              <View style={[styles.reqBadge, { backgroundColor: colors.error }]}>
+                <Text style={{ fontSize: 10, color: '#FFF', fontWeight: 'bold' }}>{incomingRequests.length}</Text>
+              </View>
+            )}
           </Pressable>
 
           <Ionicons
@@ -166,6 +172,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 4,
+  },
+  reqBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
   avatarStack: {
     flexDirection: 'row',

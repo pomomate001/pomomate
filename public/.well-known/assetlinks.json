@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.pomomate.app",
+    "sha256_cert_fingerprints": [
+      "91:37:D2:E2:02:EA:CB:18:BE:46:7E:83:2D:2B:83:25:6A:45:F0:AD:9F:FE:70:93:56:FB:1E:0F:98:C6:E2:5B"
+    ]
+  }
+}]

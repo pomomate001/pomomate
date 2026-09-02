@@ -145,7 +145,7 @@ export const en: TranslationSchema = {
     removeFriend: 'Remove Friend',
     removeConfirmTitle: 'Remove Friend',
     removeConfirmBody: 'Are you sure you want to remove this person from your friends list?',
-    shareCodeMessage: "Let's focus together on PomoMate! Add me as a friend:\n\nLink: https://pomomate.app/join?code={code}\nCode: {code}",
+    shareCodeMessage: "Let's focus together on PomoMate! Add me as a friend:\n\nPaste the code below into the Add Friend section in the app:\n\n{code}",
     shareCodeTitle: 'PomoMate Friend Code',
     yourCodeAlertTitle: 'Your Friend Code',
     yourCodeAlertBody: 'Your Code: {code}\n\nShare this code with your friend so they can add you!',

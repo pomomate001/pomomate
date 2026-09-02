@@ -145,7 +145,7 @@ export const tr: TranslationSchema = {
     removeFriend: 'Arkadaşlıktan Çıkar',
     removeConfirmTitle: 'Arkadaşı Çıkar',
     removeConfirmBody: 'Bu kişiyi arkadaş listenizden çıkarmak istediğinize emin misiniz?',
-    shareCodeMessage: "PomoMate'de birlikte odaklanalım! Beni arkadaş olarak ekle:\n\nLink: https://pomomate.app/join?code={code}\nKod: {code}",
+    shareCodeMessage: "PomoMate'de birlikte odaklanalım! Beni arkadaş olarak ekle:\n\nUygulamada Arkadaş Ekle bölümüne aşağıdaki kodu yapıştır:\n\n{code}",
     shareCodeTitle: 'PomoMate Arkadaşlık Kodu',
     yourCodeAlertTitle: 'Arkadaşlık Kodun',
     yourCodeAlertBody: 'Kodun: {code}\n\nBu kodu arkadaşına göndererek seni eklemesini sağlayabilirsin!',
