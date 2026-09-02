@@ -37,16 +37,9 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [showAddTask, setShowAddTask] = useState(false);
   const [isScreenShrunk, setIsScreenShrunk] = useState(false);
   const [isInPiP, setIsInPiP] = useState(false);
-  const [pipSupported, setPipSupported] = useState(false);
-
   const remainingSeconds = useTimerStore((s) => s.remainingSeconds);
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const timerMode = useTimerStore((s) => s.mode);
-
-  // Check PiP support on mount
-  useEffect(() => {
-    pipService.isPiPSupported().then(setPipSupported);
-  }, []);
 
   // Detect PiP mode changes via native listener & AppState
   useEffect(() => {

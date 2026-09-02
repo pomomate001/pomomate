@@ -8,7 +8,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import type { MediaStream } from 'react-native-webrtc';
-import { RTCView } from 'react-native-webrtc';
 
 interface SharedFile {
   id: string;

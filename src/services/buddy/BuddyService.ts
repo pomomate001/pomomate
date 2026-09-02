@@ -1,5 +1,7 @@
 import { supabase } from '../auth/supabaseClient';
 import { useBuddyStore } from '../../state/buddyStore';
+import { useTimerStore } from '../../state/timerStore';
+import { useTaskStore } from '../../state/taskStore';
 import { logger } from '../../utils/logger';
 import type { BuddySession, BuddyEmojiCode, TimerMode } from '../../types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -240,7 +242,6 @@ export class BuddyService {
         useBuddyStore.getState().updateTimerState(payload.payload);
         
         // Also update local timerStore for guest
-        const { useTimerStore } = require('../../state/timerStore');
         const state = payload.payload;
         const updates: any = {};
         if (state.timerMode !== undefined) updates.mode = state.timerMode;
@@ -253,7 +254,6 @@ export class BuddyService {
       })
       .on('broadcast', { event: 'task_sync' }, (payload) => {
         const { action, taskOrId } = payload.payload as { action: string, taskOrId: any };
-        const { useTaskStore } = require('../../state/taskStore');
         const store = useTaskStore.getState();
         
         if (action === 'add') {
