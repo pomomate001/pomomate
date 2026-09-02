@@ -21,6 +21,7 @@ interface RoomScreenPanelProps {
   sharedFile: SharedFile | null;
   isScreenSharing: boolean;
   screenStream?: MediaStream | null;
+  presenterName?: string;
   isHost: boolean;
   allowFiles: boolean;
   onPickFile: () => void;
@@ -33,6 +34,7 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   sharedFile,
   isScreenSharing,
   screenStream,
+  presenterName,
   isHost,
   allowFiles,
   onPickFile,
@@ -170,7 +172,9 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
           {/* Top Live Pill */}
           <View style={styles.liveBadge}>
             <View style={styles.liveDot} />
-            <Text style={styles.liveText}>CANLI EKRAN YAYINI</Text>
+            <Text style={styles.liveText}>
+              {presenterName ? `${presenterName.toUpperCase()} EKRANINI PAYLAŞIYOR` : 'CANLI EKRAN YAYINI'}
+            </Text>
           </View>
 
           {!streamUrl && (

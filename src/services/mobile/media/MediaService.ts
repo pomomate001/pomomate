@@ -98,13 +98,21 @@ export class MediaService {
   async getDisplayMedia(): Promise<MediaStream | null> {
     try {
       let stream: MediaStream | null = null;
+      const screenConstraints = {
+        video: {
+          width: { ideal: 720, max: 1080 },
+          height: { ideal: 1280, max: 1920 },
+          frameRate: { ideal: 24, max: 30 },
+        },
+      };
+
       if (Platform.OS === 'web') {
-        stream = (await navigator.mediaDevices.getDisplayMedia({ video: true })) as unknown as MediaStream;
+        stream = (await navigator.mediaDevices.getDisplayMedia(screenConstraints as any)) as unknown as MediaStream;
       } else {
-        // use react-native-webrtc getDisplayMedia for mobile
-        stream = (await mediaDevices.getDisplayMedia({ video: true } as any)) as unknown as MediaStream;
+        // Use optimized constraints for mobile to avoid CPU lag & stutter
+        stream = (await mediaDevices.getDisplayMedia(screenConstraints as any)) as unknown as MediaStream;
       }
-      logger.info('[Media] Screen display media acquired successfully');
+      logger.info('[Media] Screen display media acquired successfully (optimized 720p/24fps)');
       return stream;
     } catch (err) {
       logger.warn('[Media] Failed to get display media:', err);

@@ -5,6 +5,7 @@
  * oturum yoksa kimlik doğrulama akışı gösterilir.
  */
 import React, { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../ui/theme';
@@ -12,7 +13,7 @@ import { TimerStack, StatsStack, RoomStack, ProfileStack } from './stacks';
 import { AuthNavigator } from './AuthNavigator';
 import { UpdatePasswordModal } from '../ui/screens/auth';
 import type { RootTabParamList } from './types';
-import { useUserStore, useFriendsStore, usePiPStore } from '../state';
+import { useUserStore, useFriendsStore, usePiPStore, useRoomStore } from '../state';
 import { authService, supabase } from '../services/auth';
 import { countryService } from '../services/location/CountryService';
 import { PiPFloatingBar } from '../ui/screens/pip/PiPFloatingBar';
@@ -40,6 +41,7 @@ function MainTabs() {
 
   const user = useUserStore((s) => s.user);
   const incomingRequests = useFriendsStore((s) => s.incomingRequests);
+  const isInPiP = usePiPStore((s) => s.isInPiP);
 
   useEffect(() => {
     if (user?.id) {
@@ -70,7 +72,11 @@ function MainTabs() {
         tabBarLabel: tabLabels[route.name],
         tabBarActiveTintColor: colors.tabBarActive,
         tabBarInactiveTintColor: colors.tabBarInactive,
-        tabBarStyle: { backgroundColor: colors.tabBarBackground, borderTopColor: colors.divider },
+        tabBarStyle: {
+          backgroundColor: colors.tabBarBackground,
+          borderTopColor: colors.divider,
+          ...(isInPiP ? { display: 'none' } : {}),
+        },
       })}
     >
       <Tab.Screen name="TimerTab" component={TimerStack} />
@@ -129,19 +135,21 @@ export function RootNavigator() {
   }, [setUser]);
 
   const isInPiP = usePiPStore((state) => state.isInPiP);
-
-  if (isInPiP) {
-    return <PiPFloatingBar />;
-  }
+  const currentRoom = useRoomStore((state) => state.currentRoom);
 
   if (!user) {
     return <AuthNavigator />;
   }
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <MainTabs />
       <UpdatePasswordModal />
-    </>
+      {isInPiP && !currentRoom && (
+        <View style={StyleSheet.absoluteFill}>
+          <PiPFloatingBar />
+        </View>
+      )}
+    </View>
   );
 }

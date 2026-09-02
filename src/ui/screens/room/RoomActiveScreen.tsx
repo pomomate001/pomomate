@@ -15,13 +15,12 @@ import { RoomViewToggles } from './features/RoomViewToggles';
 import { RoomBottomBar } from './RoomBottomBar';
 import { RoomInviteSheet } from './RoomInviteSheet';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
-import { useRoomStore, useUserStore, useTaskStore, useTimerStore } from '../../../state';
+import { useRoomStore, useUserStore, useTaskStore } from '../../../state';
 import { mediaService } from '../../../services/mobile/media/MediaService';
 import { permissionManager } from '../../../services/mobile/permissions/PermissionManager';
 import { pipService } from '../../../services/mobile/pip/PiPService';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
-import { formatDuration } from '../../../core/pomodoro';
 import { useTranslation } from '../../../i18n';
 import { RoomClient } from '../../../services/webrtc/RoomClient';
 import { supabase } from '../../../services/auth/supabaseClient';
@@ -38,13 +37,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [screenShareOn, setScreenShareOn] = useState(false);
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteScreenSharer, setRemoteScreenSharer] = useState<{ userId: string; userName: string } | null>(null);
   const [showAddTask, setShowAddTask] = useState(false);
   const [isScreenShrunk, setIsScreenShrunk] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [isInPiP, setIsInPiP] = useState(false);
-  const remainingSeconds = useTimerStore((s) => s.remainingSeconds);
-  const isTimerRunning = useTimerStore((s) => s.isRunning);
-  const timerMode = useTimerStore((s) => s.mode);
 
   // Detect PiP mode changes via native listener & AppState
   useEffect(() => {
@@ -138,6 +135,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           delete next[peerId];
           return next;
         });
+        setRemoteScreenSharer((prev) => (prev?.userId === peerId ? null : prev));
       }
     });
     
@@ -223,6 +221,45 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     };
   }, [roomId, isHost, micOn, camOn]);
 
+  // Synchronize screen share status across all room participants
+  useEffect(() => {
+    if (!roomId) return;
+    const channel = supabase.channel(`room_screen_${roomId}`, {
+      config: { broadcast: { ack: false } },
+    });
+
+    channel
+      .on('broadcast', { event: 'screen_share_status' }, ({ payload }) => {
+        if (payload) {
+          if (payload.isSharing && payload.userId !== user?.id) {
+            setRemoteScreenSharer({
+              userId: payload.userId,
+              userName: payload.userName || 'Katılımcı',
+            });
+            // Auto open the large presentation panel for viewers
+            if (!viewToggles.screen) {
+              toggleView('screen');
+            }
+          } else if (!payload.isSharing && payload.userId !== user?.id) {
+            setRemoteScreenSharer((prev) => (prev?.userId === payload.userId ? null : prev));
+          }
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId, user?.id, viewToggles.screen, toggleView]);
+
+  const activeScreenStream = screenShareOn
+    ? screenStream
+    : remoteScreenSharer
+    ? remoteStreams[remoteScreenSharer.userId] || null
+    : null;
+
+  const isAnyScreenSharing = screenShareOn || (!!remoteScreenSharer && !!activeScreenStream);
+
   const participants = [
     {
       userId: user?.id ?? 'my-user',
@@ -233,15 +270,18 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       stream: camOn ? localStream : null,
       isLocal: true,
     },
-    ...members.map((m) => ({
-      userId: m.userId,
-      displayName: m.userId.slice(0, 6),
-      avatarUrl: undefined,
-      hasCamera: !!remoteStreams[m.userId],
-      hasMic: false, // We'd need signaling state to know for sure, but assume false unless speaking
-      stream: remoteStreams[m.userId] || null,
-      isLocal: false,
-    })),
+    ...members.map((m) => {
+      const isPresentingScreen = remoteScreenSharer?.userId === m.userId;
+      return {
+        userId: m.userId,
+        displayName: m.userId.slice(0, 6),
+        avatarUrl: undefined,
+        hasCamera: !isPresentingScreen && !!remoteStreams[m.userId],
+        hasMic: false,
+        stream: isPresentingScreen ? null : remoteStreams[m.userId] || null,
+        isLocal: false,
+      };
+    }),
   ];
 
   /* ─── Media Handlers ─── */
@@ -352,6 +392,18 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         if (stream) {
           setScreenShareOn(true);
           setScreenStream(stream);
+
+          // Broadcast to all participants that host is sharing screen
+          const channel = supabase.channel(`room_screen_${roomId}`);
+          channel.send({
+            type: 'broadcast',
+            event: 'screen_share_status',
+            payload: {
+              userId: user?.id,
+              userName: user?.displayName || 'Host',
+              isSharing: true,
+            },
+          });
           
           const videoTrack = stream.getVideoTracks()[0];
           if (videoTrack) {
@@ -359,6 +411,15 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
               setScreenShareOn(false);
               setScreenStream(null);
               setIsScreenShrunk(false); // Reset shrink when screen ends
+              const ch = supabase.channel(`room_screen_${roomId}`);
+              ch.send({
+                type: 'broadcast',
+                event: 'screen_share_status',
+                payload: {
+                  userId: user?.id,
+                  isSharing: false,
+                },
+              });
             };
           }
           if (!viewToggles.screen) {
@@ -372,15 +433,25 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       }
     } else {
       if (roomClientRef.current) {
-         roomClientRef.current.stopMedia(); // or separate method if screen is different track
+         roomClientRef.current.stopMedia();
       } else {
          mediaService.stopUserMedia();
       }
       setScreenShareOn(false);
       setScreenStream(null);
       setIsScreenShrunk(false);
+
+      const channel = supabase.channel(`room_screen_${roomId}`);
+      channel.send({
+        type: 'broadcast',
+        event: 'screen_share_status',
+        payload: {
+          userId: user?.id,
+          isSharing: false,
+        },
+      });
     }
-  }, [screenShareOn, isHost, viewToggles.screen, toggleView, t]);
+  }, [screenShareOn, isHost, viewToggles.screen, toggleView, t, roomId, user]);
 
   /* ─── Share Handler ─── */
 
@@ -470,47 +541,42 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const activeSharedFile = sharedFiles.find(f => f.id === activeSharedFileId) || null;
 
-  /* ─── PiP Compact View (Dynamic Island Mini Floating Bar) ─── */
+  /* ─── PiP Compact View (Mini Floating Bar: Only Mic, Cam, Screen Share) ─── */
   if (isInPiP) {
-    const formattedTime = formatDuration(remainingSeconds);
-    const modeLabel = timerMode === 'work' ? 'Odak' : timerMode === 'shortBreak' ? 'Kısa Mola' : 'Uzun Mola';
-    const modeColor = timerMode === 'work' ? '#A855F7' : '#22C55E';
-
     return (
       <View style={styles.pipContainer}>
-        <View style={styles.pipHeaderRow}>
-          <View style={[styles.pipModeBadge, { backgroundColor: `${modeColor}30`, borderColor: modeColor }]}>
-            <View style={[styles.pipDot, { backgroundColor: isTimerRunning ? '#22C55E' : '#EAB308' }]} />
-            <Text style={[styles.pipModeText, { color: modeColor }]}>{modeLabel}</Text>
+        <View style={styles.pipBar}>
+          {/* Left: Room Badge / Live Dot */}
+          <View style={styles.pipLiveBadge}>
+            <View style={styles.pipLiveDot} />
+            <Text style={styles.pipLiveText} numberOfLines={1}>
+              {room?.name || 'Canlı Oda'}
+            </Text>
           </View>
-          <Text style={styles.pipTimerText}>{formattedTime}</Text>
-        </View>
 
-        <View style={styles.pipControls}>
-          <Pressable
-            style={[styles.pipButton, micOn && styles.pipButtonActive]}
-            onPress={handleToggleMic}
-          >
-            <Ionicons name={micOn ? 'mic' : 'mic-off'} size={18} color="#FFF" />
-          </Pressable>
-          <Pressable
-            style={[styles.pipButton, camOn && styles.pipButtonActive]}
-            onPress={handleToggleCam}
-          >
-            <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={18} color="#FFF" />
-          </Pressable>
-          <Pressable
-            style={[styles.pipButton, screenShareOn && { backgroundColor: '#A855F7' }]}
-            onPress={handleToggleScreen}
-          >
-            <Ionicons name={screenShareOn ? 'desktop' : 'desktop-outline'} size={18} color="#FFF" />
-          </Pressable>
-          <Pressable
-            style={[styles.pipButton, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
-            onPress={() => setIsInPiP(false)}
-          >
-            <Ionicons name="expand" size={18} color="#FFF" />
-          </Pressable>
+          {/* Right: Camera, Mic, Screen Share Controls */}
+          <View style={styles.pipControls}>
+            <Pressable
+              style={[styles.pipButton, micOn ? styles.pipBtnActiveGreen : styles.pipBtnInactive]}
+              onPress={handleToggleMic}
+            >
+              <Ionicons name={micOn ? 'mic' : 'mic-off'} size={18} color="#FFF" />
+            </Pressable>
+
+            <Pressable
+              style={[styles.pipButton, camOn ? styles.pipBtnActiveGreen : styles.pipBtnInactive]}
+              onPress={handleToggleCam}
+            >
+              <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={18} color="#FFF" />
+            </Pressable>
+
+            <Pressable
+              style={[styles.pipButton, screenShareOn ? styles.pipBtnActivePurple : styles.pipBtnInactive]}
+              onPress={handleToggleScreen}
+            >
+              <Ionicons name={screenShareOn ? 'desktop' : 'desktop-outline'} size={18} color="#FFF" />
+            </Pressable>
+          </View>
         </View>
       </View>
     );
@@ -587,8 +653,9 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           >
             <RoomScreenPanel
               sharedFile={activeSharedFile}
-              isScreenSharing={screenShareOn}
-              screenStream={screenStream}
+              isScreenSharing={isAnyScreenSharing}
+              screenStream={activeScreenStream}
+              presenterName={remoteScreenSharer ? remoteScreenSharer.userName : undefined}
               isHost={isHost}
               allowFiles={roomSettings.allowFiles}
               onPickFile={handlePickFile}
@@ -596,7 +663,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
                 if (activeSharedFile) handleRemoveFile(activeSharedFile.id);
               }}
               onEnterPiP={handleEnterPiP}
-              onStopScreenShare={handleToggleScreen}
+              onStopScreenShare={screenShareOn ? handleToggleScreen : undefined}
             />
           </View>
         )}
@@ -696,55 +763,62 @@ const styles = StyleSheet.create({
   /* ─── PiP compact view styles ─── */
   pipContainer: {
     flex: 1,
-    backgroundColor: '#0F0F1A',
+    backgroundColor: '#0D0D14',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    gap: 8,
+    padding: 6,
   },
-  pipHeaderRow: {
+  pipBar: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#181824',
+    borderRadius: 22,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(168, 85, 247, 0.3)',
+    elevation: 8,
   },
-  pipModeBadge: {
+  pipLiveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 4,
+    gap: 6,
+    flex: 1,
+    marginRight: 8,
   },
-  pipDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  pipLiveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22C55E',
   },
-  pipModeText: {
-    fontSize: 10,
+  pipLiveText: {
+    color: '#FFF',
+    fontSize: 13,
     fontWeight: '700',
-  },
-  pipTimerText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
   },
   pipControls: {
     flexDirection: 'row',
-    gap: 10,
+    alignItems: 'center',
+    gap: 8,
   },
   pipButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pipButtonActive: {
+  pipBtnActiveGreen: {
     backgroundColor: '#22C55E',
+  },
+  pipBtnActivePurple: {
+    backgroundColor: '#A855F7',
+  },
+  pipBtnInactive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   /* ─── Mini Mod floating button ─── */
   miniModButton: {
