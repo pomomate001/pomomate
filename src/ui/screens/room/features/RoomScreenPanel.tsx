@@ -7,7 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import type { MediaStream } from 'react-native-webrtc';
+import { RTCView, type MediaStream } from 'react-native-webrtc';
 
 interface SharedFile {
   id: string;
@@ -149,39 +149,54 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   });
 
   if (isScreenSharing) {
+    const streamURL = screenStream && screenStream.toURL ? screenStream.toURL() : null;
+
     return (
-      <View style={styles.broadcastContainer}>
-        {/* Top Live Pill */}
-        <View style={styles.liveBadge}>
-          <View style={styles.liveDot} />
-          <Text style={styles.liveText}>CANLI EKRAN YAYINI</Text>
-        </View>
+      <View style={[styles.broadcastContainer, streamURL ? { padding: 0 } : {}]}>
+        {streamURL ? (
+          <RTCView
+            streamURL={streamURL}
+            style={StyleSheet.absoluteFill}
+            objectFit="contain"
+          />
+        ) : (
+          <View style={styles.broadcastIconBox}>
+            <Ionicons name="desktop" size={54} color="#A855F7" />
+          </View>
+        )}
 
-        {/* Central Icon & Information */}
-        <View style={styles.broadcastIconBox}>
-          <Ionicons name="desktop" size={54} color="#A855F7" />
-        </View>
+        <View style={[styles.broadcastOverlay, streamURL ? { backgroundColor: 'transparent', justifyContent: 'flex-end', paddingBottom: 40 } : {}]}>
+          {/* Top Live Pill */}
+          <View style={[styles.liveBadge, streamURL ? { position: 'absolute', top: 20 } : {}]}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>CANLI EKRAN YAYINI</Text>
+          </View>
 
-        <Text style={styles.broadcastTitle}>Ekranınız Odaya Paylaşılıyor</Text>
-        <Text style={styles.broadcastDesc}>
-          Katılımcılar şu anda ekranınızı canlı olarak izliyor. Uygulamayı arka plana aldığınızda ekran paylaşımı devam eder.
-        </Text>
-
-        {/* Action Controls */}
-        <View style={styles.broadcastActions}>
-          {onEnterPiP && (
-            <Pressable style={styles.pipActionBtn} onPress={onEnterPiP}>
-              <Ionicons name="contract-outline" size={20} color="#FFF" />
-              <Text style={styles.pipActionBtnText}>Mini Moda Geç (Dinamik Ada)</Text>
-            </Pressable>
+          {!streamURL && (
+            <>
+              <Text style={styles.broadcastTitle}>Ekranınız Odaya Paylaşılıyor</Text>
+              <Text style={styles.broadcastDesc}>
+                Katılımcılar şu anda ekranınızı canlı olarak izliyor. Uygulamayı arka plana aldığınızda ekran paylaşımı devam eder.
+              </Text>
+            </>
           )}
 
-          {onStopScreenShare && (
-            <Pressable style={styles.stopActionBtn} onPress={onStopScreenShare}>
-              <Ionicons name="stop-circle-outline" size={20} color="#FF4D4D" />
-              <Text style={styles.stopActionBtnText}>Ekran Paylaşımını Durdur</Text>
-            </Pressable>
-          )}
+          {/* Action Controls */}
+          <View style={styles.broadcastActions}>
+            {onEnterPiP && (
+              <Pressable style={styles.pipActionBtn} onPress={onEnterPiP}>
+                <Ionicons name="contract-outline" size={20} color="#FFF" />
+                <Text style={styles.pipActionBtnText}>Mini Moda Geç (Dinamik Ada)</Text>
+              </Pressable>
+            )}
+
+            {onStopScreenShare && (
+              <Pressable style={styles.stopActionBtn} onPress={onStopScreenShare}>
+                <Ionicons name="stop-circle-outline" size={20} color="#FF4D4D" />
+                <Text style={styles.stopActionBtnText}>Ekran Paylaşımını Durdur</Text>
+              </Pressable>
+            )}
+          </View>
         </View>
       </View>
     );
@@ -272,6 +287,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
     backgroundColor: 'rgba(18, 18, 28, 0.95)',
+  },
+  broadcastOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(18, 18, 28, 0.7)',
+    padding: 24,
   },
   liveBadge: {
     flexDirection: 'row',

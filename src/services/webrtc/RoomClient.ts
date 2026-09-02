@@ -113,10 +113,11 @@ export class RoomClient {
 
   async enableAudioVideo(audio: boolean, video: boolean): Promise<MediaStream | null> {
     try {
-      // On native, we use MediaService for permission handling
-      // On web, we use navigator.mediaDevices directly
-      const stream = await navigator.mediaDevices.getUserMedia({ audio, video });
-      this.peerManager.setLocalStream(stream);
+      const { mediaService } = require('../../../services/mobile/media/MediaService');
+      const stream = await mediaService.getUserMedia({ audio, video });
+      if (stream) {
+        this.peerManager.setLocalStream(stream);
+      }
       return stream;
     } catch (err) {
       logger.warn('[RoomClient] Failed to get media:', err);
@@ -126,8 +127,11 @@ export class RoomClient {
 
   async enableScreenShare(): Promise<MediaStream | null> {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-      this.peerManager.setLocalStream(stream);
+      const { mediaService } = require('../../../services/mobile/media/MediaService');
+      const stream = await mediaService.getDisplayMedia();
+      if (stream) {
+        this.peerManager.setLocalStream(stream);
+      }
       return stream;
     } catch (err) {
       logger.warn('[RoomClient] Failed to get screen share:', err);
@@ -136,6 +140,8 @@ export class RoomClient {
   }
 
   stopMedia(): void {
+    const { mediaService } = require('../../../services/mobile/media/MediaService');
+    mediaService.stopUserMedia();
     this.peerManager.setLocalStream(null);
   }
 

@@ -100,15 +100,6 @@ export const RoomViewToggles: React.FC<RoomViewTogglesProps> = ({
         isActive={viewToggles.cameras}
         onPress={() => onToggle('cameras')}
       />
-      {onEnterPiP && (
-        <ToggleButton
-          icon="contract"
-          iconOutline="contract-outline"
-          color="#A855F7"
-          isActive={false}
-          onPress={onEnterPiP}
-        />
-      )}
       {showShrinkToggle && onToggleShrink && (
         <ToggleButton
           icon="expand"

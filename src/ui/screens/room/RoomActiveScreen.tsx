@@ -63,6 +63,38 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     };
   }, []);
 
+  const [remoteStreams, setRemoteStreams] = useState<Record<string, MediaStream>>({});
+  const roomClientRef = React.useRef<any>(null);
+
+  useEffect(() => {
+    if (!roomId || !user) return;
+    
+    // Lazy import to avoid circular dependency issues
+    const { RoomClient } = require('../../../services/webrtc/RoomClient');
+    const signalingUrl = process.env.EXPO_PUBLIC_WEBRTC_SIGNALING_URL || 'wss://api.pomomate.app/ws/signaling';
+    
+    const client = new RoomClient({
+      signalingUrl,
+      token: 'temp-token',
+      roomId,
+      userId: user.id,
+      isHost: !room?.hostId || room.hostId === user.id
+    });
+    
+    roomClientRef.current = client;
+    client.connect();
+    
+    const cleanupStream = client.onRemoteStream((peerId: string, stream: MediaStream) => {
+      setRemoteStreams(prev => ({ ...prev, [peerId]: stream }));
+    });
+    
+    return () => {
+      cleanupStream();
+      client.disconnect();
+      roomClientRef.current = null;
+    };
+  }, [roomId, user?.id, room?.hostId]);
+
   const handleEnterPiP = useCallback(async () => {
     const supported = await pipService.isPiPSupported();
     if (!supported) {
@@ -108,9 +140,9 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       userId: m.userId,
       displayName: m.userId.slice(0, 6),
       avatarUrl: undefined,
-      hasCamera: false,
-      hasMic: false,
-      stream: null,
+      hasCamera: !!remoteStreams[m.userId],
+      hasMic: false, // We'd need signaling state to know for sure, but assume false unless speaking
+      stream: remoteStreams[m.userId] || null,
       isLocal: false,
     })),
   ];
@@ -124,7 +156,13 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     }
 
     if (!micOn) {
-      const stream = await mediaService.getUserMedia({ audio: true, video: camOn });
+      let stream = null;
+      if (roomClientRef.current) {
+        stream = await roomClientRef.current.enableAudioVideo(true, camOn);
+      } else {
+        stream = await mediaService.getUserMedia({ audio: true, video: camOn });
+      }
+      
       if (stream) {
         setMicOn(true);
         if (camOn) setLocalStream(stream);
@@ -133,10 +171,19 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       }
     } else {
       if (camOn) {
-        const stream = await mediaService.getUserMedia({ audio: false, video: true });
+        let stream = null;
+        if (roomClientRef.current) {
+           stream = await roomClientRef.current.enableAudioVideo(false, true);
+        } else {
+           stream = await mediaService.getUserMedia({ audio: false, video: true });
+        }
         if (stream) setLocalStream(stream);
       } else {
-        mediaService.stopUserMedia();
+        if (roomClientRef.current) {
+           roomClientRef.current.stopMedia();
+        } else {
+           mediaService.stopUserMedia();
+        }
         setLocalStream(null);
       }
       setMicOn(false);
@@ -150,7 +197,12 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     }
 
     if (!camOn) {
-      const stream = await mediaService.getUserMedia({ audio: micOn, video: true });
+      let stream = null;
+      if (roomClientRef.current) {
+        stream = await roomClientRef.current.enableAudioVideo(micOn, true);
+      } else {
+        stream = await mediaService.getUserMedia({ audio: micOn, video: true });
+      }
       if (stream) {
         setCamOn(true);
         setLocalStream(stream);
@@ -163,9 +215,17 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       }
     } else {
       if (micOn) {
-        await mediaService.getUserMedia({ audio: true, video: false });
+        if (roomClientRef.current) {
+          await roomClientRef.current.enableAudioVideo(true, false);
+        } else {
+          await mediaService.getUserMedia({ audio: true, video: false });
+        }
       } else {
-        mediaService.stopUserMedia();
+        if (roomClientRef.current) {
+          roomClientRef.current.stopMedia();
+        } else {
+          mediaService.stopUserMedia();
+        }
       }
       setCamOn(false);
       setLocalStream(null);
@@ -185,7 +245,13 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           await permissionManager.requestNotifications();
         }
         
-        const stream = await mediaService.getDisplayMedia();
+        let stream = null;
+        if (roomClientRef.current) {
+           stream = await roomClientRef.current.enableScreenShare();
+        } else {
+           stream = await mediaService.getDisplayMedia();
+        }
+        
         if (stream) {
           setScreenShareOn(true);
           setScreenStream(stream);
@@ -201,6 +267,12 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           if (!viewToggles.screen) {
             toggleView('screen');
           }
+          
+          // Enter PiP mode automatically upon starting screen share
+          const supported = await pipService.isPiPSupported();
+          if (supported) {
+            await pipService.enterPiP();
+          }
         } else {
           Alert.alert(t('rooms.screenShareTitle'), t('rooms.screenShareError'));
         }
@@ -208,6 +280,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         Alert.alert(t('rooms.screenShareTitle'), t('rooms.screenShareError'));
       }
     } else {
+      if (roomClientRef.current) {
+         roomClientRef.current.stopMedia(); // or separate method if screen is different track
+      } else {
+         mediaService.stopUserMedia();
+      }
       setScreenShareOn(false);
       setScreenStream(null);
       setIsScreenShrunk(false);
