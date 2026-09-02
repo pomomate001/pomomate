@@ -161,6 +161,7 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
             style={StyleSheet.absoluteFill}
             objectFit="contain"
             mirror={false}
+            zOrder={0}
           />
         ) : (
           <View style={styles.broadcastIconBox}>

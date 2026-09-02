@@ -125,7 +125,7 @@ export class PeerManager {
 
       for (const track of stream.getTracks()) {
         const kind = track.kind;
-        const sender = senders.find((s) => s.track && s.track.kind === kind);
+        let sender = senders.find((s) => s.track && s.track.kind === kind);
         if (sender) {
           try {
             await sender.replaceTrack(track);
@@ -134,17 +134,42 @@ export class PeerManager {
           }
         } else {
           try {
-            peer.connection.addTrack(track, stream);
+            sender = peer.connection.addTrack(track, stream);
             renegotiateNeeded = true;
           } catch (e) {
             logger.warn('[PeerManager] addTrack error:', e);
           }
+        }
+
+        if (kind === 'video' && sender) {
+          await this.optimizeVideoSender(sender);
         }
       }
 
       if (renegotiateNeeded) {
         await this.renegotiatePeer(peer);
       }
+    }
+  }
+
+  private async optimizeVideoSender(sender: any): Promise<void> {
+    if (!sender || typeof sender.getParameters !== 'function') return;
+    try {
+      const params = sender.getParameters();
+      if (!params.encodings || params.encodings.length === 0) {
+        params.encodings = [{}];
+      }
+      // 1.5 Mbps bitrate cap (prevents bandwidth spikes, packet loss & thermal throttling)
+      params.encodings[0].maxBitrate = 1500000;
+      // Cap at 24 fps for smooth rendering without GPU overheating
+      params.encodings[0].maxFramerate = 24;
+      // Crucial for screen sharing: preserve text crispness during network jitter
+      (params as any).degradationPreference = 'maintain-resolution';
+      if (typeof sender.setParameters === 'function') {
+        await sender.setParameters(params);
+      }
+    } catch {
+      // Platform may gracefully ignore custom params
     }
   }
 
@@ -253,7 +278,10 @@ export class PeerManager {
     if (this.localStream) {
       for (const track of this.localStream.getTracks()) {
         try {
-          connection.addTrack(track, this.localStream);
+          const sender = connection.addTrack(track, this.localStream);
+          if (track.kind === 'video' && sender) {
+            void this.optimizeVideoSender(sender);
+          }
         } catch (err) {
           logger.warn('[PeerManager] Error adding track to connection:', err);
         }

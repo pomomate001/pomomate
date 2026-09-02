@@ -102,7 +102,7 @@ export class MediaService {
         video: {
           width: { ideal: 720, max: 1080 },
           height: { ideal: 1280, max: 1920 },
-          frameRate: { ideal: 24, max: 30 },
+          frameRate: { ideal: 20, max: 24 },
         },
       };
 
@@ -112,7 +112,7 @@ export class MediaService {
         // Use optimized constraints for mobile to avoid CPU lag & stutter
         stream = (await mediaDevices.getDisplayMedia(screenConstraints as any)) as unknown as MediaStream;
       }
-      logger.info('[Media] Screen display media acquired successfully (optimized 720p/24fps)');
+      logger.info('[Media] Screen display media acquired successfully (optimized 720p/20-24fps)');
       return stream;
     } catch (err) {
       logger.warn('[Media] Failed to get display media:', err);
