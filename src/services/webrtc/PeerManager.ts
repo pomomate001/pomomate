@@ -100,25 +100,60 @@ export class PeerManager {
   }
 
   /** Set the local media stream (audio/video). */
-  setLocalStream(stream: MediaStream | null): void {
+  async setLocalStream(stream: MediaStream | null): Promise<void> {
     this.localStream = stream;
-    // Replace tracks or add them to existing connections
-    if (stream) {
+    if (!stream) {
       for (const peer of this.peers.values()) {
         const senders = peer.connection.getSenders();
-        for (const track of stream.getTracks()) {
-          const kind = track.kind;
-          const sender = senders.find((s) => s.track && s.track.kind === kind);
-          if (sender) {
-            if (sender.track && sender.track !== track) {
-              sender.track.stop();
-            }
-            sender.replaceTrack(track);
-          } else {
+        for (const s of senders) {
+          if (s.track) s.track.stop();
+        }
+      }
+      return;
+    }
+
+    for (const peer of this.peers.values()) {
+      const senders = peer.connection.getSenders();
+      let renegotiateNeeded = false;
+
+      for (const track of stream.getTracks()) {
+        const kind = track.kind;
+        const sender = senders.find((s) => s.track && s.track.kind === kind);
+        if (sender) {
+          try {
+            await sender.replaceTrack(track);
+          } catch (e) {
+            logger.warn('[PeerManager] replaceTrack error:', e);
+          }
+        } else {
+          try {
             peer.connection.addTrack(track, stream);
+            renegotiateNeeded = true;
+          } catch (e) {
+            logger.warn('[PeerManager] addTrack error:', e);
           }
         }
       }
+
+      if (renegotiateNeeded) {
+        await this.renegotiatePeer(peer);
+      }
+    }
+  }
+
+  private async renegotiatePeer(peer: PeerInfo): Promise<void> {
+    try {
+      const offer = await peer.connection.createOffer({});
+      await peer.connection.setLocalDescription(offer);
+      this.signaling.send({
+        type: 'offer',
+        roomId: this.roomId,
+        userId: this.localUserId,
+        targetUserId: peer.userId,
+        payload: offer,
+      });
+    } catch (err) {
+      logger.warn('[PeerManager] Renegotiation failed:', err);
     }
   }
 
@@ -146,11 +181,13 @@ export class PeerManager {
 
   private async handleSignalingMessage(msg: SignalingMessage): Promise<void> {
     if (msg.roomId !== this.roomId) return;
+    if (msg.userId === this.localUserId) return; // Prevent self-broadcast loopback
+    if (msg.targetUserId && msg.targetUserId !== this.localUserId) return; // Ignore messages intended for others
 
     switch (msg.type) {
       case 'join':
         if (msg.userId && msg.userId !== this.localUserId) {
-          // New peer joined — initiate connection (if host, or for mesh)
+          // New peer joined — initiate connection
           await this.createPeerConnection(msg.userId, true);
         }
         break;
@@ -195,6 +232,17 @@ export class PeerManager {
 
     this.notifyStateChange(userId, 'connecting');
 
+    // Attach local media stream tracks (camera/mic/screen) immediately
+    if (this.localStream) {
+      for (const track of this.localStream.getTracks()) {
+        try {
+          connection.addTrack(track, this.localStream);
+        } catch (err) {
+          logger.warn('[PeerManager] Error adding track to connection:', err);
+        }
+      }
+    }
+
     // ICE candidates
     connection.onicecandidate = (e: any) => {
       if (e.candidate) {
@@ -226,8 +274,8 @@ export class PeerManager {
       }
     };
 
-    // Data Channel (Host creates it)
-    if (this.isHost && createOffer) {
+    // Data Channel (Initiator creates it)
+    if (createOffer) {
       const dc = connection.createDataChannel('pomo-sync');
       peerInfo.dataChannel = dc as any;
       this.setupDataChannel(dc, userId);

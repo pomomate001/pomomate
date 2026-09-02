@@ -1,10 +1,11 @@
 /**
  * Room feature: Chat with sender name, date, and message deletion.
  */
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useChatStore, useUserStore, useRoomStore } from '../../../../state';
+import { supabase } from '../../../../services/auth/supabaseClient';
 import { useColors } from '../../../theme';
 import { typography } from '../../../theme/typography';
 import { spacing } from '../../../theme/spacing';
@@ -36,6 +37,30 @@ export function RoomChat({ roomId, isHost }: RoomChatProps) {
   const currentUserId = user?.id ?? 'my-user';
   const currentUserName = user?.displayName ?? 'Ben';
 
+  // Listen for incoming chat messages in this room
+  useEffect(() => {
+    if (!roomId) return;
+
+    const channel = supabase.channel(`room_chat_${roomId}`, {
+      config: { broadcast: { ack: false } },
+    });
+
+    channel
+      .on('broadcast', { event: 'new_msg' }, ({ payload }) => {
+        if (payload && payload.id && payload.userId !== currentUserId) {
+          addMessage(payload as Message);
+          setTimeout(() => {
+            listRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId, currentUserId, addMessage]);
+
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -51,6 +76,15 @@ export function RoomChat({ roomId, isHost }: RoomChatProps) {
 
     addMessage(msg);
     setText('');
+
+    // Broadcast to all room peers in real-time
+    const channel = supabase.channel(`room_chat_${roomId}`);
+    channel.send({
+      type: 'broadcast',
+      event: 'new_msg',
+      payload: msg,
+    });
+
     setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: true });
     }, 100);

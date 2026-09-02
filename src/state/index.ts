@@ -12,3 +12,4 @@ export { useFriendsStore } from './friendsStore';
 export type { FriendSummary, FriendRequest, FriendRequestStatus } from './friendsStore';
 export { useTagStore } from './tagStore';
 export { useBuddyStore } from './buddyStore';
+export { usePiPStore } from './pipStore';

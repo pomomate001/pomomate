@@ -276,12 +276,6 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           if (!viewToggles.screen) {
             toggleView('screen');
           }
-          
-          // Enter PiP mode automatically upon starting screen share
-          const supported = await pipService.isPiPSupported();
-          if (supported) {
-            await pipService.enterPiP();
-          }
         } else {
           Alert.alert(t('rooms.screenShareTitle'), t('rooms.screenShareError'));
         }

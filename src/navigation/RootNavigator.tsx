@@ -12,9 +12,10 @@ import { TimerStack, StatsStack, RoomStack, ProfileStack } from './stacks';
 import { AuthNavigator } from './AuthNavigator';
 import { UpdatePasswordModal } from '../ui/screens/auth';
 import type { RootTabParamList } from './types';
-import { useUserStore, useFriendsStore } from '../state';
+import { useUserStore, useFriendsStore, usePiPStore } from '../state';
 import { authService, supabase } from '../services/auth';
 import { countryService } from '../services/location/CountryService';
+import { PiPFloatingBar } from '../ui/screens/pip/PiPFloatingBar';
 import { useTranslation } from '../i18n';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -126,6 +127,12 @@ export function RootNavigator() {
       authListener.subscription.unsubscribe();
     };
   }, [setUser]);
+
+  const isInPiP = usePiPStore((state) => state.isInPiP);
+
+  if (isInPiP) {
+    return <PiPFloatingBar />;
+  }
 
   if (!user) {
     return <AuthNavigator />;

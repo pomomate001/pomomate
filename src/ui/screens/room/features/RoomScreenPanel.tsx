@@ -166,7 +166,7 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
           </View>
         )}
 
-        <View style={styles.broadcastOverlay}>
+        <View style={[styles.broadcastOverlay, streamUrl ? styles.broadcastOverlayActive : null]}>
           {/* Top Live Pill */}
           <View style={styles.liveBadge}>
             <View style={styles.liveDot} />
@@ -174,26 +174,22 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
           </View>
 
           {!streamUrl && (
-            <>
+            <View style={{ alignItems: 'center' }}>
+              <View style={styles.broadcastIconBox}>
+                <Ionicons name="desktop" size={54} color="#A855F7" />
+              </View>
               <Text style={styles.broadcastTitle}>Ekranınız Odaya Paylaşılıyor</Text>
               <Text style={styles.broadcastDesc}>
-                Katılımcılar şu anda ekranınızı canlı olarak izliyor. Uygulamayı arka plana aldığınızda ekran paylaşımı devam eder.
+                Katılımcılar şu anda ekranınızı canlı olarak izliyor.
               </Text>
-            </>
+            </View>
           )}
 
-          {/* Action Controls */}
-          <View style={styles.broadcastActions}>
-            {onEnterPiP && (
-              <Pressable style={styles.pipActionBtn} onPress={onEnterPiP}>
-                <Ionicons name="contract-outline" size={20} color="#FFF" />
-                <Text style={styles.pipActionBtnText}>Mini Moda Geç</Text>
-              </Pressable>
-            )}
-
+          {/* Action Controls - Positioned at bottom */}
+          <View style={styles.broadcastActionsBottom}>
             {onStopScreenShare && (
               <Pressable style={styles.stopActionBtn} onPress={onStopScreenShare}>
-                <Ionicons name="stop-circle-outline" size={20} color="#FF4D4D" />
+                <Ionicons name="stop-circle-outline" size={18} color="#FF4D4D" />
                 <Text style={styles.stopActionBtnText}>Ekran Paylaşımını Durdur</Text>
               </Pressable>
             )}
@@ -347,30 +343,16 @@ const styles = StyleSheet.create({
     maxWidth: 280,
     marginBottom: 24,
   },
-  broadcastActions: {
+  broadcastOverlayActive: {
+    justifyContent: 'space-between',
+    backgroundColor: 'transparent',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+  },
+  broadcastActionsBottom: {
     width: '100%',
-    maxWidth: 280,
-    gap: 10,
-  },
-  pipActionBtn: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#9333EA',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    gap: 8,
-    shadowColor: '#9333EA',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  pipActionBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
+    marginBottom: 8,
   },
   stopActionBtn: {
     flexDirection: 'row',

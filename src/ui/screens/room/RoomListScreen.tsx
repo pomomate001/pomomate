@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +13,7 @@ import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { AdPlacement } from '../../ads';
 import { useRoomStore, useUserStore, useSettingsStore } from '../../../state';
+import { roomService, roomInviteService } from '../../../services/room';
 import type { Room } from '../../../types';
 import { useTranslation } from '../../../i18n';
 
@@ -132,6 +134,36 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
   const user = useUserStore((s) => s.user);
   const isPremium = useSettingsStore((s) => s.isPremium);
 
+  const [pendingInvites, setPendingInvites] = useState<
+    {
+      id: string;
+      roomId: string;
+      roomName: string;
+      inviteCode: string;
+      senderName: string;
+    }[]
+  >([]);
+
+  const fetchInvites = useCallback(async () => {
+    if (!user?.id) return;
+    const invites = await roomInviteService.getPendingInvites(user.id);
+    setPendingInvites(invites);
+  }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchInvites();
+    }, [fetchInvites])
+  );
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = roomInviteService.listenForInvites(user.id, () => {
+      fetchInvites();
+    });
+    return () => unsub();
+  }, [user?.id, fetchInvites]);
+
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       {/* Gradient Header */}
@@ -149,6 +181,58 @@ export function RoomListScreen({ onCreateRoom, onJoinRoom, onEnterRoom }: RoomLi
           </Text>
         </View>
       </View>
+
+      {/* Pending Room Invitations */}
+      {pendingInvites.map((inv) => (
+        <View
+          key={inv.id}
+          style={[
+            styles.inviteCard,
+            shadows.md,
+            { backgroundColor: colors.surface, borderColor: colors.primary },
+          ]}
+        >
+          <View style={styles.inviteHeader}>
+            <View style={[styles.inviteIconCircle, { backgroundColor: `${colors.primary}20` }]}>
+              <Ionicons name="mail-unread" size={22} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.captionBold, { color: colors.primary, letterSpacing: 0.8 }]}>
+                ÇALIŞMA ODASI DAVETİ 🎯
+              </Text>
+              <Text style={[typography.bodyBold, { color: colors.textPrimary, marginTop: 2 }]}>
+                {inv.senderName} seni &quot;{inv.roomName}&quot; odasına davet etti!
+              </Text>
+            </View>
+          </View>
+          <View style={styles.inviteActions}>
+            <Pressable
+              style={[styles.inviteRejectBtn, { borderColor: colors.border }]}
+              onPress={async () => {
+                await roomInviteService.respondToInvite(inv.id, 'rejected');
+                setPendingInvites((prev) => prev.filter((i) => i.id !== inv.id));
+              }}
+            >
+              <Text style={[typography.captionBold, { color: colors.textSecondary }]}>Reddet</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.inviteAcceptBtn, { backgroundColor: colors.primary }]}
+              onPress={async () => {
+                await roomInviteService.respondToInvite(inv.id, 'accepted');
+                setPendingInvites((prev) => prev.filter((i) => i.id !== inv.id));
+                const res = await roomService.joinRoom(inv.inviteCode, user?.id || 'guest');
+                if (res.room) {
+                  useRoomStore.getState().addRoom(res.room);
+                  onEnterRoom(res.room.id);
+                }
+              }}
+            >
+              <Ionicons name="log-in-outline" size={18} color="#FFF" style={{ marginRight: 6 }} />
+              <Text style={[typography.captionBold, { color: '#FFF' }]}>Odaya Katıl</Text>
+            </Pressable>
+          </View>
+        </View>
+      ))}
 
       {/* Actions */}
       <View style={styles.actions}>
@@ -295,5 +379,47 @@ const styles = StyleSheet.create({
   },
   deleteBtn: {
     padding: 6,
+  },
+  inviteCard: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    padding: spacing.md,
+  },
+  inviteHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  inviteIconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inviteActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+  },
+  inviteRejectBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inviteAcceptBtn: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

@@ -81,7 +81,7 @@ class MainActivity : ReactActivity() {
   fun enterPiPMode() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val builder = PictureInPictureParams.Builder()
-        .setAspectRatio(Rational(16, 9))
+        .setAspectRatio(Rational(239, 100))
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         builder.setAutoEnterEnabled(autoPiPEnabled)
       }
@@ -92,7 +92,7 @@ class MainActivity : ReactActivity() {
   fun updateAutoPiP(enabled: Boolean) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
       val params = PictureInPictureParams.Builder()
-        .setAspectRatio(Rational(16, 9))
+        .setAspectRatio(Rational(239, 100))
         .setAutoEnterEnabled(enabled)
         .build()
       setPictureInPictureParams(params)

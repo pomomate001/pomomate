@@ -32,20 +32,29 @@ export class RoomInviteService {
     sender: { id: string; displayName: string; avatarUrl?: string | null }
   ): Promise<boolean> {
     try {
-      const channelName = `room-invite-${friendId}`;
-      const channel = supabase.channel(channelName, {
-        config: { broadcast: { ack: true } },
+      // 1. Save to Supabase room_invitations table for persistent notifications
+      await supabase.from('room_invitations').insert({
+        room_id: room.id,
+        room_name: room.name,
+        invite_code: room.inviteCode,
+        sender_id: sender.id,
+        sender_name: sender.displayName || 'Bir arkadaşın',
+        receiver_id: friendId,
+        status: 'pending',
       });
 
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => resolve(), 3000);
+      // 2. Broadcast via Realtime channel for instant popup
+      const channelName = `room-invite-${friendId}`;
+      const channel = supabase.channel(channelName, {
+        config: { broadcast: { ack: false } },
+      });
+
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => resolve(), 2000);
         channel.subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             clearTimeout(timeout);
             resolve();
-          } else if (status === 'CHANNEL_ERROR') {
-            clearTimeout(timeout);
-            reject(new Error('Channel subscription failed'));
           }
         });
       });
@@ -66,16 +75,88 @@ export class RoomInviteService {
         payload,
       });
 
-      // Cleanup sender channel after dispatch
       setTimeout(() => {
         supabase.removeChannel(channel);
-      }, 1000);
+      }, 500);
 
       logger.info(`[RoomInvite] Invite sent to friend ${friendId} for room ${room.inviteCode}`);
       return true;
     } catch (err: any) {
       logger.warn('[RoomInvite] Failed to send room invite:', err?.message || err);
       return false;
+    }
+  }
+
+  /**
+   * Fetch all active pending invitations for the current user.
+   */
+  async getPendingInvites(userId: string): Promise<
+    {
+      id: string;
+      roomId: string;
+      roomName: string;
+      inviteCode: string;
+      senderId: string;
+      senderName: string;
+      createdAt: string;
+    }[]
+  > {
+    if (!userId) return [];
+    try {
+      const { data, error } = await supabase
+        .from('room_invitations')
+        .select('id, room_id, room_name, invite_code, sender_id, sender_name, created_at, rooms!inner(is_active)')
+        .eq('receiver_id', userId)
+        .eq('status', 'pending')
+        .eq('rooms.is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        // Fallback without join if foreign key alias issue
+        const { data: fallbackData } = await supabase
+          .from('room_invitations')
+          .select('id, room_id, room_name, invite_code, sender_id, sender_name, created_at')
+          .eq('receiver_id', userId)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        return (fallbackData || []).map((row: any) => ({
+          id: row.id,
+          roomId: row.room_id,
+          roomName: row.room_name,
+          inviteCode: row.invite_code,
+          senderId: row.sender_id,
+          senderName: row.sender_name,
+          createdAt: row.created_at,
+        }));
+      }
+
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        roomId: row.room_id,
+        roomName: row.room_name,
+        inviteCode: row.invite_code,
+        senderId: row.sender_id,
+        senderName: row.sender_name,
+        createdAt: row.created_at,
+      }));
+    } catch (e) {
+      logger.warn('[RoomInvite] Failed to fetch pending invites:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Accept or reject a room invitation.
+   */
+  async respondToInvite(inviteId: string, status: 'accepted' | 'rejected'): Promise<void> {
+    try {
+      await supabase
+        .from('room_invitations')
+        .update({ status })
+        .eq('id', inviteId);
+    } catch (e) {
+      logger.warn('[RoomInvite] Failed to respond to invite:', e);
     }
   }
 
