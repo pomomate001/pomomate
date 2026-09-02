@@ -60,6 +60,20 @@ export class PiPService {
       return false;
     }
   }
+
+  /**
+   * Enable or disable automatic PiP when leaving the app.
+   */
+  async setAutoPiPEnabled(enabled: boolean): Promise<boolean> {
+    if (Platform.OS !== 'android') return false;
+    if (!PiPModule?.setAutoPiPEnabled) return false;
+
+    try {
+      return await PiPModule.setAutoPiPEnabled(enabled);
+    } catch {
+      return false;
+    }
+  }
 }
 
 export const pipService = new PiPService();

@@ -261,10 +261,10 @@ export const en: TranslationSchema = {
     filePickError: 'Failed to select file.',
     filePickErrorTitle: 'File Selection',
     filePickErrorDesc: 'Failed to select file.',
-    shareRoomMessage: "Let's focus together on PomoMate!\n\nRoom: {name}\nRoom Code: {code}\n\nOpen PomoMate app → \"Join Room\" → Paste code",
+    shareRoomMessage: "Let's focus together on PomoMate!\n\nRoom: {name}\n\nPaste the code below into the \"Join Room\" section in the app:\n\n{code}",
     defaultRoomName: 'Study Room',
     shareMessageTitle: 'PomoMate Study Room',
-    shareMessageBody: "Let's focus together on PomoMate!\n\nRoom: {roomName}\nRoom Code: {inviteCode}\n\nOpen PomoMate app → \"Join Room\" → Paste code",
+    shareMessageBody: "Let's focus together on PomoMate!\n\nRoom: {roomName}\n\nPaste the code below into the \"Join Room\" section in the app:\n\n{inviteCode}",
   },
   profile: {
     title: 'Profile',

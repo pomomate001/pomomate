@@ -261,10 +261,10 @@ export const tr: TranslationSchema = {
     filePickError: 'Dosya seçilemedi.',
     filePickErrorTitle: 'Dosya Seçimi',
     filePickErrorDesc: 'Dosya seçilemedi.',
-    shareRoomMessage: 'PomoMate ile birlikte çalışalım!\n\nOda: {name}\nOda Kodu: {code}\n\nPomoMate uygulamasını aç → "Odaya Katıl" → Kodu yapıştır',
+    shareRoomMessage: 'PomoMate ile birlikte çalışalım!\n\nOda: {name}\n\nUygulamada "Odaya Katıl" bölümüne aşağıdaki kodu yapıştır:\n\n{code}',
     defaultRoomName: 'Çalışma Odası',
     shareMessageTitle: 'PomoMate Çalışma Odası',
-    shareMessageBody: 'PomoMate ile birlikte çalışalım!\n\nOda: {roomName}\nOda Kodu: {inviteCode}\n\nPomoMate uygulamasını aç → "Odaya Katıl" → Kodu yapıştır',
+    shareMessageBody: 'PomoMate ile birlikte çalışalım!\n\nOda: {roomName}\n\nUygulamada "Odaya Katıl" bölümüne aşağıdaki kodu yapıştır:\n\n{inviteCode}',
   },
   profile: {
     title: 'Profil',

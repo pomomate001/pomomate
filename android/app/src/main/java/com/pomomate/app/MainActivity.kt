@@ -21,6 +21,14 @@ class MainActivity : ReactActivity() {
   companion object {
     var instance: MainActivity? = null
     var isInPiPMode: Boolean = false
+    var autoPiPEnabled: Boolean = false
+  }
+
+  override fun onUserLeaveHint() {
+    super.onUserLeaveHint()
+    if (autoPiPEnabled) {
+      enterPiPMode()
+    }
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {

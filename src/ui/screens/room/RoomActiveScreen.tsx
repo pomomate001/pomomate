@@ -49,7 +49,15 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       const inPiP = await pipService.isInPiPMode();
       setIsInPiP(inPiP);
     });
-    return () => sub.remove();
+
+    // Buralara gelince auto PiP modunu aktif ediyoruz,
+    // Çıkınca kapatıyoruz.
+    pipService.setAutoPiPEnabled(true);
+
+    return () => {
+      sub.remove();
+      pipService.setAutoPiPEnabled(false);
+    };
   }, []);
 
   const handleEnterPiP = useCallback(async () => {

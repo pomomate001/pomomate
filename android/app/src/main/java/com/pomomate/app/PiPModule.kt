@@ -42,4 +42,10 @@ class PiPModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMod
   fun isInPiPMode(promise: Promise) {
     promise.resolve(MainActivity.isInPiPMode)
   }
+
+  @ReactMethod
+  fun setAutoPiPEnabled(enabled: Boolean, promise: Promise) {
+    MainActivity.autoPiPEnabled = enabled
+    promise.resolve(true)
+  }
 }
