@@ -20,7 +20,7 @@ class PiPModule(private val reactContext: ReactApplicationContext) : ReactContex
               .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
               ?.emit("onPiPModeChanged", isInPiP)
           }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
       }
     }
@@ -34,7 +34,7 @@ class PiPModule(private val reactContext: ReactApplicationContext) : ReactContex
 
   @ReactMethod
   fun enterPiPMode(promise: Promise) {
-    val activity = currentActivity as? MainActivity
+    val activity = (reactContext.currentActivity ?: MainActivity.instance) as? MainActivity
     if (activity == null) {
       promise.reject("NO_ACTIVITY", "Activity not found")
       return
@@ -68,7 +68,7 @@ class PiPModule(private val reactContext: ReactApplicationContext) : ReactContex
   @ReactMethod
   fun setAutoPiPEnabled(enabled: Boolean, promise: Promise) {
     MainActivity.autoPiPEnabled = enabled
-    val activity = currentActivity as? MainActivity
+    val activity = (reactContext.currentActivity ?: MainActivity.instance) as? MainActivity
     activity?.runOnUiThread {
       activity.updateAutoPiP(enabled)
     }
