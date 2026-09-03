@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, jest } from '@jest/globals';
+import { revenueCatService } from '../RevenueCatService';
 
 jest.mock('react-native', () => ({
   Platform: { OS: 'ios' },
@@ -25,8 +26,6 @@ jest.mock('../../auth/supabaseClient', () => ({
     rpc: jest.fn(),
   },
 }));
-
-import { revenueCatService } from '../RevenueCatService';
 
 describe('RevenueCatService - isUserPro expiration & revocation logic', () => {
   it('returns true when RevenueCat has an active premium entitlement', () => {

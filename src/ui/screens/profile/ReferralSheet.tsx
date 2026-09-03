@@ -48,19 +48,42 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
   const referralCode = stats.myCode || (user?.id ? user.id.slice(0, 8).toUpperCase() : 'POMO-PRO');
   const referralLink = `https://pomomate.app/join?ref=${referralCode}`;
 
+  const [isPremiumActive, setIsPremiumActive] = useState<boolean>(false);
+
   const loadStats = async () => {
     const data = await referralService.getReferralStats();
     setStats(data);
+    if (data.premiumUntil) {
+      setIsPremiumActive(new Date(data.premiumUntil).getTime() > Date.now());
+    } else {
+      setIsPremiumActive(false);
+    }
     if (data.myCode && user && !user.referralCode) {
       updateUser({ referralCode: data.myCode });
     }
   };
 
   useEffect(() => {
-    if (visible) {
-      loadStats();
-    }
-  }, [visible]);
+    if (!visible) return;
+    let isMounted = true;
+    const fetchStats = async () => {
+      const data = await referralService.getReferralStats();
+      if (!isMounted) return;
+      setStats(data);
+      if (data.premiumUntil) {
+        setIsPremiumActive(new Date(data.premiumUntil).getTime() > Date.now());
+      } else {
+        setIsPremiumActive(false);
+      }
+      if (data.myCode && user && !user.referralCode) {
+        updateUser({ referralCode: data.myCode });
+      }
+    };
+    void fetchStats();
+    return () => {
+      isMounted = false;
+    };
+  }, [visible, user, updateUser]);
 
   const handleShare = async () => {
     try {
@@ -160,7 +183,7 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
             {t('referral.subtitle')}
           </Text>
 
-          {stats.premiumUntil && new Date(stats.premiumUntil).getTime() > Date.now() && (
+          {stats.premiumUntil && isPremiumActive && (
             <View style={[styles.activePill, { backgroundColor: `${colors.success}15`, borderColor: colors.success }]}>
               <Ionicons name="sparkles" size={14} color={colors.success} style={{ marginRight: 6 }} />
               <Text style={[typography.captionBold, { color: colors.success }]}>

@@ -28,7 +28,7 @@ export function resolveDeviceLanguage(): Language {
     if (timeZone && (timeZone === 'Europe/Istanbul' || timeZone === 'Asia/Istanbul')) {
       return 'tr';
     }
-  } catch (err) {
+  } catch {
     // If native modules error on unusual platforms, safely fallback
   }
 

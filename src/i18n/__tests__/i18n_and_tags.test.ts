@@ -1,4 +1,8 @@
 import { describe, it, expect, jest } from '@jest/globals';
+import { resolveDeviceLanguage } from '../deviceLanguage';
+import { getTagName } from '../../services/tags/TagService';
+import { translate } from '../index';
+import { getCountryFlag, getCountryName } from '../../services/location/CountryService';
 
 const mockLocales = [{ languageCode: 'tr', regionCode: 'TR' }];
 const mockCalendars = [{ timeZone: 'Europe/Istanbul' }];
@@ -7,10 +11,6 @@ jest.mock('expo-localization', () => ({
   getLocales: () => mockLocales,
   getCalendars: () => mockCalendars,
 }));
-
-import { resolveDeviceLanguage } from '../deviceLanguage';
-import { getTagName } from '../../services/tags/TagService';
-import { translate } from '../index';
 
 describe('i18n and Tags Localized Handling', () => {
   describe('resolveDeviceLanguage', () => {
@@ -82,9 +82,6 @@ describe('i18n and Tags Localized Handling', () => {
   });
 
   describe('Country Badges and Flags', () => {
-    // Import helpers
-    const { getCountryFlag, getCountryName } = require('../../services/location/CountryService');
-
     it('converts ISO codes to flag emojis', () => {
       expect(getCountryFlag('TR')).toBe('🇹🇷');
       expect(getCountryFlag('DE')).toBe('🇩🇪');

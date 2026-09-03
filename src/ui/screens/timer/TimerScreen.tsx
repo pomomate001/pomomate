@@ -77,7 +77,6 @@ export function TimerScreen() {
   const rawAnimationId = mode === 'work' ? workAnimationId : breakAnimationId;
   const activeAnimationId = isVisualWallpaperActive ? 'none' : rawAnimationId;
   const recordPomodoro = useStatsStore((s) => s.recordPomodoro);
-  const workDuration = useSettingsStore((s) => s.workDuration);
   const colors = useColors();
   
   // Task state

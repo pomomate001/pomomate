@@ -25,24 +25,28 @@ export function ManageSubscriptionSheet({ visible, onClose }: ManageSubscription
   const [isStoreSub, setIsStoreSub] = useState<boolean>(true);
 
   useEffect(() => {
-    if (visible) {
-      loadSubscriptionDetails();
-    }
-  }, [visible, user]);
-
-  const loadSubscriptionDetails = async () => {
-    setLoading(true);
-    const details = await revenueCatService.getSubscriptionDetails(user);
-    if (details) {
-      setPlanName(details.planName);
-      setIsStoreSub(details.isStoreSubscription);
-      if (details.expirationDate) {
-        const dateObj = new Date(details.expirationDate);
-        setExpirationDate(dateObj.toLocaleDateString());
+    if (!visible) return;
+    let isMounted = true;
+    const fetchDetails = async () => {
+      setLoading(true);
+      const details = await revenueCatService.getSubscriptionDetails(user);
+      if (isMounted && details) {
+        setPlanName(details.planName);
+        setIsStoreSub(details.isStoreSubscription);
+        if (details.expirationDate) {
+          const dateObj = new Date(details.expirationDate);
+          setExpirationDate(dateObj.toLocaleDateString());
+        }
       }
-    }
-    setLoading(false);
-  };
+      if (isMounted) {
+        setLoading(false);
+      }
+    };
+    void fetchDetails();
+    return () => {
+      isMounted = false;
+    };
+  }, [visible, user]);
 
   const [manageLoading, setManageLoading] = useState(false);
 

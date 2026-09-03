@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { referralService } from '../ReferralService';
 
 const mockStorage: Record<string, string> = {};
 
@@ -25,8 +26,6 @@ jest.mock('../../auth/supabaseClient', () => ({
     rpc: jest.fn(),
   },
 }));
-
-import { referralService } from '../ReferralService';
 
 describe('ReferralService', () => {
   beforeEach(async () => {

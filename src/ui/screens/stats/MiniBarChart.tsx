@@ -18,7 +18,7 @@ interface MiniBarChartProps {
 
 function Bar({ d, max, height, color, index }: { d: BarData, max: number, height: number, color: string, index: number }) {
   const colors = useColors();
-  const anim = React.useRef(new Animated.Value(0)).current;
+  const [anim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     anim.setValue(0);

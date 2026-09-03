@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -45,32 +45,61 @@ export function DraggableTaskList({
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
-  const translateY = useRef(new Animated.Value(0)).current;
+  const [translateY] = useState(() => new Animated.Value(0));
 
-  const draggingIndexRef = useRef<number>(-1);
-  const targetIndexRef = useRef<number>(-1);
-  const tasksRef = useRef<Task[]>(tasks);
-  tasksRef.current = tasks;
+  const [dragState] = useState(() => ({
+    draggingIndex: -1,
+    targetIndex: -1,
+    tasks,
+    onReorder,
+    onDragEnd,
+  }));
 
-  const panResponder = useRef(
+  useEffect(() => {
+    dragState.tasks = tasks;
+    dragState.onReorder = onReorder;
+    dragState.onDragEnd = onDragEnd;
+  });
+
+  const finishDrag = () => {
+    const fromIndex = dragState.draggingIndex;
+    const toIndex = dragState.targetIndex;
+
+    if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+      const reordered = [...dragState.tasks];
+      const [moved] = reordered.splice(fromIndex, 1);
+      reordered.splice(toIndex, 0, moved);
+      dragState.onReorder(reordered);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+
+    dragState.draggingIndex = -1;
+    dragState.targetIndex = -1;
+    setDraggingId(null);
+    setTargetIndex(null);
+    translateY.setValue(0);
+    dragState.onDragEnd?.();
+  };
+
+  const [panResponder] = useState(() =>
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: () => draggingIndexRef.current !== -1,
+      onMoveShouldSetPanResponder: () => dragState.draggingIndex !== -1,
       onPanResponderGrant: () => {
         translateY.setValue(0);
       },
       onPanResponderMove: (_, gestureState) => {
-        if (draggingIndexRef.current === -1) return;
+        if (dragState.draggingIndex === -1) return;
         translateY.setValue(gestureState.dy);
 
         const deltaIndex = Math.round(gestureState.dy / ESTIMATED_ITEM_HEIGHT);
         const newTarget = Math.max(
           0,
-          Math.min(tasksRef.current.length - 1, draggingIndexRef.current + deltaIndex)
+          Math.min(dragState.tasks.length - 1, dragState.draggingIndex + deltaIndex)
         );
 
-        if (newTarget !== targetIndexRef.current) {
-          targetIndexRef.current = newTarget;
+        if (newTarget !== dragState.targetIndex) {
+          dragState.targetIndex = newTarget;
           setTargetIndex(newTarget);
           void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
@@ -82,31 +111,11 @@ export function DraggableTaskList({
         finishDrag();
       },
     })
-  ).current;
-
-  const finishDrag = () => {
-    const fromIndex = draggingIndexRef.current;
-    const toIndex = targetIndexRef.current;
-
-    if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
-      const reordered = [...tasksRef.current];
-      const [moved] = reordered.splice(fromIndex, 1);
-      reordered.splice(toIndex, 0, moved);
-      onReorder(reordered);
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-
-    draggingIndexRef.current = -1;
-    targetIndexRef.current = -1;
-    setDraggingId(null);
-    setTargetIndex(null);
-    translateY.setValue(0);
-    onDragEnd?.();
-  };
+  );
 
   const handleStartDrag = (task: Task, index: number) => {
-    draggingIndexRef.current = index;
-    targetIndexRef.current = index;
+    dragState.draggingIndex = index;
+    dragState.targetIndex = index;
     setDraggingId(task.id);
     setTargetIndex(index);
     translateY.setValue(0);
