@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -16,6 +16,7 @@ import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { authService } from '../../../services/auth';
+import { referralService } from '../../../services/monetization';
 import { useTranslation } from '../../../i18n';
 
 interface RegisterScreenProps {
@@ -29,9 +30,18 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    referralService.getPendingCode().then((code) => {
+      if (code) {
+        setReferralCode(code);
+      }
+    });
+  }, []);
 
   const handleRegister = async () => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -54,6 +64,9 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
     setError(null);
     setIsLoading(true);
     try {
+      if (referralCode.trim()) {
+        await referralService.savePendingCode(referralCode.trim());
+      }
       // Sadece kayıt yapıyoruz, setUser çağırmıyoruz ki ana ekrana atmasın.
       await authService.signUpWithEmail(normalizedEmail, password);
       setIsSuccess(true);
@@ -150,6 +163,16 @@ export function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
             secureTextEntry
             placeholder={t('auth.passwordConfirmPlaceholder')}
             leftIcon="lock-closed-outline"
+          />
+
+          <Input
+            label={t('auth.referralCodeLabel')}
+            value={referralCode}
+            onChangeText={(text) => setReferralCode(text.toUpperCase())}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            placeholder={t('auth.referralCodePlaceholder')}
+            leftIcon="gift-outline"
           />
 
           {error && (

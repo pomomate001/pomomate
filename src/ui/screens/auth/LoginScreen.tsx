@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,6 +17,7 @@ import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { authService } from '../../../services/auth';
+import { referralService } from '../../../services/monetization';
 import { useUserStore } from '../../../state';
 import { useTranslation } from '../../../i18n';
 
@@ -47,6 +49,11 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
     try {
       const user = await authService.signInWithEmail(normalizedEmail, password);
       setUser(user);
+      referralService.consumePendingCodeIfAny().then((res) => {
+        if (res?.success) {
+          Alert.alert('Davet Kodu Uygulandı! 🎁', `${res.referrerName || 'Arkadaşın'} seni PomoMate'e davet etti!`);
+        }
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : t('auth.unexpectedError');
       setError(message);
@@ -61,6 +68,11 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
     try {
       const user = await authService.signInWithGoogle();
       setUser(user);
+      referralService.consumePendingCodeIfAny().then((res) => {
+        if (res?.success) {
+          Alert.alert('Davet Kodu Uygulandı! 🎁', `${res.referrerName || 'Arkadaşın'} seni PomoMate'e davet etti!`);
+        }
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : t('auth.unexpectedError');
       if (message !== 'Giriş iptal edildi.' && message !== 'Sign in cancelled.') {

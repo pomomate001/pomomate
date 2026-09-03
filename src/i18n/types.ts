@@ -55,6 +55,8 @@ export interface TranslationSchema {
     fillAllFields: string;
     passwordMinLength: string;
     passwordsDoNotMatch: string;
+    referralCodeLabel: string;
+    referralCodePlaceholder: string;
     loginError: string;
     googleLoginError: string;
     registerError: string;
@@ -108,6 +110,8 @@ export interface TranslationSchema {
     saveBtn: string;
     emptyTasks: string;
     emptyTasksSubtitle: string;
+    targetPomodoros: string;
+    quickAddPlaceholder: string;
   };
   stats: {
     title: string;
@@ -126,6 +130,9 @@ export interface TranslationSchema {
     noTasksDate: string;
     dayLabels: [string, string, string, string, string, string, string];
     monthLabels: [string, string, string, string, string, string, string, string, string, string, string, string];
+    addTaskForDate: string;
+    skipForDate: string;
+    deleteScheduledTask: string;
   };
   friends: {
     title: string;
@@ -373,6 +380,14 @@ export interface TranslationSchema {
     insufficientMessage: string;
     shareTitle: string;
     shareMessage: string;
+    enterCodeHeader: string;
+    enterCodePlaceholder: string;
+    applyCodeBtn: string;
+    codeAppliedTitle: string;
+    codeAppliedBody: string;
+    activeUntil: string;
+    invitedFriendsHeader: string;
+    noFriendsYet: string;
   };
   tags: {
     addTags: string;
@@ -416,6 +431,7 @@ export interface TranslationSchema {
     goToTags: string;
     loadMore: string;
     discoverButton: string;
+    refresh: string;
   };
 }
 

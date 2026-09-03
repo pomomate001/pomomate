@@ -100,3 +100,18 @@ export class TagService {
 }
 
 export const tagService = new TagService();
+
+/**
+ * Returns the localized name of a tag based on the active language.
+ * Defaults to Turkish (nameTr) if language is 'tr' or if English is missing.
+ */
+export function getTagName(
+  tag: { nameTr: string; nameEn?: string | null } | null | undefined,
+  language: string = 'tr'
+): string {
+  if (!tag) return '';
+  if (language === 'en' && tag.nameEn && tag.nameEn.trim().length > 0) {
+    return tag.nameEn;
+  }
+  return tag.nameTr || tag.nameEn || '';
+}

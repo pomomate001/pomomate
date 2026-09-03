@@ -60,8 +60,8 @@ export const AMBIENT_SOUNDS: SoundItem[] = [
   {
     id: 'bird',
     label: 'Kuş Cıvıltısı',
-    description: 'Huzur verici orman ve neşeli kuş cıvıltıları',
-    url: 'https://assets.mixkit.co/active_storage/sfx/2436/2436-preview.mp3',
+    description: 'Huzur verici sabah ormanı ve dinlendirici kuş sesleri',
+    url: 'https://assets.mixkit.co/active_storage/sfx/1210/1210-preview.mp3',
   },
 ];
 

@@ -1,1 +1,1 @@
-export { tagService } from './TagService';
+export { tagService, getTagName } from './TagService';

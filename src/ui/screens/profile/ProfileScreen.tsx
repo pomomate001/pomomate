@@ -20,7 +20,8 @@ import { useTranslation } from '../../../i18n';
 import { TagSelectionSheet } from './TagSelectionSheet';
 import { EditNameSheet } from './EditNameSheet';
 import { ManageSubscriptionSheet } from './ManageSubscriptionSheet';
-import { tagService } from '../../../services/tags';
+import { tagService, getTagName } from '../../../services/tags';
+import { countryService, getCountryFlag, getCountryName } from '../../../services/location';
 import { useSettingsStore } from '../../../state/settingsStore';
 
 interface ProfileScreenProps {
@@ -58,7 +59,7 @@ export function ProfileScreen({
   onNavigateSounds,
 }: ProfileScreenProps) {
   const colors = useColors();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const user = useUserStore((s) => s.user);
   const updateUser = useUserStore((s) => s.updateUser);
   const [showPaywall, setShowPaywall] = React.useState(false);
@@ -70,6 +71,10 @@ export function ProfileScreen({
   const [showManageSubscription, setShowManageSubscription] = React.useState(false);
   const userTags = useTagStore((s) => s.userTags);
   const isPremium = useSettingsStore((s) => s.isPremium);
+
+  const countryCode = user?.countryCode || countryService.detectCountryCode() || 'TR';
+  const countryFlag = getCountryFlag(countryCode);
+  const countryName = getCountryName(countryCode, language);
 
   // Load user tags
   React.useEffect(() => {
@@ -126,6 +131,17 @@ export function ProfileScreen({
               {user?.email ?? ''}
             </Text>
 
+            {/* Country Badge (Automatic country tag outside the 8 editable hobby tags) */}
+            <View style={[styles.countryBadge, { backgroundColor: `${colors.info}15`, borderColor: `${colors.info}35` }]}>
+              <Text style={{ fontSize: 12, marginRight: 5 }}>{countryFlag}</Text>
+              <Text style={[typography.captionBold, { color: colors.info, fontSize: 11 }]}>{countryName}</Text>
+              <View style={[styles.countryAutoPill, { backgroundColor: `${colors.info}25` }]}>
+                <Text style={{ color: colors.info, fontSize: 8, fontWeight: '700' }}>
+                  {language === 'en' ? 'COUNTRY' : 'ÜLKE'}
+                </Text>
+              </View>
+            </View>
+
             {/* Tags */}
             {userTags.length > 0 && (
               <Pressable onPress={() => setShowTagSelection(true)} style={styles.tagsContainer}>
@@ -133,7 +149,7 @@ export function ProfileScreen({
                   {userTags.map((tag) => (
                     <View key={tag.id} style={[styles.profileTag, { backgroundColor: `${colors.primary}20`, borderColor: `${colors.primary}40` }]}>
                       {tag.icon && <Text style={{ fontSize: 10, marginRight: 3 }}>{tag.icon}</Text>}
-                      <Text style={[typography.overline, { color: colors.primary, fontSize: 10 }]}>{tag.nameTr}</Text>
+                      <Text style={[typography.overline, { color: colors.primary, fontSize: 10 }]}>{getTagName(tag, language)}</Text>
                     </View>
                   ))}
                   <View style={[styles.profileTagEdit, { borderColor: `${colors.primary}40` }]}>
@@ -170,6 +186,11 @@ export function ProfileScreen({
                   setShowPaywall(true);
                 }
               }} 
+            />
+            <SettingRow 
+              icon="gift-outline" 
+              label={t('referral.title')} 
+              onPress={() => setShowReferral(true)} 
             />
             <SettingRow icon="color-palette-outline" label={t('profile.appearance')} onPress={onNavigateAppearance} />
             <SettingRow icon="timer-outline" label={t('profile.timerSettings')} onPress={onNavigateTimer} />
@@ -248,6 +269,23 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     alignItems: 'center',
+  },
+  countryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    marginTop: spacing.xs,
+    marginBottom: 2,
+  },
+  countryAutoPill: {
+    borderRadius: radius.full,
+    marginLeft: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
   },
   tagsContainer: {
     marginTop: spacing.sm,

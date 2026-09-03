@@ -5,4 +5,5 @@ module.exports = {
   },
   testPathIgnorePatterns: ['/node_modules/', '/server/'],
   testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
+  setupFiles: ['<rootDir>/jest.setup.js'],
 };

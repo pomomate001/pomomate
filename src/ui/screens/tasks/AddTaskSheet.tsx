@@ -14,7 +14,7 @@ import { useTranslation } from '../../../i18n';
 interface AddTaskSheetProps {
   visible: boolean;
   onClose: () => void;
-  onAdd: (title: string, tag: string | null, recurrence: RecurrenceType, targetDate?: string) => void;
+  onAdd: (title: string, tag: string | null, recurrence: RecurrenceType, targetDate?: string, targetPomodoroCount?: number) => void;
   onEdit?: (id: string, updates: Partial<Task>) => void;
   initialDate?: string;
   initialTask?: Task;
@@ -26,6 +26,7 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
   const [title, setTitle] = useState('');
   const [tag, setTag] = useState('');
   const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
+  const [targetPomodoroCount, setTargetPomodoroCount] = useState(1);
   const [prevTask, setPrevTask] = useState<Task | undefined>(undefined);
   const [prevVisible, setPrevVisible] = useState(false);
 
@@ -43,6 +44,7 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
       setTitle(initialTask?.title || '');
       setTag(initialTask?.tag || '');
       setRecurrence(initialTask?.recurrence?.type || 'none');
+      setTargetPomodoroCount(initialTask?.targetPomodoroCount || 1);
     }
   }
 
@@ -56,10 +58,11 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
       onEdit(initialTask.id, {
         title: trimmedTitle,
         tag: trimmedTag,
-        recurrence: { type: recurrence }
+        recurrence: { type: recurrence },
+        targetPomodoroCount,
       });
     } else {
-      onAdd(trimmedTitle, trimmedTag, recurrence, initialDate);
+      onAdd(trimmedTitle, trimmedTag, recurrence, initialDate, targetPomodoroCount);
     }
     
     onClose();
@@ -88,6 +91,36 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
       />
 
       <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.sm, marginTop: spacing.md }]}>
+        {t('tasks.targetPomodoros')}
+      </Text>
+      
+      <View style={styles.pomodoroRow}>
+        {[1, 2, 3, 4, 5, 6].map((num) => {
+          const isSelected = targetPomodoroCount === num;
+          return (
+            <Pressable
+              key={num}
+              onPress={() => setTargetPomodoroCount(num)}
+              style={[
+                styles.pomoChip,
+                {
+                  backgroundColor: isSelected ? colors.primary : colors.surfaceVariant,
+                  borderColor: isSelected ? colors.primary : colors.border,
+                }
+              ]}
+            >
+              <Text style={[
+                typography.captionBold,
+                { color: isSelected ? colors.textInverse : colors.textPrimary }
+              ]}>
+                {num} 🍅
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.sm, marginTop: spacing.xs }]}>
         {t('tasks.recurrence')}
       </Text>
       
@@ -130,6 +163,21 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
 }
 
 const styles = StyleSheet.create({
+  pomodoroRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  pomoChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    minWidth: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   optionsWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',

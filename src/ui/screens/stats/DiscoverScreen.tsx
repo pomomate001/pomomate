@@ -24,6 +24,8 @@ import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { useUserStore, useFriendsStore, useTagStore } from '../../../state';
 import { friendService } from '../../../services/friends/FriendService';
+import { getTagName } from '../../../services/tags';
+import { countryService, getCountryFlag, getCountryName } from '../../../services/location';
 import { useTranslation } from '../../../i18n';
 import type { StatsStackParamList } from '../../../navigation/types';
 import type { SuggestedUser } from '../../../state/friendsStore';
@@ -35,7 +37,7 @@ const PAGE_SIZE = 10;
 
 export function DiscoverScreen({ navigation }: Props) {
   const colors = useColors();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const insets = useSafeAreaInsets();
 
   const user = useUserStore((s) => s.user);
@@ -48,6 +50,12 @@ export function DiscoverScreen({ navigation }: Props) {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Default filter: Match only users in the same country (can be toggled off)
+  const [sameCountryOnly, setSameCountryOnly] = useState(true);
+
+  const userCountryCode = user?.countryCode || countryService.detectCountryCode() || 'TR';
+  const userCountryFlag = getCountryFlag(userCountryCode);
+  const userCountryName = getCountryName(userCountryCode, language);
 
   // Debounce search
   useEffect(() => {
@@ -71,7 +79,7 @@ export function DiscoverScreen({ navigation }: Props) {
     const search = debouncedSearch.trim() || null;
 
     friendService
-      .discoverUsers(user.id, PAGE_SIZE, 0, null, search)
+      .discoverUsers(user.id, PAGE_SIZE, 0, null, search, sameCountryOnly, userCountryCode)
       .then(() => {
         if (isMounted) {
           setIsLoading(false);
@@ -87,14 +95,14 @@ export function DiscoverScreen({ navigation }: Props) {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [user?.id, userTags.length, debouncedSearch]);
+  }, [user?.id, userTags.length, debouncedSearch, sameCountryOnly, userCountryCode]);
 
   const handleRefresh = async () => {
     if (!user?.id || userTags.length === 0) return;
     setIsRefreshing(true);
     const search = debouncedSearch.trim() || null;
     try {
-      await friendService.discoverUsers(user.id, PAGE_SIZE, 0, null, search);
+      await friendService.discoverUsers(user.id, PAGE_SIZE, 0, null, search, sameCountryOnly, userCountryCode);
     } finally {
       setIsRefreshing(false);
     }
@@ -157,20 +165,61 @@ export function DiscoverScreen({ navigation }: Props) {
             </Pressable>
           )}
         </View>
+
+        {/* Country Filter Toggle Bar (Single option: Match only my country OR all countries) */}
+        <View style={styles.filterBar}>
+          <Pressable
+            onPress={() => setSameCountryOnly(!sameCountryOnly)}
+            style={[
+              styles.countryFilterChip,
+              sameCountryOnly
+                ? { backgroundColor: `${colors.primary}20`, borderColor: colors.primary }
+                : { backgroundColor: colors.surfaceVariant, borderColor: colors.border },
+            ]}
+          >
+            <Text style={{ fontSize: 13, marginRight: 6 }}>
+              {sameCountryOnly ? userCountryFlag : '🌍'}
+            </Text>
+            <Text
+              style={[
+                typography.captionBold,
+                { color: sameCountryOnly ? colors.primary : colors.textSecondary, fontSize: 12 },
+              ]}
+            >
+              {sameCountryOnly
+                ? (language === 'en' ? `Only in ${userCountryName}` : `Sadece ${userCountryName}'dekiler`)
+                : (language === 'en' ? 'All Countries (Global)' : 'Tüm Dünya (Filtresiz)')}
+            </Text>
+            <Ionicons
+              name={sameCountryOnly ? 'checkmark-circle' : 'globe-outline'}
+              size={14}
+              color={sameCountryOnly ? colors.primary : colors.textSecondary}
+              style={{ marginLeft: 6 }}
+            />
+          </Pressable>
+        </View>
       </View>
     </View>
   );
-
-
 
   const renderUserCard = ({ item }: { item: SuggestedUser }) => (
     <View style={[styles.userCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.cardHeader}>
         <Avatar uri={item.avatarUrl} name={item.displayName} size={50} />
         <View style={styles.cardInfo}>
-          <Text style={[typography.bodyBold, { color: colors.textPrimary }]} numberOfLines={1}>
-            {item.displayName}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary }]} numberOfLines={1}>
+              {item.displayName}
+            </Text>
+            {!!item.countryCode && (
+              <View style={[styles.userCountryTag, { backgroundColor: `${colors.info}15`, borderColor: `${colors.info}30` }]}>
+                <Text style={{ fontSize: 10, marginRight: 3 }}>{getCountryFlag(item.countryCode)}</Text>
+                <Text style={[typography.overline, { color: colors.info, fontSize: 9 }]}>
+                  {getCountryName(item.countryCode, language)}
+                </Text>
+              </View>
+            )}
+          </View>
           <View style={styles.matchScoreBadge}>
             <Ionicons name="flash" size={12} color={colors.warning} />
             <Text style={[typography.captionBold, { color: colors.warning, marginLeft: 4 }]}>
@@ -213,7 +262,7 @@ export function DiscoverScreen({ navigation }: Props) {
               >
                 {tag.icon && <Text style={{ fontSize: 12, marginRight: 4 }}>{tag.icon}</Text>}
                 <Text style={[typography.caption, { color: isMatch ? colors.primary : colors.textSecondary }]}>
-                  {tag.nameTr}
+                  {getTagName(tag, language)}
                 </Text>
               </View>
             );
@@ -267,7 +316,7 @@ export function DiscoverScreen({ navigation }: Props) {
     return (
       <View style={{ paddingVertical: spacing.xl, paddingBottom: spacing.xxxl, alignItems: 'center' }}>
         <Button
-          title={t('discover.refresh' as any) || "Yenile"}
+          title={t('discover.refresh')}
           variant="outline"
           icon={<Ionicons name="refresh" size={16} color={colors.primary} />}
           onPress={handleRefresh}
@@ -340,6 +389,27 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: spacing.sm,
     fontSize: 15,
+  },
+  filterBar: {
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  countryFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radius.full,
+    borderWidth: 1,
+  },
+  userCountryTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   categoryScroll: {
     paddingHorizontal: spacing.lg,

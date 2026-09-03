@@ -30,6 +30,10 @@ export interface User {
   countryCode?: string | null;
   tags?: Tag[];
   subscriptionTier: SubscriptionTier;
+  referralCode?: string;
+  referredBy?: string | null;
+  premiumUntil?: ISODateString | null;
+  referralRewardClaimedCount?: number;
   createdAt: ISODateString;
   updatedAt: ISODateString;
 }
@@ -84,6 +88,8 @@ export interface Task {
   completed: boolean;
   /** Number of completed pomodoro cycles associated with this task. */
   pomodoroCount: number;
+  /** Estimated / target number of pomodoro cycles (defaults to 1). */
+  targetPomodoroCount?: number;
   createdAt: ISODateString;
   /** Optional — tag/category for the task, e.g. "Matematik" */
   tag?: string | null;
@@ -91,6 +97,12 @@ export interface Task {
   targetDate?: string;
   /** Defines if and how this task repeats */
   recurrence?: TaskRecurrence | null;
+  /** List of YYYY-MM-DD dates where this recurring task was explicitly skipped/removed for that day */
+  recurrenceExceptions?: string[];
+  /** Flag used when rendering virtual recurring instances on future calendar dates */
+  isVirtualRecurring?: boolean;
+  /** If virtual recurring, points to the underlying recurring task template ID */
+  originalTaskId?: ID;
 }
 
 /* -------------------------------------------------------------------------- */

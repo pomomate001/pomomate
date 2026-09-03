@@ -14,6 +14,12 @@ describe('Pomodoro Core Logic', () => {
       expect(getNextMode('work', 8)).toBe('longBreak');
     });
 
+    it('should respect custom cyclesBeforeLongBreak parameter', () => {
+      expect(getNextMode('work', 2, 2)).toBe('longBreak');
+      expect(getNextMode('work', 3, 3)).toBe('longBreak');
+      expect(getNextMode('work', 2, 3)).toBe('shortBreak');
+    });
+
     it('should switch to work after any break', () => {
       expect(getNextMode('shortBreak', 1)).toBe('work');
       expect(getNextMode('longBreak', 4)).toBe('work');

@@ -34,13 +34,22 @@ export function VideoWindmillPreview() {
 export function VideoSkyPreview() {
   return (
     <LinearGradient
-      colors={['#1E88E5', '#64B5F6', '#BBDEFB']}
+      colors={['#050814', '#0F172A', '#1E1B4B', '#2E1065']}
       start={{ x: 0, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
+      end={{ x: 1, y: 1 }}
       style={styles.previewContainer}
     >
+      {/* Cosmic stars */}
+      <View style={{ position: 'absolute', top: 10, left: 16, width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#FFF', opacity: 0.85 }} />
+      <View style={{ position: 'absolute', top: 24, left: 68, width: 2, height: 2, borderRadius: 1, backgroundColor: '#DDD', opacity: 0.6 }} />
+      <View style={{ position: 'absolute', top: 52, left: 22, width: 2, height: 2, borderRadius: 1, backgroundColor: '#FFF', opacity: 0.7 }} />
+      <View style={{ position: 'absolute', top: 16, right: 28, width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#E0E7FF', opacity: 0.9 }} />
+      <View style={{ position: 'absolute', top: 46, right: 38, width: 2, height: 2, borderRadius: 1, backgroundColor: '#FFF', opacity: 0.55 }} />
+      <View style={{ position: 'absolute', bottom: 14, left: 42, width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#DDD', opacity: 0.75 }} />
+      <View style={{ position: 'absolute', bottom: 18, right: 18, width: 2, height: 2, borderRadius: 1, backgroundColor: '#FFF', opacity: 0.85 }} />
+
       <View style={styles.centerIconWrap}>
-        <Ionicons name="cloudy-outline" size={30} color="#FFFFFF" />
+        <Ionicons name="planet-outline" size={28} color="#C7D2FE" />
       </View>
       <View style={styles.liveBadge}>
         <View style={[styles.liveDot, { backgroundColor: '#FF4D4D' }]} />
@@ -301,20 +310,30 @@ export function TimerDesignPreview({ designId }: { designId: string }) {
     case 'circle':
       return (
         <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
-          <Svg width={46} height={46} viewBox="0 0 46 46">
-            <Circle cx="23" cy="23" r="19" stroke={colors.border} strokeWidth="3" fill="none" />
+          <Svg width={58} height={58} viewBox="0 0 58 58">
+            <Circle cx="29" cy="29" r="23" stroke={colors.border} strokeWidth="3.5" fill="none" />
             <Circle
-              cx="23"
-              cy="23"
-              r="19"
+              cx="29"
+              cy="29"
+              r="23"
               stroke={primaryColor}
-              strokeWidth="3.5"
+              strokeWidth="4"
               fill="none"
-              strokeDasharray="120"
-              strokeDashoffset="35"
+              strokeDasharray="144.5"
+              strokeDashoffset="36.1"
               strokeLinecap="round"
+              transform="rotate(-90 29 29)"
             />
           </Svg>
+          <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+            <Ionicons name="barbell-outline" size={10} color={primaryColor} style={{ marginBottom: 1 }} />
+            <Text style={{ fontSize: 11, fontWeight: '300', color: colors.textPrimary, fontVariant: ['tabular-nums'] }}>
+              25:00
+            </Text>
+            <Text style={{ fontSize: 6.5, fontWeight: '600', color: colors.textSecondary }}>
+              Çalışma
+            </Text>
+          </View>
         </View>
       );
 
@@ -330,45 +349,84 @@ export function TimerDesignPreview({ designId }: { designId: string }) {
     case 'arc':
       return (
         <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
-          <Svg width={48} height={48} viewBox="0 0 48 48">
-            {/* Background Track Arc (240 deg) */}
+          <Svg width={58} height={58} viewBox="0 0 58 58">
+            {/* Background Track Arc (240 deg, open at bottom) */}
             <Circle
-              cx="24"
-              cy="24"
-              r="18"
+              cx="29"
+              cy="29"
+              r="23"
               stroke={colors.border}
-              strokeWidth="3.5"
+              strokeWidth="4"
               fill="none"
               strokeLinecap="round"
-              strokeDasharray="75.4 113.1"
-              transform="rotate(150 24 24)"
+              strokeDasharray="96.3 144.5"
+              transform="rotate(150 29 29)"
             />
             {/* Active Progress Arc */}
             <Circle
-              cx="24"
-              cy="24"
-              r="18"
+              cx="29"
+              cy="29"
+              r="23"
               stroke={primaryColor}
               strokeWidth="4"
               fill="none"
               strokeLinecap="round"
-              strokeDasharray="52.8 113.1"
-              transform="rotate(150 24 24)"
+              strokeDasharray="144.5"
+              strokeDashoffset="72.3"
+              transform="rotate(150 29 29)"
             />
           </Svg>
           <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
-            <Text style={{ fontSize: 9, fontWeight: '700', color: colors.textPrimary, marginTop: -2 }}>25m</Text>
+            <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: `${primaryColor}25`, alignItems: 'center', justifyContent: 'center', marginBottom: 1 }}>
+              <Ionicons name="flame-outline" size={9} color={primaryColor} />
+            </View>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: colors.textPrimary, fontVariant: ['tabular-nums'] }}>
+              25:00
+            </Text>
+            <Text style={{ fontSize: 6.5, fontWeight: '600', color: colors.textSecondary }}>
+              Odaklanma
+            </Text>
           </View>
         </View>
       );
 
     case 'neon':
       return (
-        <View style={[styles.previewContainer, { backgroundColor: '#0A0A0A' }]}>
-          <Svg width={46} height={46} viewBox="0 0 46 46">
-            <Circle cx="23" cy="23" r="19" stroke={primaryColor} strokeWidth="1.5" fill="none" opacity={0.4} />
-            <Circle cx="23" cy="23" r="16" stroke={primaryColor} strokeWidth="3" fill="none" />
+        <View style={[styles.previewContainer, { backgroundColor: '#050811' }]}>
+          <Svg width={58} height={58} viewBox="0 0 58 58">
+            <Circle cx="29" cy="29" r="23" stroke="rgba(255, 255, 255, 0.12)" strokeWidth="2.5" fill="none" />
+            <Circle cx="29" cy="29" r="18" stroke="rgba(0, 240, 255, 0.35)" strokeWidth="1" strokeDasharray="3 4" fill="none" />
+            <Circle
+              cx="29"
+              cy="29"
+              r="23"
+              stroke="#00F0FF"
+              strokeWidth="3.5"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray="144.5"
+              strokeDashoffset="36.1"
+              transform="rotate(-90 29 29)"
+            />
           </Svg>
+          <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+            <View style={{ borderWidth: 1, borderColor: '#00F0FF', backgroundColor: 'rgba(0, 240, 255, 0.15)', borderRadius: 3, paddingHorizontal: 4, paddingVertical: 0.5, marginBottom: 1 }}>
+              <Text style={{ fontSize: 5.5, fontWeight: '800', color: '#00F0FF', letterSpacing: 0.5 }}>CYBER</Text>
+            </View>
+            <Text
+              style={{
+                fontSize: 11.5,
+                fontWeight: '900',
+                color: '#FFFFFF',
+                textShadowColor: '#00F0FF',
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 8,
+                fontVariant: ['tabular-nums'],
+              }}
+            >
+              25:00
+            </Text>
+          </View>
         </View>
       );
 

@@ -3,8 +3,10 @@ import { useSettingsStore } from '../state/settingsStore';
 import { tr } from './translations/tr';
 import { en } from './translations/en';
 import type { Language, TranslationKey } from './types';
+import { resolveDeviceLanguage } from './deviceLanguage';
 
 export * from './types';
+export { resolveDeviceLanguage };
 
 const translations = {
   tr,
@@ -59,7 +61,7 @@ export function translate(
  * Static translation helper using current state.
  */
 export function t(key: TranslationKey, params?: Record<string, string | number>): string {
-  const language = useSettingsStore.getState().language || 'tr';
+  const language = useSettingsStore.getState().language || resolveDeviceLanguage();
   return translate(key, language, params);
 }
 
@@ -67,7 +69,7 @@ export function t(key: TranslationKey, params?: Record<string, string | number>)
  * React hook for consuming translations and changing language.
  */
 export function useTranslation() {
-  const language = useSettingsStore((s) => s.language) || 'tr';
+  const language = useSettingsStore((s) => s.language) || resolveDeviceLanguage();
   const setLanguage = useSettingsStore((s) => s.setLanguage);
 
   const tFunc = useCallback(

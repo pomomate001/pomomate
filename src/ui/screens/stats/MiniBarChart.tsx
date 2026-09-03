@@ -18,16 +18,17 @@ interface MiniBarChartProps {
 
 function Bar({ d, max, height, color, index }: { d: BarData, max: number, height: number, color: string, index: number }) {
   const colors = useColors();
-  const [anim] = useState(() => new Animated.Value(0));
+  const anim = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    anim.setValue(0);
     Animated.timing(anim, {
       toValue: 1,
-      duration: 500,
-      delay: index * 50,
+      duration: 400,
+      delay: index * 35,
       useNativeDriver: false,
     }).start();
-  }, [anim, index]);
+  }, [anim, d.value, d.label, index]);
 
   const targetHeight = (d.value / max) * height;
   const animHeight = anim.interpolate({

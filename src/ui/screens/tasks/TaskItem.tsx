@@ -5,6 +5,7 @@ import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import type { Task } from '../../../types';
+import { useTranslation } from '../../../i18n';
 
 interface TaskItemProps {
   task: Task;
@@ -15,6 +16,7 @@ interface TaskItemProps {
 
 export function TaskItem({ task, onToggle, onDelete, onPress }: TaskItemProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const [scaleAnim] = useState(() => new Animated.Value(1));
 
   const handleToggle = () => {
@@ -58,18 +60,22 @@ export function TaskItem({ task, onToggle, onDelete, onPress }: TaskItemProps) {
               </Text>
             </View>
           )}
+          <View style={[styles.tagBadge, { backgroundColor: `${colors.primary}18` }]}>
+            <Text style={[typography.captionBold, { color: task.completed ? colors.textDisabled : colors.primary, fontSize: 11 }]}>
+              ⏱️ {task.pomodoroCount || 0}/{task.targetPomodoroCount || 1} Pomo
+            </Text>
+          </View>
           {task.recurrence && task.recurrence.type !== 'none' && (
             <View style={[styles.tagBadge, { backgroundColor: `${colors.info}15` }]}>
               <Ionicons name="repeat" size={10} color={colors.info} />
               <Text style={[typography.caption, { color: colors.info, marginLeft: 2 }]}>
-                {task.recurrence.type === 'daily' ? 'Her gün' : task.recurrence.type === 'weekdays' ? 'Hafta içi' : 'Hafta sonu'}
+                {task.recurrence.type === 'daily'
+                  ? t('tasks.recurrenceDaily')
+                  : task.recurrence.type === 'weekdays'
+                  ? t('tasks.recurrenceWeekdays')
+                  : t('tasks.recurrenceWeekends')}
               </Text>
             </View>
-          )}
-          {task.pomodoroCount > 0 && (
-            <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: spacing.xs }]}>
-              🎯 {task.pomodoroCount}
-            </Text>
           )}
         </View>
       </Pressable>

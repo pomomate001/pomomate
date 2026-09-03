@@ -9,12 +9,14 @@ import { Avatar } from '../../components/Avatar';
 import { Button } from '../../components/Button';
 import { useFriendsStore, useUserStore } from '../../../state';
 import { friendService } from '../../../services/friends/FriendService';
+import { getTagName } from '../../../services/tags';
+import { getCountryFlag, getCountryName } from '../../../services/location';
 import { useTranslation } from '../../../i18n';
 import type { SuggestedUser } from '../../../state/friendsStore';
 
 export function DiscoverUsersTab() {
   const colors = useColors();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const user = useUserStore((s) => s.user);
   const suggestedUsers = useFriendsStore((s) => s.suggestedUsers);
   const [isLoading, setIsLoading] = useState(false);
@@ -134,9 +136,19 @@ export function DiscoverUsersTab() {
             <View style={styles.userHeader}>
               <Avatar uri={su.avatarUrl} name={su.displayName} size={44} />
               <View style={styles.userInfo}>
-                <Text style={[typography.bodyBold, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {su.displayName}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+                  <Text style={[typography.bodyBold, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {su.displayName}
+                  </Text>
+                  {!!su.countryCode && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, paddingHorizontal: 4, paddingVertical: 1, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.12)' }}>
+                      <Text style={{ fontSize: 9 }}>{getCountryFlag(su.countryCode)}</Text>
+                      <Text style={[typography.overline, { color: colors.textSecondary, fontSize: 8, marginLeft: 2 }]}>
+                        {getCountryName(su.countryCode, language)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
                 {su.matchingTagCount > 0 && (
                   <View style={styles.matchBadge}>
                     <Ionicons name="flash" size={10} color={colors.primary} />
@@ -178,7 +190,7 @@ export function DiscoverUsersTab() {
                   >
                     {tag.icon && <Text style={{ fontSize: 10, marginRight: 3 }}>{tag.icon}</Text>}
                     <Text style={[typography.overline, { color: colors.textSecondary, fontSize: 10 }]}>
-                      {tag.nameTr}
+                      {getTagName(tag, language)}
                     </Text>
                   </View>
                 ))}

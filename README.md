@@ -11,44 +11,53 @@ PomoMate is a productivity app that combines the Pomodoro Technique with real-ti
 
 ## ✨ Features
 
-### 🕐 Pomodoro Timer
+### 🕐 Pomodoro Timer & Native PiP
 - **Customizable durations**: Work (25min), Short Break (5min), Long Break (15min)
-- **Multiple timer designs**: Minimal, Circle, Arc (Premium)
-- **Background animations**: Particles, Gradient (Premium)
-- **Auto-advance**: Seamless flow through work and break cycles
-- **Notifications**: Local notifications when timers complete
+- **5 Unique Timer Designs**: Minimalist, Classic Circle, Modern Digital, Curved Arc (Pro), and Neon Glow (Pro)
+- **Live Video & Atmosphere Backgrounds**:
+  - Full-screen looping videos: Deep Space & Stars, Windmill Meadow, Rain Window
+  - High-res static wallpapers: Pixel Art, Winter Village
+  - Ambient particle overlays: Floating Glowing Particles, Falling Snow, Rain, Bubbles
+- **Relaxing Ambient Sounds**: Gentle Forest Morning Birds (`Mixkit SFX 1210`), Window Rain, Crackling Campfire, with live preview
+- **Picture-in-Picture (PiP)**: Floating timer overlay keeping focus visible while multitasking on Android
+- **Drift-free accuracy**: Target timestamp tracking (<500ms drift) with automatic resynchronization upon `AppState` foregrounding
+- **Auto-advance & Local Notifications**: Seamless flow through work and break cycles with background notifications
 
-### 👥 Collaborative Rooms
+### 👥 Collaborative Rooms & P2P
 - **Real-time sync**: Timer, tasks, and chat synchronized across all members
 - **Up to 8 users**: Host-authoritative P2P architecture
 - **Audio/Video**: Optional camera and microphone for face-to-face sessions
 - **Screen sharing**: Share your screen with room members
-- **Modular features**: Timer, Tasks, Chat, Media, Files (extensible for future features)
-- **Room invitations**: Easy join via shareable room codes
+- **Modular features**: Timer, Tasks, Chat, Media, Files
+- **Room invitations**: Easy join via shareable room codes and deep links
 
-### ✅ Task Management
+### ✅ Task Management & Smart Recurrence
 - **Personal & Shared tasks**: Track individual and room tasks
-- **Drag & drop reorder**: Organize tasks by priority
-- **Pomodoro counter**: Track completed pomodoros per task
-- **Persistence**: Tasks saved to cloud via Supabase
+- **Drag & drop reorder**: Reorganize tasks smoothly with haptic feedback
+- **Target Pomodoro Counter**: Auto-completes and shifts tasks upon meeting required pomodoro cycles
+- **Smart recurrence tags**: Once, Daily, Weekdays, Weekends with full Turkish & English localization
+- **Cloud sync**: Automatic historical recording to Supabase `completed_tasks`
 
-### 📊 Statistics & Progress
-- **Daily/Weekly/Monthly views**: Visualize your productivity
-- **Streak tracking**: Build consistency with daily streaks
-- **Friend comparisons**: See how you stack up (with privacy controls)
-- **Charts & graphs**: Clean visualizations of your progress
+### 📊 Statistics & Calendar Insights
+- **Daily/Weekly/Monthly views**: Interactive bar charts tracking productive focus hours
+- **Streak tracking**: Consistent daily streaks and historical milestone records
+- **Calendar Heatmap**: Day-by-day Pomodoro density visualization
+- **Friend comparisons**: Friendly leaderboard with opt-in privacy controls
 
-### 👫 Friends & Social
-- **Friend requests**: Connect with study partners
-- **Shared statistics**: Opt-in stat sharing with friends
-- **Privacy controls**: Choose what to share and with whom
-- **Friend leaderboard**: Friendly competition to stay motivated
+### 👫 Social & Tag-Based Friend Discovery
+- **Smart Discovery Algorithm**: Server-side PostgreSQL RPC (`discover_users`) recommending study partners by hobby/interest overlap
+- **Bilingual Tag System**: Shared tag UUIDs with dynamic UI localization (`getTagName`) — "Matematik" and "Mathematics" seamlessly match
+- **Friend Requests & Realtime Status**: Send/accept friend requests, see online status, and invite friends directly into buddy focus rooms
 
-### 💎 Premium & Monetization
-- **Ad-free experience**: No ads for premium users
-- **Exclusive designs**: Premium timer faces and animations
-- **Referral rewards**: Invite 3 friends → earn 1 month free premium
-- **Flexible plans**: Monthly and yearly subscriptions via RevenueCat
+### 💎 Pro Mode, Referral Rewards & Hardened Expiration
+- **Multi-Source Entitlement Validation**: Store subscriptions via RevenueCat; promotional gifts via Supabase `premium_until`
+- **Automatic Expiration & Revocation**: Instant feature re-locking when subscriptions lapse; `AppState` foreground revalidation
+- **Safe Fallbacks (`revertToFreeDefaults`)**: Automatically resets expired users to free themes, minimal timer, and neutral backgrounds
+- **Viral Referral System (3 Invites → 1 Month Free Pro)**:
+  - Deep link routing (`https://pomomate.app/join?ref=CODE` & `pomomate://join?ref=CODE`) with Android App Links and static lightweight landing
+  - Automatic code consumption on both standard email registration and Google OAuth sign-in
+  - In-app progress tracking, WhatsApp one-tap formatted sharing, and instant reward claiming RPCs
+- **Zero-Permission Geo-Localization**: Automatically defaults to Turkish in Turkey and English worldwide without requesting privacy-invasive permissions
 
 ---
 

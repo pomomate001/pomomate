@@ -121,11 +121,18 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
     const friend = params.get('friend');
     const room = params.get('room');
     let code = '';
 
-    if (friend) {
+    if (ref) {
+      code = ref;
+      document.getElementById('subTitle').innerText = 'Bir arkadaşın seni PomoMate\'e davet etti! Birlikte odaklanın ve Pro planı ücretsiz kullanın.';
+      document.getElementById('codeLabel').innerText = 'Özel Davet Kodu';
+      document.getElementById('codeValue').innerText = ref;
+      document.getElementById('codeBox').style.display = 'block';
+    } else if (friend) {
       code = friend;
       document.getElementById('subTitle').innerText = 'Bir arkadaşın seni PomoMate\'de birlikte çalışmaya davet etti!';
       document.getElementById('codeLabel').innerText = 'Arkadaşlık Kodu';

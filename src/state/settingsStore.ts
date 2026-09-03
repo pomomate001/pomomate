@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { storage } from '../platform/storage';
+import { resolveDeviceLanguage } from '../i18n/deviceLanguage';
 
 export type AmbientSoundMode = 'work' | 'break' | 'always' | 'off';
 
@@ -54,11 +55,12 @@ interface SettingsActions {
   setLongBreakDuration: (seconds: number) => void;
   setCyclesBeforeLongBreak: (n: number) => void;
   setIsPremium: (premium: boolean) => void;
+  revertToFreeDefaults: () => void;
   reset: () => void;
 }
 
 const initialSettings: SettingsState = {
-  language: 'tr',
+  language: resolveDeviceLanguage(),
   themeId: 'darkRose',
   timerDesignId: 'minimal',
   backgroundEffectId: 'video_sky',
@@ -95,6 +97,20 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       setLongBreakDuration: (longBreakDuration) => set({ longBreakDuration }),
       setCyclesBeforeLongBreak: (cyclesBeforeLongBreak) => set({ cyclesBeforeLongBreak }),
       setIsPremium: (isPremium) => set({ isPremium }),
+      revertToFreeDefaults: () =>
+        set((state) => {
+          const updates: Partial<SettingsState> = {};
+          if (state.themeId === 'midnightBlue') {
+            updates.themeId = 'darkRose';
+          }
+          if (state.timerDesignId === 'arc' || state.timerDesignId === 'neon') {
+            updates.timerDesignId = 'minimal';
+          }
+          if (['rain', 'snow', 'bubbles'].includes(state.backgroundEffectId)) {
+            updates.backgroundEffectId = 'none';
+          }
+          return updates;
+        }),
       reset: () => set(initialSettings),
     }),
     {

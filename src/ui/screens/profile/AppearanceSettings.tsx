@@ -12,6 +12,7 @@ import { timerDesigns } from '../timer/timerDesigns';
 import { backgroundEffects } from '../../animations/backgroundEffects';
 import { focusAnimations } from '../../animations/focusAnimations';
 import { AppearanceOptionCard } from './AppearanceOptionCard';
+import { PremiumPaywallSheet } from './PremiumPaywallSheet';
 import { useTranslation } from '../../../i18n';
 import {
   VideoWindmillPreview,
@@ -38,6 +39,9 @@ export function AppearanceSettings() {
   const colors = useColors();
   const { t } = useTranslation();
   const { availableThemes, setThemeId } = useTheme();
+  const isPremium = useSettingsStore((s) => s.isPremium);
+  const [showPaywall, setShowPaywall] = React.useState(false);
+
   const {
     themeId,
     timerDesignId,
@@ -51,9 +55,13 @@ export function AppearanceSettings() {
     setBreakAnimationId,
   } = useSettingsStore();
 
-  const handleTheme = (id: string) => {
-    saveThemeId(id);
-    setThemeId(id);
+  const handleTheme = (theme: { id: string; isPremium?: boolean }) => {
+    if (theme.isPremium && !isPremium) {
+      setShowPaywall(true);
+      return;
+    }
+    saveThemeId(theme.id);
+    setThemeId(theme.id);
   };
 
   const videoBackgrounds = backgroundEffects.filter((e) => e.category === 'video');
@@ -66,31 +74,55 @@ export function AppearanceSettings() {
     videoBackgrounds.some((v) => v.id === backgroundEffectId) ||
     imageBackgrounds.some((img) => img.id === backgroundEffectId);
 
-  const handleSelectVideoOrImageBackground = (id: string) => {
-    setBackgroundEffectId(id);
+  const handleSelectVideoOrImageBackground = (item: (typeof backgroundEffects)[0]) => {
+    if (!item.free && !isPremium) {
+      setShowPaywall(true);
+      return;
+    }
+    setBackgroundEffectId(item.id);
     // When a video or image wallpaper is selected, disable/clear focus animations
     setWorkAnimationId('none');
     setBreakAnimationId('none');
   };
 
-  const handleSelectParticleEffect = (id: string) => {
-    setBackgroundEffectId(id);
+  const handleSelectParticleEffect = (item: (typeof backgroundEffects)[0]) => {
+    if (!item.free && !isPremium) {
+      setShowPaywall(true);
+      return;
+    }
+    setBackgroundEffectId(item.id);
   };
 
-  const handleSelectWorkAnimation = (id: string) => {
-    if (id !== 'none' && isVisualWallpaperActive) {
+  const handleSelectWorkAnimation = (item: (typeof focusAnimations)[0]) => {
+    if (!item.free && !isPremium) {
+      setShowPaywall(true);
+      return;
+    }
+    if (item.id !== 'none' && isVisualWallpaperActive) {
       // If user chooses an animation, clear any active wallpaper so they don't clash
       setBackgroundEffectId('none');
     }
-    setWorkAnimationId(id);
+    setWorkAnimationId(item.id);
   };
 
-  const handleSelectBreakAnimation = (id: string) => {
-    if (id !== 'none' && isVisualWallpaperActive) {
+  const handleSelectBreakAnimation = (item: (typeof focusAnimations)[0]) => {
+    if (!item.free && !isPremium) {
+      setShowPaywall(true);
+      return;
+    }
+    if (item.id !== 'none' && isVisualWallpaperActive) {
       // If user chooses an animation, clear any active wallpaper so they don't clash
       setBackgroundEffectId('none');
     }
-    setBreakAnimationId(id);
+    setBreakAnimationId(item.id);
+  };
+
+  const handleSelectTimerDesign = (item: (typeof timerDesigns)[0]) => {
+    if (!item.free && !isPremium) {
+      setShowPaywall(true);
+      return;
+    }
+    setTimerDesignId(item.id);
   };
 
   const renderBackgroundPreview = (id: string) => {
@@ -153,7 +185,8 @@ export function AppearanceSettings() {
             subtitle={e.description}
             isSelected={backgroundEffectId === e.id}
             isPremium={!e.free}
-            onPress={() => handleSelectVideoOrImageBackground(e.id)}
+            isLocked={!e.free && !isPremium}
+            onPress={() => handleSelectVideoOrImageBackground(e)}
             renderPreview={() => renderBackgroundPreview(e.id)}
           />
         ))}
@@ -169,7 +202,8 @@ export function AppearanceSettings() {
             subtitle={e.description}
             isSelected={backgroundEffectId === e.id}
             isPremium={!e.free}
-            onPress={() => handleSelectVideoOrImageBackground(e.id)}
+            isLocked={!e.free && !isPremium}
+            onPress={() => handleSelectVideoOrImageBackground(e)}
             renderPreview={() => renderBackgroundPreview(e.id)}
           />
         ))}
@@ -185,7 +219,8 @@ export function AppearanceSettings() {
             subtitle={e.description}
             isSelected={backgroundEffectId === e.id}
             isPremium={!e.free}
-            onPress={() => handleSelectParticleEffect(e.id)}
+            isLocked={!e.free && !isPremium}
+            onPress={() => handleSelectParticleEffect(e)}
             renderPreview={() => renderBackgroundPreview(e.id)}
           />
         ))}
@@ -201,7 +236,8 @@ export function AppearanceSettings() {
             subtitle={a.description}
             isSelected={workAnimationId === a.id}
             isPremium={!a.free}
-            onPress={() => handleSelectWorkAnimation(a.id)}
+            isLocked={!a.free && !isPremium}
+            onPress={() => handleSelectWorkAnimation(a)}
             renderPreview={() => renderFocusAnimationPreview(a.id)}
           />
         ))}
@@ -217,7 +253,8 @@ export function AppearanceSettings() {
             subtitle={a.description}
             isSelected={breakAnimationId === a.id}
             isPremium={!a.free}
-            onPress={() => handleSelectBreakAnimation(a.id)}
+            isLocked={!a.free && !isPremium}
+            onPress={() => handleSelectBreakAnimation(a)}
             renderPreview={() => renderFocusAnimationPreview(a.id)}
           />
         ))}
@@ -233,7 +270,8 @@ export function AppearanceSettings() {
             subtitle={tItem.description}
             isSelected={themeId === tItem.id}
             isPremium={tItem.isPremium}
-            onPress={() => handleTheme(tItem.id)}
+            isLocked={Boolean(tItem.isPremium && !isPremium)}
+            onPress={() => handleTheme(tItem)}
             renderPreview={() => <ThemeMockupPreview theme={tItem} />}
           />
         ))}
@@ -249,13 +287,19 @@ export function AppearanceSettings() {
             subtitle={d.description}
             isSelected={timerDesignId === d.id}
             isPremium={!d.free}
-            onPress={() => setTimerDesignId(d.id)}
+            isLocked={!d.free && !isPremium}
+            onPress={() => handleSelectTimerDesign(d)}
             renderPreview={() => <TimerDesignPreview designId={d.id} />}
           />
         ))}
       </View>
 
       <View style={{ height: spacing.xxxl }} />
+
+      <PremiumPaywallSheet
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+      />
     </ScrollView>
   );
 }

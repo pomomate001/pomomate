@@ -114,7 +114,11 @@ export function RootNavigator() {
         setUser(currentUser);
         // Auto-detect and save country code for discovery
         if (currentUser?.id) {
-          void countryService.detectAndSave(currentUser.id);
+          void countryService.detectAndSave(currentUser.id).then((code) => {
+            if (code && !currentUser.countryCode && isMounted) {
+              setUser({ ...currentUser, countryCode: code });
+            }
+          });
         }
       }
     };
@@ -131,7 +135,11 @@ export function RootNavigator() {
       setUser(currentUser);
       // Auto-detect and save country code for discovery
       if (currentUser?.id) {
-        void countryService.detectAndSave(currentUser.id);
+        void countryService.detectAndSave(currentUser.id).then((code) => {
+          if (code && !currentUser.countryCode && isMounted) {
+            setUser({ ...currentUser, countryCode: code });
+          }
+        });
       }
     });
 

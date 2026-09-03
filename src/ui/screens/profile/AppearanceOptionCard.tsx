@@ -12,6 +12,7 @@ interface AppearanceOptionCardProps {
   isSelected: boolean;
   onPress: () => void;
   isPremium?: boolean;
+  isLocked?: boolean;
   renderPreview: () => React.ReactNode;
 }
 
@@ -21,6 +22,7 @@ export function AppearanceOptionCard({
   isSelected,
   onPress,
   isPremium = false,
+  isLocked = false,
   renderPreview,
 }: AppearanceOptionCardProps) {
   const colors = useColors();
@@ -43,17 +45,21 @@ export function AppearanceOptionCard({
       <View style={styles.previewWrap}>
         {renderPreview()}
 
-        {/* Selected Checkmark Badge */}
-        {isSelected && (
+        {/* Selected or Lock Badge */}
+        {isSelected ? (
           <View style={[styles.selectedBadge, { backgroundColor: colors.primary }]}>
             <Ionicons name="checkmark" size={13} color={colors.textInverse} />
           </View>
-        )}
+        ) : isLocked ? (
+          <View style={[styles.selectedBadge, { backgroundColor: 'rgba(0,0,0,0.65)' }]}>
+            <Ionicons name="lock-closed" size={11} color="#FFF" />
+          </View>
+        ) : null}
 
         {/* Premium Badge */}
         {isPremium && (
-          <View style={[styles.premiumBadge, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-            <Ionicons name="star" size={11} color={colors.warning} />
+          <View style={[styles.premiumBadge, { backgroundColor: 'rgba(0,0,0,0.75)' }]}>
+            <Ionicons name={isLocked ? 'lock-closed' : 'star'} size={10} color={colors.warning} />
             <Text style={[styles.premiumText, { color: colors.warning }]}>PRO</Text>
           </View>
         )}

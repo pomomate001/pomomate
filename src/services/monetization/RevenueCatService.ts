@@ -14,7 +14,7 @@ export class RevenueCatService {
   private initialized = false;
 
   async initialize(userId: string): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized || Platform.OS === 'web') return;
 
     try {
       const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
@@ -32,6 +32,7 @@ export class RevenueCatService {
   }
 
   async getOfferings(): Promise<PurchasesPackage[]> {
+    if (Platform.OS === 'web') return [];
     try {
       const offerings = await Purchases.getOfferings();
       if (!offerings.current) return [];
@@ -46,6 +47,7 @@ export class RevenueCatService {
   }
 
   async purchasePackage(pkg: PurchasesPackage, userId?: string): Promise<boolean> {
+    if (Platform.OS === 'web') return false;
     try {
       const result = await Purchases.purchasePackage(pkg);
       logger.info('[RevenueCat] Purchase successful');
@@ -61,6 +63,7 @@ export class RevenueCatService {
   }
 
   async restorePurchases(userId?: string): Promise<boolean> {
+    if (Platform.OS === 'web') return false;
     try {
       const customerInfo = await Purchases.restorePurchases();
       logger.info('[RevenueCat] Purchases restored');
@@ -76,6 +79,7 @@ export class RevenueCatService {
   }
 
   async checkSubscription(): Promise<SubscriptionTier> {
+    if (Platform.OS === 'web') return 'free';
     try {
       const customerInfo = await Purchases.getCustomerInfo();
       return this.checkEntitlement(customerInfo) ? 'premium' : 'free';
@@ -86,32 +90,66 @@ export class RevenueCatService {
   }
 
   public checkEntitlement(customerInfo: CustomerInfo): boolean {
+    if (!customerInfo || !customerInfo.entitlements) return false;
     // Check if user has active "premium" entitlement
     return customerInfo.entitlements.active['premium'] !== undefined;
   }
 
-  async getSubscriptionDetails(): Promise<{ planName: string; expirationDate: string | null } | null> {
-    try {
-      const customerInfo = await Purchases.getCustomerInfo();
-      const premiumEntitlement = customerInfo.entitlements.active['premium'];
-      
-      if (!premiumEntitlement) return null;
-
-      // Extract details
-      const productId = premiumEntitlement.productIdentifier.toLowerCase();
-      let planName = 'PomoMate Pro';
-      if (productId.includes('monthly') || productId.includes('month')) planName = 'PomoMate Pro Monthly';
-      else if (productId.includes('yearly') || productId.includes('annual') || productId.includes('year')) planName = 'PomoMate Pro Yearly';
-      else planName = `PomoMate Pro (${premiumEntitlement.productIdentifier})`;
-
-      return {
-        planName,
-        expirationDate: premiumEntitlement.expirationDate, // ISO String
-      };
-    } catch (err) {
-      logger.warn('[RevenueCat] Failed to get subscription details:', err);
-      return null;
+  /**
+   * Combined check: User is Pro if:
+   * 1) RevenueCat has an active store entitlement ('premium'), OR
+   * 2) Supabase subscription_tier is 'premium' AND premium_until is a valid future timestamp.
+   * Store subscriptions never rely on premium_until (RevenueCat is the single source of truth).
+   */
+  public isUserPro(
+    user: { subscriptionTier?: string; premiumUntil?: string | null } | null | undefined,
+    rcTier: SubscriptionTier,
+  ): boolean {
+    if (rcTier === 'premium') return true;
+    if (user?.subscriptionTier === 'premium' && user.premiumUntil) {
+      return new Date(user.premiumUntil).getTime() > Date.now();
     }
+    return false;
+  }
+
+  async getSubscriptionDetails(
+    user?: { subscriptionTier?: string; premiumUntil?: string | null } | null
+  ): Promise<{ planName: string; expirationDate: string | null; isStoreSubscription: boolean } | null> {
+    if (Platform.OS !== 'web') {
+      try {
+        const customerInfo = await Purchases.getCustomerInfo();
+        const premiumEntitlement = customerInfo.entitlements.active['premium'];
+        
+        if (premiumEntitlement) {
+          const productId = premiumEntitlement.productIdentifier.toLowerCase();
+          let planName = 'PomoMate Pro';
+          if (productId.includes('monthly') || productId.includes('month')) planName = 'PomoMate Pro (Aylık)';
+          else if (productId.includes('yearly') || productId.includes('annual') || productId.includes('year')) planName = 'PomoMate Pro (Yıllık)';
+          else planName = `PomoMate Pro (${premiumEntitlement.productIdentifier})`;
+
+          return {
+            planName,
+            expirationDate: premiumEntitlement.expirationDate, // ISO String
+            isStoreSubscription: true,
+          };
+        }
+      } catch (err) {
+        logger.warn('[RevenueCat] Failed to get customerInfo details:', err);
+      }
+    }
+
+    // Fallback: Check if user has an active referral / promo gift
+    if (user?.subscriptionTier === 'premium' && user.premiumUntil) {
+      if (new Date(user.premiumUntil).getTime() > Date.now()) {
+        return {
+          planName: 'PomoMate Pro (Hediye / Davet Ödülü)',
+          expirationDate: user.premiumUntil,
+          isStoreSubscription: false,
+        };
+      }
+    }
+
+    return null;
   }
 
   async manageSubscriptions(): Promise<void> {
@@ -186,6 +224,7 @@ export class RevenueCatService {
   async onCustomerInfoUpdate(
     handler: (info: CustomerInfo) => void,
   ): Promise<void> {
+    if (Platform.OS === 'web') return;
     Purchases.addCustomerInfoUpdateListener(handler);
   }
 }

@@ -208,7 +208,7 @@ export class BuddyService {
   }
 
   /** Broadcast a task sync event to keep tasks in sync between buddies. */
-  async broadcastTask(sessionId: string, action: 'add' | 'update' | 'delete', taskOrId: any): Promise<void> {
+  async broadcastTask(sessionId: string, action: 'add' | 'update' | 'delete' | 'reorder', taskOrId: any): Promise<void> {
     if (this.channel) {
       await this.channel.send({
         type: 'broadcast',
@@ -265,6 +265,8 @@ export class BuddyService {
           store.updateTask(taskOrId.id, taskOrId.updates);
         } else if (action === 'delete') {
           store.removeTask(taskOrId);
+        } else if (action === 'reorder') {
+          store.reorderTasks(taskOrId);
         }
       })
       .on('broadcast', { event: 'emoji_sent' }, (payload) => {

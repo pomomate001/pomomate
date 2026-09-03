@@ -24,11 +24,11 @@ import { soundService } from '../../../services/mobile/sound/SoundService';
 import { adMobService } from '../../../services/monetization';
 import type { TimerMode, Task, BuddyEmojiCode } from '../../../types';
 import { generateId } from '../../../utils/id';
-import { nowIso } from '../../../utils/datetime';
-import { AddTaskSheet } from '../tasks/AddTaskSheet';
-import { TaskItem } from '../tasks/TaskItem';
+import { nowIso, toLocalDateStr } from '../../../utils/datetime';
+import { AddTaskSheet, DraggableTaskList } from '../tasks';
 import { useTranslation } from '../../../i18n';
 import { buddyService } from '../../../services/buddy';
+import { statsService } from '../../../services/stats';
 import { BuddyInviteSheet } from './BuddyInviteSheet';
 import { BuddyAvatarBar } from './BuddyAvatarBar';
 import { BuddyInviteNotification } from './BuddyInviteNotification';
@@ -86,6 +86,7 @@ export function TimerScreen() {
   const toggleCompleted = useTaskStore((s) => s.toggleCompleted);
   const removeTask = useTaskStore((s) => s.removeTask);
   const recordTaskCompleted = useStatsStore((s) => s.recordTaskCompleted);
+  const [isScrollEnabled, setIsScrollEnabled] = useState(true);
 
   // Expandable task list
   const [isTaskListExpanded, setIsTaskListExpanded] = useState(false);
@@ -153,17 +154,37 @@ export function TimerScreen() {
     if (remainingSeconds === 0 && !isRunning) {
       notificationService.cancelAllScheduled();
       if (mode === 'work') {
-        recordPomodoro(workDuration);
+        recordPomodoro(duration);
+        if (user?.id) {
+          statsService.recordSession(user.id, duration, 'work', activeSession?.id);
+        }
         
         // Find the first uncompleted task for today and increment its pomodoroCount
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = toLocalDateStr();
         const activeTask = useTaskStore.getState().tasks.find(t => 
-          (!t.targetDate || t.targetDate === todayStr) && !t.completed
+          t.targetDate === todayStr && !t.completed
         );
         if (activeTask) {
-          useTaskStore.getState().updateTask(activeTask.id, { 
-            pomodoroCount: (activeTask.pomodoroCount || 0) + 1 
-          });
+          const currentCount = activeTask.pomodoroCount || 0;
+          const targetCount = activeTask.targetPomodoroCount || 1;
+          const updatedCount = currentCount + 1;
+
+          if (updatedCount >= targetCount) {
+            // Reached target pomodoro count! Automatically mark completed and move to bottom
+            useTaskStore.getState().updateTask(activeTask.id, { 
+              pomodoroCount: updatedCount,
+              completed: true,
+            });
+            useTaskStore.getState().moveTaskToEnd(activeTask.id);
+            recordTaskCompleted();
+            if (user?.id) {
+              statsService.recordCompletedTask(user.id, activeTask.title);
+            }
+          } else {
+            useTaskStore.getState().updateTask(activeTask.id, { 
+              pomodoroCount: updatedCount,
+            });
+          }
         }
         
         soundService.playCompletionSound();
@@ -185,7 +206,15 @@ export function TimerScreen() {
         );
       }
     }
-  }, [remainingSeconds, isRunning, mode, recordPomodoro, workDuration, t]);
+  }, [remainingSeconds, isRunning, mode, recordPomodoro, duration, recordTaskCompleted, user?.id, activeSession?.id, t]);
+
+  // Generate recurring tasks for today and sync stats on mount
+  useEffect(() => {
+    useTaskStore.getState().generateRecurringTasks();
+    if (user?.id) {
+      statsService.syncUserStats(user.id);
+    }
+  }, [user?.id]);
 
   // Listen for incoming buddy invites
   useEffect(() => {
@@ -255,16 +284,17 @@ export function TimerScreen() {
   const [editingTask, setEditingTask] = React.useState<Task | undefined>(undefined);
 
   const handleAddTask = useCallback(
-    (title: string, tag: string | null, recurrence: any) => {
+    (title: string, tag: string | null, recurrence: any, targetDate?: string, targetPomodoroCount?: number) => {
       const task: Task = {
         id: generateId(),
         userId: '',
         title,
         tag,
         recurrence: { type: recurrence },
-        targetDate: new Date().toISOString().split('T')[0],
+        targetDate: targetDate || new Date().toISOString().split('T')[0],
         completed: false,
         pomodoroCount: 0,
+        targetPomodoroCount: targetPomodoroCount || 1,
         createdAt: nowIso(),
       };
       addTask(task);
@@ -281,6 +311,16 @@ export function TimerScreen() {
       buddyService.broadcastTask(activeSession.id, 'update', { id, updates });
     }
   }, [activeSession]);
+
+  const handleReorderTasks = useCallback(
+    (newOrder: Task[]) => {
+      useTaskStore.getState().reorderTasks(newOrder);
+      if (activeSession) {
+        buddyService.broadcastTask(activeSession.id, 'reorder', newOrder);
+      }
+    },
+    [activeSession]
+  );
 
   const openEditTask = useCallback((task: Task) => {
     setEditingTask(task);
@@ -319,10 +359,11 @@ export function TimerScreen() {
 
   const modeButtons: TimerMode[] = ['work', 'shortBreak', 'longBreak'];
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayTasks = tasks.filter(t => !t.targetDate || t.targetDate === todayStr);
+  const todayStr = toLocalDateStr();
+  const todayTasks = tasks.filter(t => t.targetDate === todayStr);
   const uncompletedTasks = todayTasks.filter(t => !t.completed);
-  const remainingTaskList = todayTasks.slice(1); // all tasks except the first one
+  const completedTasks = todayTasks.filter(t => t.completed);
+  const sortedTodayTasks = [...uncompletedTasks, ...completedTasks];
 
   return (
     <BackgroundEffect effectId={backgroundEffectId}>
@@ -341,6 +382,7 @@ export function TimerScreen() {
       />
 
       <ScrollView
+        scrollEnabled={isScrollEnabled}
         contentContainerStyle={[
           styles.container,
           { 
@@ -477,7 +519,7 @@ export function TimerScreen() {
             </View>
             
             {/* Active / Primary Task Card */}
-            {todayTasks.length === 0 ? (
+            {sortedTodayTasks.length === 0 ? (
               <View style={[styles.emptyCard, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
                 <Ionicons name="clipboard-outline" size={24} color={colors.textSecondary} />
                 <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
@@ -486,56 +528,30 @@ export function TimerScreen() {
               </View>
             ) : (
               <>
-                {/* First (active) task */}
-                <View style={[
-                  styles.activeTaskCard,
-                  { backgroundColor: 'rgba(15, 18, 28, 0.78)', borderColor: isRunning && mode === 'work' ? colors.primary : 'rgba(255, 255, 255, 0.15)' }
-                ]}>
-                  {isRunning && mode === 'work' && (
-                    <View style={[styles.workingIndicator, { backgroundColor: colors.primary }]}>
-                      <Ionicons name="radio" size={8} color={colors.textInverse} />
-                      <Text style={[typography.overline, { color: colors.textInverse, marginLeft: 3, fontSize: 8 }]}>{t('timer.workingOn')}</Text>
-                    </View>
-                  )}
-                  <View style={{ transform: [{ scale: 0.95 }] }}>
-                    <TaskItem
-                      task={todayTasks[0]}
-                      onToggle={handleToggleTask}
-                      onDelete={handleRemoveTask}
-                      onPress={openEditTask}
-                    />
-                  </View>
-                </View>
+                <DraggableTaskList
+                  tasks={isTaskListExpanded ? sortedTodayTasks : sortedTodayTasks.slice(0, 1)}
+                  isWorking={isRunning && mode === 'work'}
+                  onToggle={handleToggleTask}
+                  onDelete={handleRemoveTask}
+                  onPress={openEditTask}
+                  onReorder={handleReorderTasks}
+                  onDragBegin={() => setIsScrollEnabled(false)}
+                  onDragEnd={() => setIsScrollEnabled(true)}
+                />
 
                 {/* Expand/Collapse button */}
-                {remainingTaskList.length > 0 && (
+                {sortedTodayTasks.length > 1 && (
                   <Pressable 
                     onPress={toggleTaskList} 
                     style={[styles.expandBtn, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1 }]}
                   >
                     <Text style={[typography.captionBold, { color: colors.textPrimary, fontSize: 11 }]}>
-                      {isTaskListExpanded ? t('timer.hideTasks') : t('timer.moreTasks', { count: remainingTaskList.length })}
+                      {isTaskListExpanded ? t('timer.hideTasks') : t('timer.moreTasks', { count: sortedTodayTasks.length - 1 })}
                     </Text>
                     <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>
                       <Ionicons name="chevron-down" size={14} color={colors.textPrimary} />
                     </Animated.View>
                   </Pressable>
-                )}
-
-                {/* Expanded task list */}
-                {isTaskListExpanded && (
-                  <View style={[styles.expandedList, { backgroundColor: 'rgba(15, 18, 28, 0.78)', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
-                    {remainingTaskList.map((task) => (
-                      <View key={task.id} style={{ transform: [{ scale: 0.95 }] }}>
-                      <TaskItem
-                        task={task}
-                        onToggle={handleToggleTask}
-                        onDelete={handleRemoveTask}
-                        onPress={openEditTask}
-                      />
-                      </View>
-                    ))}
-                  </View>
                 )}
               </>
             )}

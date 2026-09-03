@@ -5,6 +5,7 @@ import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
+import { useTranslation } from '../../../i18n';
 
 interface AddTaskInputProps {
   onAdd: (title: string) => void;
@@ -13,6 +14,7 @@ interface AddTaskInputProps {
 export function AddTaskInput({ onAdd }: AddTaskInputProps) {
   const [text, setText] = useState('');
   const colors = useColors();
+  const { t } = useTranslation();
 
   const handleSubmit = () => {
     const trimmed = text.trim();
@@ -26,7 +28,7 @@ export function AddTaskInput({ onAdd }: AddTaskInputProps) {
       <TextInput
         value={text}
         onChangeText={setText}
-        placeholder="Yeni görev ekle…"
+        placeholder={t('tasks.quickAddPlaceholder')}
         placeholderTextColor={colors.textDisabled}
         onSubmitEditing={handleSubmit}
         returnKeyType="done"

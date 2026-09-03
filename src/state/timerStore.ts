@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { DEFAULT_DURATIONS, getNextMode } from '../core';
 import type { TimerMode, TimerState } from '../types';
+import { useSettingsStore } from './settingsStore';
 
 interface TimerStore extends TimerState {
   /** Number of completed work intervals in the current set. */
@@ -26,9 +27,23 @@ interface TimerStore extends TimerState {
   clearRemoteUpdateFlag: () => void;
 }
 
+export function getDurationForMode(mode: TimerMode): number {
+  try {
+    const settings = useSettingsStore.getState();
+    if (mode === 'work' && settings?.workDuration) return settings.workDuration;
+    if (mode === 'shortBreak' && settings?.shortBreakDuration) return settings.shortBreakDuration;
+    if (mode === 'longBreak' && settings?.longBreakDuration) return settings.longBreakDuration;
+  } catch {
+    // Fallback if settings store not initialized yet
+  }
+  return DEFAULT_DURATIONS[mode];
+}
+
+const initialWorkDuration = getDurationForMode('work');
+
 const initialState: TimerState & { completedWorkCycles: number; targetEndTime: number | null } = {
-  duration: DEFAULT_DURATIONS.work,
-  remainingSeconds: DEFAULT_DURATIONS.work,
+  duration: initialWorkDuration,
+  remainingSeconds: initialWorkDuration,
   isRunning: false,
   mode: 'work',
   currentCycle: 1,
@@ -49,12 +64,15 @@ export const useTimerStore = create<TimerStore & { isRemoteUpdate?: boolean }>((
   pause: () => set({ isRunning: false, targetEndTime: null }),
 
   reset: () =>
-    set((state) => ({
-      isRunning: false,
-      targetEndTime: null,
-      remainingSeconds: DEFAULT_DURATIONS[state.mode],
-      duration: DEFAULT_DURATIONS[state.mode],
-    })),
+    set((state) => {
+      const dur = getDurationForMode(state.mode);
+      return {
+        isRunning: false,
+        targetEndTime: null,
+        remainingSeconds: dur,
+        duration: dur,
+      };
+    }),
 
   tick: () =>
     set((state) => {
@@ -86,14 +104,16 @@ export const useTimerStore = create<TimerStore & { isRemoteUpdate?: boolean }>((
       return state;
     }),
 
-  setMode: (mode) =>
+  setMode: (mode) => {
+    const dur = getDurationForMode(mode);
     set({
       mode,
-      duration: DEFAULT_DURATIONS[mode],
-      remainingSeconds: DEFAULT_DURATIONS[mode],
+      duration: dur,
+      remainingSeconds: dur,
       isRunning: false,
       targetEndTime: null,
-    }),
+    });
+  },
 
   setTimerState: (newState) => set((state) => ({ ...state, ...newState })),
   
@@ -103,11 +123,13 @@ export const useTimerStore = create<TimerStore & { isRemoteUpdate?: boolean }>((
     const { mode, completedWorkCycles, currentCycle } = get();
     const nextCompleted =
       mode === 'work' ? completedWorkCycles + 1 : completedWorkCycles;
-    const nextMode = getNextMode(mode, nextCompleted);
+    const cyclesBeforeLongBreak = useSettingsStore.getState()?.cyclesBeforeLongBreak ?? 4;
+    const nextMode = getNextMode(mode, nextCompleted, cyclesBeforeLongBreak);
+    const dur = getDurationForMode(nextMode);
     set({
       mode: nextMode,
-      duration: DEFAULT_DURATIONS[nextMode],
-      remainingSeconds: DEFAULT_DURATIONS[nextMode],
+      duration: dur,
+      remainingSeconds: dur,
       isRunning: false,
       targetEndTime: null,
       completedWorkCycles: nextCompleted,
@@ -115,3 +137,26 @@ export const useTimerStore = create<TimerStore & { isRemoteUpdate?: boolean }>((
     });
   },
 }));
+
+// Subscribe to settings store to immediately update timer durations when user modifies them
+useSettingsStore.subscribe((settings, prevSettings) => {
+  const timer = useTimerStore.getState();
+  if (!timer.isRunning) {
+    if (timer.mode === 'work' && settings.workDuration !== prevSettings?.workDuration) {
+      useTimerStore.setState({
+        duration: settings.workDuration,
+        remainingSeconds: settings.workDuration,
+      });
+    } else if (timer.mode === 'shortBreak' && settings.shortBreakDuration !== prevSettings?.shortBreakDuration) {
+      useTimerStore.setState({
+        duration: settings.shortBreakDuration,
+        remainingSeconds: settings.shortBreakDuration,
+      });
+    } else if (timer.mode === 'longBreak' && settings.longBreakDuration !== prevSettings?.longBreakDuration) {
+      useTimerStore.setState({
+        duration: settings.longBreakDuration,
+        remainingSeconds: settings.longBreakDuration,
+      });
+    }
+  }
+});

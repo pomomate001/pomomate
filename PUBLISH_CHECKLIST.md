@@ -14,6 +14,15 @@ Bu dosyayı adım adım takip ederek uygulamanızı Google Play Store'a yayınla
   server/migrations/001_initial_schema.sql
   server/migrations/002_rls_policies.sql
   server/migrations/003_storage_buckets.sql
+  server/migrations/004_social_features.sql
+  server/migrations/005_seed_tags.sql
+  server/migrations/006_fix_user_insert.sql
+  server/migrations/007_discover_rpc.sql
+  server/migrations/008_subscription_tier_enum.sql
+  server/migrations/009_accept_request_rpc.sql
+  server/migrations/010_friend_stats_rpc.sql
+  server/migrations/011_referral_reward_system.sql
+  server/migrations/012_discover_country_filter.sql
   ```
 - [ ] Authentication → Providers → **Email** (aktif)
 - [ ] Authentication → Providers → **Google** (isteğe bağlı, aşağıda)

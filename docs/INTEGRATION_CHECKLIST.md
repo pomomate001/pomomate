@@ -95,19 +95,26 @@
 - [ ] Media streams start/stop correctly
 - [ ] Audio routing (speaker/earpiece) works
 
-### Monetization
-- [ ] Free users see ads
-- [ ] Premium users see no ads
-- [ ] RevenueCat subscription check works
-- [ ] Referral counting works
-- [ ] 3 completed referrals → reward eligible
-- [ ] Reward claim grants 1 month premium
+### Monetization & Subscription Hardening
+- [x] Free users see ads (banner + interstitial on pomodoro complete)
+- [x] Premium users see no ads
+- [x] RevenueCat subscription check works
+- [x] Single source of truth for RevenueCat + Supabase promo grants
+- [x] Expired 30-day Pro auto-revocation verified via unit tests
+- [x] AppState foreground revalidation re-checks active Pro status
+- [x] Downgrade fallback (`revertToFreeDefaults`) resets themes, timer faces & backgrounds to free presets
+- [x] Referral counting via PostgreSQL RPCs (`get_referral_stats`)
+- [x] 3 completed referrals → reward eligible via `claim_referral_reward` RPC
+- [x] Referral code attribution works on both standard email sign-up and Google OAuth sign-in
+- [x] Deep link handling (`pomomate://join?ref=...` and web fallback)
 
-### Network Resilience
-- [ ] WiFi → mobile data transition handled
-- [ ] Connection loss → auto-reconnect
-- [ ] Background → foreground recovery
-- [ ] Long-running room stability (1+ hour)
+### Internationalization & Discovery
+- [x] Zero-permission locale/country detection via Expo Localization
+- [x] Turkey/Turkish defaults to 'tr'; all worldwide users default to 'en'
+- [x] Shared tag UUID architecture: "Matematik" and "Mathematics" match correctly in discovery
+- [x] Dynamic tag presentation via `getTagName(tag, language)` across all UI components
+- [x] Task recurrence badges localized (Daily, Weekdays, Weekends)
+- [x] Discover screen refresh button localized in TR and EN
 
 ### Security
 - [ ] RLS blocks unauthorized access

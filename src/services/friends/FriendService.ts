@@ -6,6 +6,7 @@
 import { supabase } from '../auth/supabaseClient';
 import { useFriendsStore, FriendSummary, FriendRequest } from '../../state/friendsStore';
 import { logger } from '../../utils/logger';
+import { statsService } from '../stats';
 import type { SuggestedUser } from '../../state/friendsStore';
 
 export class FriendService {
@@ -45,15 +46,21 @@ export class FriendService {
         logger.warn('[FriendService] Failed to load friend profiles:', pErr.message);
       }
 
-      // 3. Assemble summaries
-      const friendList: FriendSummary[] = (profiles ?? []).map((p: any) => ({
-        userId: p.id,
-        displayName: p.display_name ?? 'Kullanıcı',
-        avatarUrl: p.avatar_url,
-        totalWorkSeconds: 0,
-        totalPomodoros: 0,
-        streak: 0,
-      }));
+      // 3. Fetch friend stats from Supabase
+      const statsMap = await statsService.fetchFriendsStats(friendIds);
+
+      // 4. Assemble summaries with real stats
+      const friendList: FriendSummary[] = (profiles ?? []).map((p: any) => {
+        const stats = statsMap[p.id];
+        return {
+          userId: p.id,
+          displayName: p.display_name ?? 'Kullanıcı',
+          avatarUrl: p.avatar_url,
+          totalWorkSeconds: stats?.totalWorkSeconds || 0,
+          totalPomodoros: stats?.totalPomodoros || 0,
+          streak: stats?.streak || 0,
+        };
+      });
 
       useFriendsStore.getState().setFriends(friendList);
       useFriendsStore.getState().setLoading(false);
@@ -272,35 +279,53 @@ export class FriendService {
     limit: number = 20,
     offset: number = 0,
     category: string | null = null,
-    search: string | null = null
+    search: string | null = null,
+    sameCountryOnly: boolean = false,
+    userCountryCode?: string | null
   ): Promise<SuggestedUser[]> {
     try {
+      let userRows: any = null;
+
+      // 1. Attempt RPC with 5 parameters (including p_same_country_only)
       const { data, error } = await supabase.rpc('discover_users', {
         p_limit: limit,
         p_offset: offset,
         p_category: category,
         p_search: search,
+        p_same_country_only: sameCountryOnly,
       });
 
-      let userRows = data;
-
-      // Fallback: If RPC errors or returns empty, query users table directly
-      if (error || !userRows || userRows.length === 0) {
-        if (error) {
-          logger.warn('[FriendService] discoverUsers RPC error, trying direct table fallback:', error.message);
+      if (!error && data) {
+        userRows = data;
+      } else {
+        // Fallback: Attempt legacy 4-parameter RPC if migration 012 not yet applied
+        const { data: legacyData, error: legacyError } = await supabase.rpc('discover_users', {
+          p_limit: limit,
+          p_offset: offset,
+          p_category: category,
+          p_search: search,
+        });
+        if (!legacyError && legacyData) {
+          userRows = legacyData;
         }
+      }
 
+      // Fallback: If both RPCs error or return empty, query users table directly
+      if (!userRows || userRows.length === 0) {
         let query = supabase
           .from('users')
           .select('id, display_name, avatar_url, country_code')
-          .neq('id', _userId)
-          .range(offset, offset + limit - 1);
+          .neq('id', _userId);
+
+        if (sameCountryOnly && userCountryCode) {
+          query = query.eq('country_code', userCountryCode);
+        }
 
         if (search && search.trim().length > 0) {
           query = query.ilike('display_name', `%${search.trim()}%`);
         }
 
-        const { data: directUsers, error: dErr } = await query;
+        const { data: directUsers, error: dErr } = await query.range(offset, offset + limit - 1);
         if (!dErr && directUsers) {
           userRows = directUsers.map((u: any) => ({
             user_id: u.id,
@@ -314,6 +339,11 @@ export class FriendService {
         }
       }
 
+      // Client-side country filter defense: guarantee users match when sameCountryOnly is active
+      if (sameCountryOnly && userCountryCode && Array.isArray(userRows)) {
+        userRows = userRows.filter((r: any) => r.country_code === userCountryCode);
+      }
+
       const suggestions: SuggestedUser[] = (userRows ?? []).map((row: any) => ({
         userId: row.user_id,
         displayName: (row.display_name && row.display_name.trim().length > 0) ? row.display_name : 'Kullanıcı',
@@ -324,8 +354,8 @@ export class FriendService {
         tags: (row.tags ?? []).map((t: any) => ({
           id: t.id,
           slug: t.slug,
-          nameTr: t.nameTr,
-          nameEn: t.nameEn,
+          nameTr: t.nameTr || t.name_tr || '',
+          nameEn: t.nameEn || t.name_en || '',
           category: t.category,
           icon: t.icon,
         })),

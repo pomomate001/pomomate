@@ -49,7 +49,12 @@ export class SupabaseAuthService implements AuthService {
         email: profile.email as string,
         displayName: profile.display_name as string,
         avatarUrl: profile.avatar_url as string | undefined,
+        countryCode: profile.country_code as string | undefined,
         subscriptionTier: profile.subscription_tier as 'free' | 'premium',
+        referralCode: (profile.referral_code as string) || (profile.id ? (profile.id as string).slice(0, 8).toUpperCase() : undefined),
+        referredBy: profile.referred_by as string | undefined,
+        premiumUntil: profile.premium_until as string | undefined,
+        referralRewardClaimedCount: (profile.referral_reward_claimed_count as number) || 0,
         createdAt: profile.created_at as string,
         updatedAt: profile.updated_at as string,
       };

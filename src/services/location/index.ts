@@ -1,1 +1,1 @@
-export { countryService } from './CountryService';
+export { countryService, getCountryFlag, getCountryName } from './CountryService';

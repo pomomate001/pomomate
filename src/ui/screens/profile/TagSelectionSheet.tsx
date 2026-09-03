@@ -7,7 +7,7 @@ import { spacing } from '../../theme/spacing';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { useTagStore, useUserStore } from '../../../state';
-import { tagService } from '../../../services/tags';
+import { tagService, getTagName } from '../../../services/tags';
 import { useTranslation } from '../../../i18n';
 import type { TagCategory } from '../../../types';
 
@@ -31,7 +31,7 @@ const CATEGORY_CONFIG: { key: TagCategory; icon: string; labelKey: string }[] = 
 
 export function TagSelectionSheet({ visible, onClose }: TagSelectionSheetProps) {
   const colors = useColors();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const user = useUserStore((s) => s.user);
   const allTags = useTagStore((s) => s.allTags);
   const userTags = useTagStore((s) => s.userTags);
@@ -105,7 +105,7 @@ export function TagSelectionSheet({ visible, onClose }: TagSelectionSheetProps) 
                 style={[styles.selectedChip, { backgroundColor: colors.primary, borderColor: colors.primary }]}
               >
                 {tag.icon && <Text style={{ fontSize: 12, marginRight: 4 }}>{tag.icon}</Text>}
-                <Text style={[typography.captionBold, { color: '#FFF' }]}>{tag.nameTr}</Text>
+                <Text style={[typography.captionBold, { color: '#FFF' }]}>{getTagName(tag, language)}</Text>
                 <Ionicons name="close" size={12} color="#FFF" style={{ marginLeft: 4 }} />
               </Pressable>
             ))}
@@ -175,7 +175,7 @@ export function TagSelectionSheet({ visible, onClose }: TagSelectionSheetProps) 
                       ]}
                       numberOfLines={1}
                     >
-                      {tag.nameTr}
+                      {getTagName(tag, language)}
                     </Text>
                     {isSelected && (
                       <Ionicons name="checkmark-circle" size={14} color={colors.primary} style={{ marginLeft: 4 }} />

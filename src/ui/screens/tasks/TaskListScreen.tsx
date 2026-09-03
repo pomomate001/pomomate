@@ -16,7 +16,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { TaskItem } from './TaskItem';
 import { AddTaskInput } from './AddTaskInput';
 import { generateId } from '../../../utils/id';
-import { nowIso } from '../../../utils/datetime';
+import { nowIso, toLocalDateStr } from '../../../utils/datetime';
 import type { Task } from '../../../types';
 import { useTranslation } from '../../../i18n';
 
@@ -37,6 +37,8 @@ export function TaskListScreen() {
         title,
         completed: false,
         pomodoroCount: 0,
+        targetPomodoroCount: 1,
+        targetDate: toLocalDateStr(),
         createdAt: nowIso(),
       };
       addTask(task);

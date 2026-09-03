@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 
 interface TargetInfo {
-  type: 'friend' | 'room' | 'none';
+  type: 'ref' | 'friend' | 'room' | 'none';
   code: string;
 }
 
@@ -13,8 +13,10 @@ function getInitialTarget(): TargetInfo {
     return { type: 'none', code: '' };
   }
   const params = new URLSearchParams(window.location.search);
+  const refCode = params.get('ref');
   const friendCode = params.get('friend');
   const roomCode = params.get('room');
+  if (refCode) return { type: 'ref', code: refCode };
   if (friendCode) return { type: 'friend', code: friendCode };
   if (roomCode) return { type: 'room', code: roomCode };
   return { type: 'none', code: '' };
@@ -66,7 +68,9 @@ export function JoinLandingScreen() {
 
         <Text style={styles.title}>PomoMate</Text>
         <Text style={styles.subtitle}>
-          {targetType === 'friend'
+          {targetType === 'ref'
+            ? "Bir arkadaşın seni PomoMate'e davet etti! Birlikte odaklanın ve Pro planı ücretsiz kullanın."
+            : targetType === 'friend'
             ? "Bir arkadaşın seni PomoMate'de birlikte çalışmaya davet etti!"
             : targetType === 'room'
             ? 'Bir çalışma odasına katılmaya davet edildin!'
@@ -76,7 +80,11 @@ export function JoinLandingScreen() {
         {code ? (
           <View style={styles.codeContainer}>
             <Text style={styles.codeLabel}>
-              {targetType === 'friend' ? 'ARKADAŞLIK KODU' : 'ODA KODU'}
+              {targetType === 'ref'
+                ? 'ÖZEL DAVET KODU'
+                : targetType === 'friend'
+                ? 'ARKADAŞLIK KODU'
+                : 'ODA KODU'}
             </Text>
             <Text style={styles.codeText} selectable>
               {code}

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Alert, Platform } from 'react-native';
+import { Alert, Platform, AppState } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,7 +10,7 @@ import { AppNavigator, navigationRef } from './src/navigation';
 import { ThemeProvider } from './src/ui/theme';
 import { validateConfig } from './src/config';
 import { notificationService } from './src/services/mobile';
-import { adMobService, revenueCatService } from './src/services/monetization';
+import { adMobService, revenueCatService, referralService } from './src/services/monetization';
 import { authService } from './src/services/auth';
 import { friendService } from './src/services/friends/FriendService';
 import { roomService, roomInviteService } from './src/services/room';
@@ -20,12 +20,14 @@ import { JoinLandingScreen } from './src/ui/screens/JoinLandingScreen';
 import * as WebBrowser from 'expo-web-browser';
 import * as SplashScreen from 'expo-splash-screen';
 
-// Keep the splash screen visible while services and auth initialize
-SplashScreen.preventAutoHideAsync();
-SplashScreen.setOptions({
-  duration: 400,
-  fade: true,
-});
+// Keep the splash screen visible while services and auth initialize (mobile only)
+if (Platform.OS !== 'web') {
+  SplashScreen.preventAutoHideAsync().catch(() => {});
+  SplashScreen.setOptions({
+    duration: 400,
+    fade: true,
+  });
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -124,6 +126,22 @@ export default function App() {
             });
           }
         }
+
+        const refCode = parsed.queryParams?.ref as string;
+        if (refCode) {
+          await referralService.savePendingCode(refCode);
+          const user = useUserStore.getState().user;
+          if (user?.id) {
+            referralService.consumePendingCodeIfAny().then((applyRes) => {
+              if (applyRes?.success) {
+                Alert.alert(
+                  'Davet Kodu Uygulandı! 🎁',
+                  `${applyRes.referrerName || 'Arkadaşın'} seni PomoMate'e davet etti!`
+                );
+              }
+            });
+          }
+        }
         
         if (accessToken && refreshToken) {
           await supabase.auth.setSession({
@@ -167,32 +185,67 @@ export default function App() {
           );
         });
 
+        // Consume any pending referral code (e.g. from deep link or registration)
+        referralService.consumePendingCodeIfAny().then((applyRes) => {
+          if (applyRes?.success) {
+            Alert.alert(
+              'Davet Kodu Uygulandı! 🎁',
+              `${applyRes.referrerName || 'Arkadaşın'} seni PomoMate'e davet etti!`
+            );
+          }
+        });
+
+        const verifySubscription = async (userToVerify?: any) => {
+          const u = userToVerify || useUserStore.getState().user;
+          if (!u?.id) return;
+
+          const rcTier = await revenueCatService.checkSubscription();
+          const isPro = revenueCatService.isUserPro(u, rcTier);
+
+          if (isPro) {
+            setIsPremium(true);
+            if (rcTier === 'premium' && u.subscriptionTier !== 'premium') {
+              await revenueCatService.syncSupabaseTier(u.id, 'premium');
+              useUserStore.getState().updateUser({ subscriptionTier: 'premium' });
+            }
+          } else {
+            setIsPremium(false);
+            useSettingsStore.getState().revertToFreeDefaults();
+            if (u.subscriptionTier === 'premium') {
+              await revenueCatService.syncSupabaseTier(u.id, 'free');
+              useUserStore.getState().updateUser({ subscriptionTier: 'free' });
+            }
+          }
+        };
+
         // Initialize RevenueCat
         await revenueCatService.initialize(currentUser.id);
 
-        // Check subscription status from RevenueCat and Supabase
-        const rcTier = await revenueCatService.checkSubscription();
-        const isPro = currentUser.subscriptionTier === 'premium' || rcTier === 'premium';
-        setIsPremium(isPro);
+        // Run initial verification
+        await verifySubscription(currentUser);
 
-        // If RevenueCat is premium but Supabase record is free, sync to Supabase
-        if (rcTier === 'premium' && currentUser.subscriptionTier !== 'premium') {
-          await revenueCatService.syncSupabaseTier(currentUser.id, 'premium');
-          useUserStore.getState().updateUser({ subscriptionTier: 'premium' });
-        }
-
-        // Listen for live RevenueCat updates (e.g. promotional grants, store renewals)
+        // Listen for live RevenueCat updates (e.g. promotional grants, store renewals, expirations)
         await revenueCatService.onCustomerInfoUpdate((customerInfo) => {
           const isEntitled = revenueCatService.checkEntitlement(customerInfo);
-          const currentSupabaseTier = useUserStore.getState().user?.subscriptionTier;
-          if (isEntitled) {
+          const currentU = useUserStore.getState().user;
+          const isPro = revenueCatService.isUserPro(
+            currentU,
+            isEntitled ? 'premium' : 'free'
+          );
+
+          if (isPro) {
             setIsPremium(true);
-            if (currentSupabaseTier !== 'premium') {
-              revenueCatService.syncSupabaseTier(currentUser.id, 'premium');
+            if (currentU && currentU.subscriptionTier !== 'premium') {
+              revenueCatService.syncSupabaseTier(currentU.id, 'premium');
               useUserStore.getState().updateUser({ subscriptionTier: 'premium' });
             }
-          } else if (currentSupabaseTier !== 'premium') {
+          } else {
             setIsPremium(false);
+            useSettingsStore.getState().revertToFreeDefaults();
+            if (currentU && currentU.subscriptionTier === 'premium') {
+              revenueCatService.syncSupabaseTier(currentU.id, 'free');
+              useUserStore.getState().updateUser({ subscriptionTier: 'free' });
+            }
           }
         });
 
@@ -250,10 +303,39 @@ export default function App() {
         await setupUserSubscription(currentUser);
       }
       
-      return { urlSub, realtimeChannel };
+      const appStateSub = AppState.addEventListener('change', (nextAppState) => {
+        if (nextAppState === 'active') {
+          const currentU = useUserStore.getState().user;
+          if (currentU?.id) {
+            revenueCatService.checkSubscription().then((rcTier) => {
+              const isPro = revenueCatService.isUserPro(currentU, rcTier);
+              if (isPro) {
+                setIsPremium(true);
+                if (rcTier === 'premium' && currentU.subscriptionTier !== 'premium') {
+                  revenueCatService.syncSupabaseTier(currentU.id, 'premium');
+                  useUserStore.getState().updateUser({ subscriptionTier: 'premium' });
+                }
+              } else {
+                setIsPremium(false);
+                useSettingsStore.getState().revertToFreeDefaults();
+                if (currentU.subscriptionTier === 'premium') {
+                  revenueCatService.syncSupabaseTier(currentU.id, 'free');
+                  useUserStore.getState().updateUser({ subscriptionTier: 'free' });
+                }
+              }
+            });
+          }
+        }
+      });
+
+      return { urlSub, realtimeChannel, appStateSub };
     };
 
-    let cleanupRefs: { urlSub?: { remove: () => void }; realtimeChannel?: ReturnType<typeof supabase.channel> | null } | null = null;
+    let cleanupRefs: {
+      urlSub?: { remove: () => void };
+      appStateSub?: { remove: () => void };
+      realtimeChannel?: ReturnType<typeof supabase.channel> | null;
+    } | null = null;
     
     // Patch init to capture cleanup refs and hide splash screen when ready
     const startInit = async () => {
@@ -262,7 +344,9 @@ export default function App() {
       } catch (err) {
         console.warn('Initialization error:', err);
       } finally {
-        await SplashScreen.hideAsync();
+        if (Platform.OS !== 'web') {
+          await SplashScreen.hideAsync().catch(() => {});
+        }
       }
     };
     
@@ -270,6 +354,7 @@ export default function App() {
 
     return () => {
       if (cleanupRefs?.urlSub) cleanupRefs.urlSub.remove();
+      if (cleanupRefs?.appStateSub) cleanupRefs.appStateSub.remove();
       if (cleanupRefs?.realtimeChannel) {
         supabase.removeChannel(cleanupRefs.realtimeChannel);
       }

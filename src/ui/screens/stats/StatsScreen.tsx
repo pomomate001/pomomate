@@ -1,18 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
+import { radius } from '../../theme/radius';
 import { useStatsStore, useTaskStore } from '../../../state';
+import { getTasksForDate } from '../../../state/taskStore';
+import { toLocalDateStr, nowIso } from '../../../utils/datetime';
+import { generateId } from '../../../utils/id';
 import { Card } from '../../components/Card';
 import { StatCard } from './StatCard';
 import { MiniBarChart } from './MiniBarChart';
 import { FriendsSection } from './FriendsSection';
 import { CalendarView } from './CalendarView';
+import { AddTaskSheet } from '../tasks';
 import { AdPlacement } from '../../ads';
 import { useTranslation, Language } from '../../../i18n';
+import type { Task } from '../../../types';
 
 type Period = 'daily' | 'weekly' | 'monthly';
 
@@ -23,6 +29,29 @@ function formatHours(seconds: number, lang: Language): string {
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
   return h > 0 ? `${h}s ${m}d` : `${m}dk`;
+}
+
+function formatSelectedDateHeader(dateStr: string, language: Language): string {
+  try {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, (m || 1) - 1, d || 1);
+    if (language === 'en') {
+      return date.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        weekday: 'short',
+      });
+    }
+    return date.toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      weekday: 'long',
+    });
+  } catch {
+    return dateStr;
+  }
 }
 
 // Calculate chart data from real recorded daily stats
@@ -39,7 +68,7 @@ function computeRealChartData(
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = toLocalDateStr(d);
       const dayLabel = dayLabels[d.getDay()];
       const match = dailyStats.find((s) => s.date === dateStr);
       result.push({
@@ -56,15 +85,17 @@ function computeRealChartData(
       const label = `${weekPrefix}${4 - w}`;
       const now = new Date();
       const start = new Date(now);
-      start.setDate(start.getDate() - (w + 1) * 7);
+      start.setDate(start.getDate() - (w + 1) * 7 + 1);
+      start.setHours(0, 0, 0, 0);
       const end = new Date(now);
       end.setDate(end.getDate() - w * 7);
+      end.setHours(23, 59, 59, 999);
+
+      const startStr = toLocalDateStr(start);
+      const endStr = toLocalDateStr(end);
 
       const total = dailyStats
-        .filter((s) => {
-          const sd = new Date(s.date);
-          return sd >= start && sd <= end;
-        })
+        .filter((s) => s.date >= startStr && s.date <= endStr)
         .reduce((sum, s) => sum + s.pomodorosCompleted, 0);
 
       result.push({ label, value: total });
@@ -89,11 +120,13 @@ function computeRealChartData(
 export function StatsScreen() {
   const { t, language } = useTranslation();
   const [period, setPeriod] = useState<Period>('daily');
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() => toLocalDateStr());
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [showAddTaskSheet, setShowAddTaskSheet] = useState(false);
 
   const { totalPomodoros, totalWorkSeconds, totalTasksCompleted, streak, daily } = useStatsStore();
   const tasks = useTaskStore((s) => s.tasks);
+  const addTask = useTaskStore((s) => s.addTask);
   const colors = useColors();
 
   const periodLabels: Record<Period, string> = {
@@ -102,8 +135,12 @@ export function StatsScreen() {
     monthly: t('stats.monthly'),
   };
 
-  const dayLabels = (t('stats.dayLabels') as unknown as string[]) || ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
-  const monthLabels = (t('stats.monthLabels') as unknown as string[]) || ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+  const dayLabels = language === 'en'
+    ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    : ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+  const monthLabels = language === 'en'
+    ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    : ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
   const weekPrefix = language === 'en' ? 'W' : 'H';
 
   const chartData = computeRealChartData(period, daily, dayLabels, monthLabels, weekPrefix);
@@ -113,18 +150,24 @@ export function StatsScreen() {
   // Extract unique tags from tasks
   const allTags = Array.from(new Set(tasks.map(t => t.tag).filter(Boolean))) as string[];
 
-  // Tasks for the selected date (and optionally filtered by tag)
-  const selectedDateTasks = tasks.filter(t => 
-    t.targetDate === selectedDate && (!selectedTag || t.tag === selectedTag)
-  );
+  // Tasks for the selected date (including recurring tasks matching this date)
+  const selectedDateTasks = useMemo(() => {
+    const allForDate = getTasksForDate(tasks, selectedDate);
+    if (!selectedTag) return allForDate;
+    return allForDate.filter(t => t.tag === selectedTag);
+  }, [tasks, selectedDate, selectedTag]);
 
-  // Compute marked dates (dates with at least one completed task, optionally filtered by tag)
-  const markedDates = new Set(
-    tasks
-      .filter(t => t.completed && (!selectedTag || t.tag === selectedTag))
-      .map(t => t.targetDate)
-      .filter(Boolean) as string[]
-  );
+  // Compute marked dates (completed tasks + days with recorded pomodoro activity)
+  const markedDates = useMemo(() => {
+    const set = new Set<string>();
+    tasks.filter(t => t.completed && (!selectedTag || t.tag === selectedTag)).forEach(t => {
+      if (t.targetDate) set.add(t.targetDate);
+    });
+    daily.filter(d => d.pomodorosCompleted > 0 || d.tasksCompleted > 0).forEach(d => {
+      set.add(d.date);
+    });
+    return set;
+  }, [tasks, daily, selectedTag]);
 
   return (
     <ScrollView style={[styles.screen, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
@@ -228,7 +271,7 @@ export function StatsScreen() {
           <MiniBarChart data={chartData} />
         </Card>
 
-        {/* Calendar and Tasks for Selected Date (Only shown in Monthly view as requested) */}
+        {/* Calendar and Tasks for Selected Date (Shown in Monthly view) */}
         {period === 'monthly' && (
           <Card variant="glass" style={styles.chartCard}>
             <CalendarView 
@@ -238,9 +281,23 @@ export function StatsScreen() {
             />
             
             <View style={{ marginTop: spacing.md, borderTopWidth: 1, borderColor: colors.divider, paddingTop: spacing.md }}>
-              <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.sm }]}>
-                {t('stats.dateTasks', { date: selectedDate })}
-              </Text>
+              <View style={styles.dateTasksHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: spacing.sm }}>
+                  <Ionicons name="calendar-outline" size={15} color={colors.primary} style={{ marginRight: 6 }} />
+                  <Text style={[typography.captionBold, { color: colors.textPrimary, fontSize: 13 }]} numberOfLines={1}>
+                    {formatSelectedDateHeader(selectedDate, language)}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setShowAddTaskSheet(true)}
+                  style={[styles.addDateTaskBtn, { backgroundColor: `${colors.primary}18`, borderColor: colors.primary }]}
+                >
+                  <Ionicons name="add" size={14} color={colors.primary} />
+                  <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 4, fontSize: 11 }]}>
+                    {t('stats.addTaskForDate')}
+                  </Text>
+                </Pressable>
+              </View>
               
               {selectedDateTasks.length === 0 ? (
                 <Text style={[typography.body, { color: colors.textDisabled, textAlign: 'center', marginVertical: spacing.md }]}>
@@ -248,16 +305,60 @@ export function StatsScreen() {
                 </Text>
               ) : (
                 selectedDateTasks.map(tItem => (
-                  <View key={tItem.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
-                    <Ionicons 
-                      name={tItem.completed ? 'checkmark-circle' : 'ellipse-outline'} 
-                      size={20} 
-                      color={tItem.completed ? colors.success : colors.textDisabled} 
-                      style={{ marginRight: spacing.sm }}
-                    />
-                    <Text style={[typography.body, { color: tItem.completed ? colors.textDisabled : colors.textPrimary, textDecorationLine: tItem.completed ? 'line-through' : 'none' }]}>
-                      {tItem.title}
-                    </Text>
+                  <View key={tItem.id} style={styles.taskRowItem}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                      <Ionicons 
+                        name={tItem.completed ? 'checkmark-circle' : 'ellipse-outline'} 
+                        size={18} 
+                        color={tItem.completed ? colors.success : colors.textDisabled} 
+                        style={{ marginRight: spacing.sm }}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[typography.body, { color: tItem.completed ? colors.textDisabled : colors.textPrimary, textDecorationLine: tItem.completed ? 'line-through' : 'none' }]}>
+                          {tItem.title}
+                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 6, flexWrap: 'wrap' }}>
+                          {tItem.tag && (
+                            <Text style={[typography.overline, { color: colors.textSecondary }]}>
+                              🏷️ {tItem.tag}
+                            </Text>
+                          )}
+                          {tItem.recurrence && tItem.recurrence.type !== 'none' && (
+                            <Text style={[typography.overline, { color: colors.primary }]}>
+                              🔁 {tItem.recurrence.type === 'daily' ? t('tasks.recurrenceDaily') : tItem.recurrence.type === 'weekdays' ? t('tasks.recurrenceWeekdays') : t('tasks.recurrenceWeekends')}
+                            </Text>
+                          )}
+                          <Text style={[typography.overline, { color: colors.textSecondary }]}>
+                            ⏱️ {tItem.pomodoroCount || 0}/{tItem.targetPomodoroCount || 1} Pomo
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Action buttons: if virtual recurring, allow skipping for this day; if concrete, allow cancelling */}
+                    {tItem.isVirtualRecurring && tItem.originalTaskId ? (
+                      <Pressable
+                        onPress={() => {
+                          useTaskStore.getState().addRecurrenceException(tItem.originalTaskId!, selectedDate);
+                        }}
+                        hitSlop={8}
+                        style={styles.taskActionBtn}
+                        accessibilityLabel={t('stats.skipForDate')}
+                      >
+                        <Ionicons name="close-circle-outline" size={18} color={colors.warning} />
+                      </Pressable>
+                    ) : !tItem.completed ? (
+                      <Pressable
+                        onPress={() => {
+                          useTaskStore.getState().removeTask(tItem.id);
+                        }}
+                        hitSlop={8}
+                        style={styles.taskActionBtn}
+                        accessibilityLabel={t('stats.deleteScheduledTask')}
+                      >
+                        <Ionicons name="trash-outline" size={18} color={colors.error} />
+                      </Pressable>
+                    ) : null}
                   </View>
                 ))
               )}
@@ -273,6 +374,28 @@ export function StatsScreen() {
       </View>
 
       <View style={{ height: spacing.xxxl }} />
+
+      {/* Add Task for Selected Date */}
+      <AddTaskSheet
+        visible={showAddTaskSheet}
+        initialDate={selectedDate}
+        onClose={() => setShowAddTaskSheet(false)}
+        onAdd={(title, tag, recurrence, targetDate, targetPomodoroCount) => {
+          const newTask: Task = {
+            id: generateId(),
+            userId: '',
+            title,
+            tag,
+            recurrence: { type: recurrence },
+            targetDate: targetDate || selectedDate,
+            completed: false,
+            pomodoroCount: 0,
+            targetPomodoroCount: targetPomodoroCount || 1,
+            createdAt: nowIso(),
+          };
+          addTask(newTask);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -322,5 +445,31 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'transparent',
-  }
+  },
+  dateTasksHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  addDateTaskBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+  },
+  taskRowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  taskActionBtn: {
+    padding: 6,
+    marginLeft: spacing.sm,
+  },
 });

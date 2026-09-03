@@ -23,9 +23,10 @@ export const CYCLES_BEFORE_LONG_BREAK = 4;
 export function getNextMode(
   current: TimerMode,
   completedWorkCycles: number,
+  cyclesBeforeLongBreak: number = CYCLES_BEFORE_LONG_BREAK,
 ): TimerMode {
   if (current === 'work') {
-    return completedWorkCycles % CYCLES_BEFORE_LONG_BREAK === 0
+    return completedWorkCycles % cyclesBeforeLongBreak === 0
       ? 'longBreak'
       : 'shortBreak';
   }
