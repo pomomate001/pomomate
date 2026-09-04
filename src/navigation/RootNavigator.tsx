@@ -7,6 +7,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../ui/theme';
 import { TimerStack, StatsStack, RoomStack, ProfileStack } from './stacks';
@@ -42,6 +43,7 @@ function MainTabs() {
   const user = useUserStore((s) => s.user);
   const incomingRequests = useFriendsStore((s) => s.incomingRequests);
   const isInPiP = usePiPStore((s) => s.isInPiP);
+  const currentRoom = useRoomStore((s) => s.currentRoom);
   const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
   const isVisualWallpaper = backgroundEffectId.startsWith('video_') || backgroundEffectId.startsWith('image_');
 
@@ -58,33 +60,39 @@ function MainTabs() {
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused, size }) => {
-          const icons = tabIcons[route.name];
-          const iconName = focused ? icons.active : icons.inactive;
-          return (
-            <Ionicons
-              name={iconName as keyof typeof Ionicons.glyphMap}
-              size={size}
-              color={focused ? colors.tabBarActive : colors.tabBarInactive}
-            />
-          );
-        },
-        tabBarLabel: tabLabels[route.name],
-        tabBarActiveTintColor: colors.tabBarActive,
-        tabBarInactiveTintColor: colors.tabBarInactive,
-        tabBarStyle: {
-          backgroundColor: isVisualWallpaper ? 'rgba(15, 18, 28, 0.72)' : colors.tabBarBackground,
-          borderTopColor: isVisualWallpaper ? 'rgba(255, 255, 255, 0.12)' : colors.divider,
-          position: isVisualWallpaper ? 'absolute' : undefined,
-          bottom: 0,
-          left: 0,
-          right: 0,
-          elevation: 0,
-          ...(isInPiP ? { display: 'none' } : {}),
-        },
-      })}
+      screenOptions={({ route }) => {
+        const routeName = getFocusedRouteNameFromRoute(route) ?? '';
+        const isRoomActive = !!currentRoom || (route.name === 'RoomTab' && routeName === 'RoomActive');
+        const hideTabBar = isInPiP || isRoomActive;
+
+        return {
+          headerShown: false,
+          tabBarIcon: ({ focused, size }) => {
+            const icons = tabIcons[route.name];
+            const iconName = focused ? icons.active : icons.inactive;
+            return (
+              <Ionicons
+                name={iconName as keyof typeof Ionicons.glyphMap}
+                size={size}
+                color={focused ? colors.tabBarActive : colors.tabBarInactive}
+              />
+            );
+          },
+          tabBarLabel: tabLabels[route.name],
+          tabBarActiveTintColor: colors.tabBarActive,
+          tabBarInactiveTintColor: colors.tabBarInactive,
+          tabBarStyle: {
+            backgroundColor: isVisualWallpaper ? 'rgba(15, 18, 28, 0.72)' : colors.tabBarBackground,
+            borderTopColor: isVisualWallpaper ? 'rgba(255, 255, 255, 0.12)' : colors.divider,
+            position: isVisualWallpaper ? 'absolute' : undefined,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            elevation: 0,
+            ...(hideTabBar ? { display: 'none' } : {}),
+          },
+        };
+      }}
     >
       <Tab.Screen name="TimerTab" component={TimerStack} />
       <Tab.Screen 

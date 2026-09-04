@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import { useTranslation } from '../../i18n';
 
 interface TargetInfo {
   type: 'ref' | 'friend' | 'room' | 'none';
@@ -23,6 +24,7 @@ function getInitialTarget(): TargetInfo {
 }
 
 export function JoinLandingScreen() {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [targetInfo] = useState<TargetInfo>(getInitialTarget);
 
@@ -69,22 +71,22 @@ export function JoinLandingScreen() {
         <Text style={styles.title}>PomoMate</Text>
         <Text style={styles.subtitle}>
           {targetType === 'ref'
-            ? "Bir arkadaşın seni PomoMate'e davet etti! Birlikte odaklanın ve Pro planı ücretsiz kullanın."
+            ? t('landing.refSubtitle')
             : targetType === 'friend'
-            ? "Bir arkadaşın seni PomoMate'de birlikte çalışmaya davet etti!"
+            ? t('landing.friendSubtitle')
             : targetType === 'room'
-            ? 'Bir çalışma odasına katılmaya davet edildin!'
-            : 'PomoMate ile birlikte odaklanın!'}
+            ? t('landing.roomSubtitle')
+            : t('landing.defaultSubtitle')}
         </Text>
 
         {code ? (
           <View style={styles.codeContainer}>
             <Text style={styles.codeLabel}>
               {targetType === 'ref'
-                ? 'ÖZEL DAVET KODU'
+                ? t('landing.refCodeLabel')
                 : targetType === 'friend'
-                ? 'ARKADAŞLIK KODU'
-                : 'ODA KODU'}
+                ? t('landing.friendCodeLabel')
+                : t('landing.roomCodeLabel')}
             </Text>
             <Text style={styles.codeText} selectable>
               {code}
@@ -96,7 +98,7 @@ export function JoinLandingScreen() {
                 color="#FFF"
               />
               <Text style={styles.copyButtonText}>
-                {copied ? 'Kopyalandı!' : 'Kodu Kopyala'}
+                {copied ? t('landing.copied') : t('landing.copyCode')}
               </Text>
             </Pressable>
           </View>
@@ -104,16 +106,16 @@ export function JoinLandingScreen() {
 
         <Pressable style={styles.primaryButton} onPress={handleOpenApp}>
           <Ionicons name="open-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
-          <Text style={styles.primaryButtonText}>Uygulamada Aç</Text>
+          <Text style={styles.primaryButtonText}>{t('landing.openInApp')}</Text>
         </Pressable>
 
         <Pressable style={styles.secondaryButton} onPress={handleOpenStore}>
           <Ionicons name="logo-google-playstore" size={18} color="#A855F7" style={{ marginRight: 8 }} />
-          <Text style={styles.secondaryButtonText}>Google Play&apos;den İndir</Text>
+          <Text style={styles.secondaryButtonText}>{t('landing.downloadFromStore')}</Text>
         </Pressable>
 
         <Text style={styles.hint}>
-          Uygulama telefonunuzda yüklüyse otomatik olarak açılacaktır.
+          {t('landing.autoOpenHint')}
         </Text>
       </View>
     </View>

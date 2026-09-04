@@ -113,7 +113,7 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
                 typography.captionBold,
                 { color: isSelected ? colors.textInverse : colors.textPrimary }
               ]}>
-                {num} 🍅
+                {num} Pomo
               </Text>
             </Pressable>
           );

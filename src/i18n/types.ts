@@ -15,6 +15,10 @@ export interface TranslationSchema {
     copied: string;
     back: string;
     saving: string;
+    paste: string;
+    pasteFromClipboard: string;
+    user: string;
+    friend: string;
   };
   tabs: {
     timer: string;
@@ -154,8 +158,14 @@ export interface TranslationSchema {
     removeConfirmBody: string;
     shareCodeMessage: string;
     shareCodeTitle: string;
+    shareInviteMessage: string;
+    shareInviteTitle: string;
     yourCodeAlertTitle: string;
     yourCodeAlertBody: string;
+    copiedAlertTitle: string;
+    copiedAlertBody: string;
+    pastedAlertTitle: string;
+    pastedAlertBody: string;
     enterCodeWarning: string;
     loginRequired: string;
     requestAccepted: string;
@@ -180,6 +190,16 @@ export interface TranslationSchema {
     suggestedCount: string;
     shuffle: string;
     matchingTags: string;
+    requestSentSuccess: string;
+    invalidUserIdOrCode: string;
+    cannotSendToSelf: string;
+    invalidCodeFormat: string;
+    cannotInteractWithUser: string;
+    requestLimitReached: string;
+    userNotFound: string;
+    alreadyFriendsWithUser: string;
+    requestAlreadyPending: string;
+    requestSendFailed: string;
   };
   rooms: {
     title: string;
@@ -272,6 +292,25 @@ export interface TranslationSchema {
     defaultRoomName: string;
     shareMessageTitle: string;
     shareMessageBody: string;
+    shareRoomInviteMessage: string;
+    inviteToRoomTitle: string;
+    inviteToRoomSubtitle: string;
+    roomJoinCodeLabel: string;
+    copyCode: string;
+    copyLink: string;
+    shareWithOtherApps: string;
+    inAppFriends: string;
+    sendingInvite: string;
+    inviteBtn: string;
+    noFriendsYet: string;
+    copiedTitle: string;
+    codeCopiedAlert: string;
+    linkCopiedAlert: string;
+    inviteSentTitle: string;
+    inviteSentAlert: string;
+    inviteFailedTitle: string;
+    inviteFailedAlert: string;
+    roomInfoError: string;
   };
   profile: {
     title: string;
@@ -414,6 +453,8 @@ export interface TranslationSchema {
     accept: string;
     decline: string;
     waiting: string;
+    sessionCreateError: string;
+    inviteDeclined: string;
   };
   discover: {
     title: string;
@@ -432,6 +473,62 @@ export interface TranslationSchema {
     loadMore: string;
     discoverButton: string;
     refresh: string;
+  };
+  appearanceOptions: {
+    video_windmill: { title: string; desc: string };
+    video_sky: { title: string; desc: string };
+    video_rain: { title: string; desc: string };
+    image_pixel_art: { title: string; desc: string };
+    image_winter_village: { title: string; desc: string };
+    particles: { title: string; desc: string };
+    rain: { title: string; desc: string };
+    snow: { title: string; desc: string };
+    bubbles: { title: string; desc: string };
+    none_effect: { title: string; desc: string };
+
+    none_anim: { title: string; desc: string };
+    cat_tail: { title: string; desc: string };
+    cat_table_right: { title: string; desc: string };
+    campfire_svg: { title: string; desc: string };
+    campfire_lottie: { title: string; desc: string };
+    camping_marshmallow: { title: string; desc: string };
+
+    theme_light: { title: string; desc: string };
+    theme_dark: { title: string; desc: string };
+    theme_ocean: { title: string; desc: string };
+    theme_sunset: { title: string; desc: string };
+    theme_rose: { title: string; desc: string };
+    theme_darkRose: { title: string; desc: string };
+    theme_neon: { title: string; desc: string };
+
+    design_minimal: { title: string; desc: string };
+    design_circle: { title: string; desc: string };
+    design_digital: { title: string; desc: string };
+    design_arc: { title: string; desc: string };
+    design_neon: { title: string; desc: string };
+  };
+  soundOptions: {
+    notify_default: { title: string; desc: string };
+    notify_bell: { title: string; desc: string };
+    notify_chime: { title: string; desc: string };
+    ambient_none: { title: string; desc: string };
+    ambient_rain: { title: string; desc: string };
+    ambient_campfire: { title: string; desc: string };
+    ambient_bird: { title: string; desc: string };
+  };
+  landing: {
+    refSubtitle: string;
+    friendSubtitle: string;
+    roomSubtitle: string;
+    defaultSubtitle: string;
+    refCodeLabel: string;
+    friendCodeLabel: string;
+    roomCodeLabel: string;
+    copied: string;
+    copyCode: string;
+    openInApp: string;
+    downloadFromStore: string;
+    autoOpenHint: string;
   };
 }
 

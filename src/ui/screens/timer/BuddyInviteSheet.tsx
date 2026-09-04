@@ -52,7 +52,7 @@ export function BuddyInviteSheet({ visible, onClose }: BuddyInviteSheetProps) {
       }
 
       if (!session) {
-        useBuddyStore.getState().setError('Oturum oluşturulamadı');
+        useBuddyStore.getState().setError(t('buddy.sessionCreateError'));
         return;
       }
 
@@ -67,7 +67,7 @@ export function BuddyInviteSheet({ visible, onClose }: BuddyInviteSheetProps) {
           onClose();
         },
         onInviteDeclined: () => {
-          useBuddyStore.getState().setError('Davet reddedildi');
+          useBuddyStore.getState().setError(t('buddy.inviteDeclined'));
           useBuddyStore.getState().setConnecting(false);
         },
         onSessionEnded: () => {

@@ -51,7 +51,10 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
       setUser(user);
       referralService.consumePendingCodeIfAny().then((res) => {
         if (res?.success) {
-          Alert.alert('Davet Kodu Uygulandı! 🎁', `${res.referrerName || 'Arkadaşın'} seni PomoMate'e davet etti!`);
+          Alert.alert(
+            t('referral.codeAppliedTitle'),
+            t('referral.codeAppliedBody', { name: res.referrerName || t('common.friend') })
+          );
         }
       });
     } catch (err) {
@@ -70,7 +73,10 @@ export function LoginScreen({ onGoToRegister, onGoToForgotPassword }: LoginScree
       setUser(user);
       referralService.consumePendingCodeIfAny().then((res) => {
         if (res?.success) {
-          Alert.alert('Davet Kodu Uygulandı! 🎁', `${res.referrerName || 'Arkadaşın'} seni PomoMate'e davet etti!`);
+          Alert.alert(
+            t('referral.codeAppliedTitle'),
+            t('referral.codeAppliedBody', { name: res.referrerName || t('common.friend') })
+          );
         }
       });
     } catch (err) {

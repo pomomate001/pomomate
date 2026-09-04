@@ -150,6 +150,9 @@ export function StatsScreen() {
   // Extract unique tags from tasks
   const allTags = Array.from(new Set(tasks.map(t => t.tag).filter(Boolean))) as string[];
 
+  const todayStr = toLocalDateStr(new Date());
+  const isPastDate = selectedDate < todayStr;
+
   // Tasks for the selected date (including recurring tasks matching this date)
   const selectedDateTasks = useMemo(() => {
     const allForDate = getTasksForDate(tasks, selectedDate);
@@ -288,15 +291,17 @@ export function StatsScreen() {
                     {formatSelectedDateHeader(selectedDate, language)}
                   </Text>
                 </View>
-                <Pressable
-                  onPress={() => setShowAddTaskSheet(true)}
-                  style={[styles.addDateTaskBtn, { backgroundColor: `${colors.primary}18`, borderColor: colors.primary }]}
-                >
-                  <Ionicons name="add" size={14} color={colors.primary} />
-                  <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 4, fontSize: 11 }]}>
-                    {t('stats.addTaskForDate')}
-                  </Text>
-                </Pressable>
+                {!isPastDate && (
+                  <Pressable
+                    onPress={() => setShowAddTaskSheet(true)}
+                    style={[styles.addDateTaskBtn, { backgroundColor: `${colors.primary}18`, borderColor: colors.primary }]}
+                  >
+                    <Ionicons name="add" size={14} color={colors.primary} />
+                    <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 4, fontSize: 11 }]}>
+                      {t('stats.addTaskForDate')}
+                    </Text>
+                  </Pressable>
+                )}
               </View>
               
               {selectedDateTasks.length === 0 ? (
@@ -335,30 +340,32 @@ export function StatsScreen() {
                       </View>
                     </View>
 
-                    {/* Action buttons: if virtual recurring, allow skipping for this day; if concrete, allow cancelling */}
-                    {tItem.isVirtualRecurring && tItem.originalTaskId ? (
-                      <Pressable
-                        onPress={() => {
-                          useTaskStore.getState().addRecurrenceException(tItem.originalTaskId!, selectedDate);
-                        }}
-                        hitSlop={8}
-                        style={styles.taskActionBtn}
-                        accessibilityLabel={t('stats.skipForDate')}
-                      >
-                        <Ionicons name="close-circle-outline" size={18} color={colors.warning} />
-                      </Pressable>
-                    ) : !tItem.completed ? (
-                      <Pressable
-                        onPress={() => {
-                          useTaskStore.getState().removeTask(tItem.id);
-                        }}
-                        hitSlop={8}
-                        style={styles.taskActionBtn}
-                        accessibilityLabel={t('stats.deleteScheduledTask')}
-                      >
-                        <Ionicons name="trash-outline" size={18} color={colors.error} />
-                      </Pressable>
-                    ) : null}
+                    {/* Action buttons: prohibited for past dates */}
+                    {!isPastDate && (
+                      tItem.isVirtualRecurring && tItem.originalTaskId ? (
+                        <Pressable
+                          onPress={() => {
+                            useTaskStore.getState().addRecurrenceException(tItem.originalTaskId!, selectedDate);
+                          }}
+                          hitSlop={8}
+                          style={styles.taskActionBtn}
+                          accessibilityLabel={t('stats.skipForDate')}
+                        >
+                          <Ionicons name="close-circle-outline" size={18} color={colors.warning} />
+                        </Pressable>
+                      ) : !tItem.completed ? (
+                        <Pressable
+                          onPress={() => {
+                            useTaskStore.getState().removeTask(tItem.id);
+                          }}
+                          hitSlop={8}
+                          style={styles.taskActionBtn}
+                          accessibilityLabel={t('stats.deleteScheduledTask')}
+                        >
+                          <Ionicons name="trash-outline" size={18} color={colors.error} />
+                        </Pressable>
+                      ) : null
+                    )}
                   </View>
                 ))
               )}
@@ -381,13 +388,15 @@ export function StatsScreen() {
         initialDate={selectedDate}
         onClose={() => setShowAddTaskSheet(false)}
         onAdd={(title, tag, recurrence, targetDate, targetPomodoroCount) => {
+          const effectiveDate = targetDate || selectedDate;
+          if (effectiveDate < todayStr) return;
           const newTask: Task = {
             id: generateId(),
             userId: '',
             title,
             tag,
             recurrence: { type: recurrence },
-            targetDate: targetDate || selectedDate,
+            targetDate: effectiveDate,
             completed: false,
             pomodoroCount: 0,
             targetPomodoroCount: targetPomodoroCount || 1,

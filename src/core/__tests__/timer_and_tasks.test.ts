@@ -3,6 +3,7 @@ import { useSettingsStore } from '../../state/settingsStore';
 import { useTimerStore } from '../../state/timerStore';
 import { useTaskStore } from '../../state/taskStore';
 import { useStatsStore } from '../../state/statsStore';
+import { useBuddyStore } from '../../state/buddyStore';
 import type { Task } from '../../types';
 
 describe('Timer and Settings Synchronization', () => {
@@ -185,5 +186,51 @@ describe('Stats Tracking and Daily Stats', () => {
     const dailyToday = stats.daily.find((d) => d.date === todayStr);
     expect(dailyToday).toBeDefined();
     expect(dailyToday?.tasksCompleted).toBe(1);
+  });
+
+  describe('Buddy Timer Synchronization with Duration Adaptation', () => {
+    it('synchronizes timer duration and remaining seconds when receiving remote buddy update', () => {
+      // User has 15 minutes (900 seconds) duration locally
+      useTimerStore.getState().setTimerState({
+        duration: 900,
+        remainingSeconds: 900,
+        isRunning: false,
+        mode: 'work',
+      });
+
+      expect(useTimerStore.getState().duration).toBe(900);
+      expect(useTimerStore.getState().remainingSeconds).toBe(900);
+
+      // Peer has 25 minutes (1500 seconds) and syncs it across buddy session
+      useTimerStore.getState().setTimerState({
+        duration: 1500,
+        remainingSeconds: 1500,
+        mode: 'work',
+        isRunning: true,
+      });
+
+      // User's store should now match the synchronized session duration
+      expect(useTimerStore.getState().duration).toBe(1500);
+      expect(useTimerStore.getState().remainingSeconds).toBe(1500);
+      expect(useTimerStore.getState().isRunning).toBe(true);
+    });
+
+    it('records sent emojis into buddy store recentEmojis immediately', () => {
+      useBuddyStore.setState({ recentEmojis: [] });
+      expect(useBuddyStore.getState().recentEmojis.length).toBe(0);
+
+      useBuddyStore.getState().addEmoji({
+        id: 'emoji-1',
+        sessionId: 'session-123',
+        senderId: 'user-me',
+        emojiCode: 'focus',
+        createdAt: new Date().toISOString(),
+      });
+
+      const recent = useBuddyStore.getState().recentEmojis;
+      expect(recent.length).toBe(1);
+      expect(recent[0].emojiCode).toBe('focus');
+      expect(recent[0].senderId).toBe('user-me');
+    });
   });
 });

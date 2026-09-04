@@ -97,6 +97,41 @@ export class PiPService {
     const sub = DeviceEventEmitter.addListener('onPiPModeChanged', callback);
     return () => sub.remove();
   }
+
+  /**
+   * Update native PiP overlay action buttons (Mic, Camera)
+   */
+  async updatePiPActions(micOn: boolean, camOn: boolean): Promise<boolean> {
+    if (Platform.OS !== 'android') return false;
+    if (!PiPModule?.updatePiPActions) return false;
+
+    try {
+      return await PiPModule.updatePiPActions(micOn, camOn);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Listen for native PiP action clicks (e.g. mic or cam toggle from system overlay)
+   */
+  addPiPActionListener(callback: (action: string) => void): () => void {
+    if (Platform.OS !== 'android') return () => {};
+
+    if (PiPModule) {
+      try {
+        const emitter = new NativeEventEmitter(PiPModule);
+        const sub = emitter.addListener('onPiPAction', callback);
+        return () => sub.remove();
+      } catch {
+        const sub = DeviceEventEmitter.addListener('onPiPAction', callback);
+        return () => sub.remove();
+      }
+    }
+
+    const sub = DeviceEventEmitter.addListener('onPiPAction', callback);
+    return () => sub.remove();
+  }
 }
 
 export const pipService = new PiPService();

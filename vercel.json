@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "framework": null,
+  "buildCommand": null,
+  "outputDirectory": "public",
   "cleanUrls": true,
   "rewrites": [
     {
@@ -13,6 +16,14 @@
     {
       "source": "/join/:match*",
       "destination": "/join/index.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
     },
     {
       "source": "/app-ads.txt",
@@ -33,7 +44,7 @@
         },
         {
           "key": "Cache-Control",
-          "value": "public, max-age=86400"
+          "value": "public, max-age=3600"
         }
       ]
     },

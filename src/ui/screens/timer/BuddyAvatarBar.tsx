@@ -7,15 +7,18 @@ import { spacing } from '../../theme/spacing';
 import { Avatar } from '../../components/Avatar';
 import { EmojiReactionPanel } from './EmojiReactionPanel';
 import { EmojiFloatingAnimation } from './EmojiFloatingAnimation';
-import { useBuddyStore } from '../../../state';
+import { useBuddyStore, useUserStore } from '../../../state';
+import { useTranslation } from '../../../i18n';
 import type { BuddyEmojiCode } from '../../../types';
 
 interface BuddyAvatarBarProps {
   hostProfile: {
+    id?: string;
     displayName: string;
     avatarUrl?: string;
   };
   guestProfile: {
+    id?: string;
     displayName: string;
     avatarUrl?: string;
   } | null;
@@ -32,6 +35,7 @@ export function BuddyAvatarBar({
   onLeave,
 }: BuddyAvatarBarProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const [showEmojiPanel, setShowEmojiPanel] = useState(false);
   const recentEmojis = useBuddyStore((s) => s.recentEmojis);
 
@@ -62,8 +66,27 @@ export function BuddyAvatarBar({
     outputRange: [0.5, 0], // line fades out completely when connected
   });
 
+  const user = useUserStore((s) => s.user);
+
   // Get the latest emoji for animation
   const latestEmoji = recentEmojis.length > 0 ? recentEmojis[recentEmojis.length - 1] : null;
+
+  // Check which avatar the latest emoji belongs to
+  const isHostEmoji = latestEmoji
+    ? hostProfile.id
+      ? latestEmoji.senderId === hostProfile.id
+      : myRole === 'host'
+      ? latestEmoji.senderId === user?.id
+      : latestEmoji.senderId !== user?.id
+    : false;
+
+  const isGuestEmoji = latestEmoji && guestProfile
+    ? guestProfile.id
+      ? latestEmoji.senderId === guestProfile.id
+      : myRole === 'guest'
+      ? latestEmoji.senderId === user?.id
+      : latestEmoji.senderId !== user?.id
+    : false;
 
   const handleSelectEmoji = useCallback(
     (code: BuddyEmojiCode) => {
@@ -91,7 +114,7 @@ export function BuddyAvatarBar({
               <Ionicons name="star" size={8} color="#FFF" />
             </View>
             {/* Emoji animation above host avatar */}
-            {latestEmoji && myRole === 'host' && (
+            {latestEmoji && isHostEmoji && (
               <EmojiFloatingAnimation
                 emojiCode={latestEmoji.emojiCode}
                 animationKey={latestEmoji.id}
@@ -126,7 +149,7 @@ export function BuddyAvatarBar({
                 size={42}
               />
               {/* Emoji animation above guest avatar */}
-              {latestEmoji && myRole === 'guest' && (
+              {latestEmoji && isGuestEmoji && (
                 <EmojiFloatingAnimation
                   emojiCode={latestEmoji.emojiCode}
                   animationKey={latestEmoji.id}
@@ -146,7 +169,7 @@ export function BuddyAvatarBar({
               <Ionicons name="hourglass-outline" size={16} color={colors.textDisabled} />
             </View>
             <Text style={[typography.overline, { color: colors.textDisabled, marginTop: 4, fontSize: 10 }]}>
-              Bekleniyor
+              {t('buddy.waiting')}
             </Text>
           </View>
         )}

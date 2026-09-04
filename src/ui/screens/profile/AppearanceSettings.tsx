@@ -169,6 +169,50 @@ export function AppearanceSettings() {
     }
   };
 
+  const getEffectTitle = (id: string, fallback: string) => {
+    const key = `appearanceOptions.${id === 'none' ? 'none_effect' : id}.title` as any;
+    const val = t(key);
+    return val !== key ? val : fallback;
+  };
+  const getEffectDesc = (id: string, fallback?: string) => {
+    const key = `appearanceOptions.${id === 'none' ? 'none_effect' : id}.desc` as any;
+    const val = t(key);
+    return val !== key ? val : (fallback ?? '');
+  };
+
+  const getAnimTitle = (id: string, fallback: string) => {
+    const key = `appearanceOptions.${id === 'none' ? 'none_anim' : id}.title` as any;
+    const val = t(key);
+    return val !== key ? val : fallback;
+  };
+  const getAnimDesc = (id: string, fallback?: string) => {
+    const key = `appearanceOptions.${id === 'none' ? 'none_anim' : id}.desc` as any;
+    const val = t(key);
+    return val !== key ? val : (fallback ?? '');
+  };
+
+  const getThemeTitle = (id: string, fallback: string) => {
+    const key = `appearanceOptions.theme_${id}.title` as any;
+    const val = t(key);
+    return val !== key ? val : fallback;
+  };
+  const getThemeDesc = (id: string, fallback?: string) => {
+    const key = `appearanceOptions.theme_${id}.desc` as any;
+    const val = t(key);
+    return val !== key ? val : (fallback ?? '');
+  };
+
+  const getDesignTitle = (id: string, fallback: string) => {
+    const key = `appearanceOptions.design_${id}.title` as any;
+    const val = t(key);
+    return val !== key ? val : fallback;
+  };
+  const getDesignDesc = (id: string, fallback?: string) => {
+    const key = `appearanceOptions.design_${id}.desc` as any;
+    const val = t(key);
+    return val !== key ? val : (fallback ?? '');
+  };
+
   return (
     <ScrollView
       style={[styles.screen, { backgroundColor: colors.background }]}
@@ -181,8 +225,8 @@ export function AppearanceSettings() {
         {videoBackgrounds.map((e) => (
           <AppearanceOptionCard
             key={e.id}
-            title={e.label}
-            subtitle={e.description}
+            title={getEffectTitle(e.id, e.label)}
+            subtitle={getEffectDesc(e.id, e.description)}
             isSelected={backgroundEffectId === e.id}
             isPremium={!e.free}
             isLocked={!e.free && !isPremium}
@@ -198,8 +242,8 @@ export function AppearanceSettings() {
         {imageBackgrounds.map((e) => (
           <AppearanceOptionCard
             key={e.id}
-            title={e.label}
-            subtitle={e.description}
+            title={getEffectTitle(e.id, e.label)}
+            subtitle={getEffectDesc(e.id, e.description)}
             isSelected={backgroundEffectId === e.id}
             isPremium={!e.free}
             isLocked={!e.free && !isPremium}
@@ -215,8 +259,8 @@ export function AppearanceSettings() {
         {otherBackgrounds.map((e) => (
           <AppearanceOptionCard
             key={e.id}
-            title={e.label}
-            subtitle={e.description}
+            title={getEffectTitle(e.id, e.label)}
+            subtitle={getEffectDesc(e.id, e.description)}
             isSelected={backgroundEffectId === e.id}
             isPremium={!e.free}
             isLocked={!e.free && !isPremium}
@@ -232,8 +276,8 @@ export function AppearanceSettings() {
         {focusAnimations.map((a) => (
           <AppearanceOptionCard
             key={a.id}
-            title={a.label}
-            subtitle={a.description}
+            title={getAnimTitle(a.id, a.label)}
+            subtitle={getAnimDesc(a.id, a.description)}
             isSelected={workAnimationId === a.id}
             isPremium={!a.free}
             isLocked={!a.free && !isPremium}
@@ -249,8 +293,8 @@ export function AppearanceSettings() {
         {focusAnimations.map((a) => (
           <AppearanceOptionCard
             key={a.id}
-            title={a.label}
-            subtitle={a.description}
+            title={getAnimTitle(a.id, a.label)}
+            subtitle={getAnimDesc(a.id, a.description)}
             isSelected={breakAnimationId === a.id}
             isPremium={!a.free}
             isLocked={!a.free && !isPremium}
@@ -266,8 +310,8 @@ export function AppearanceSettings() {
         {availableThemes.map((tItem) => (
           <AppearanceOptionCard
             key={tItem.id}
-            title={tItem.label}
-            subtitle={tItem.description}
+            title={getThemeTitle(tItem.id, tItem.label)}
+            subtitle={getThemeDesc(tItem.id, tItem.description)}
             isSelected={themeId === tItem.id}
             isPremium={tItem.isPremium}
             isLocked={Boolean(tItem.isPremium && !isPremium)}
@@ -283,8 +327,8 @@ export function AppearanceSettings() {
         {timerDesigns.map((d) => (
           <AppearanceOptionCard
             key={d.id}
-            title={d.label}
-            subtitle={d.description}
+            title={getDesignTitle(d.id, d.label)}
+            subtitle={getDesignDesc(d.id, d.description)}
             isSelected={timerDesignId === d.id}
             isPremium={!d.free}
             isLocked={!d.free && !isPremium}

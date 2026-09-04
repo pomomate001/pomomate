@@ -58,6 +58,7 @@ interface RoomStore {
   setRoomSettings: (settings: Partial<RoomSettings>) => void;
   
   addSharedFile: (file: SharedFile) => void;
+  setSharedFiles: (files: SharedFile[]) => void;
   removeSharedFile: (fileId: string) => void;
   setActiveSharedFileId: (fileId: string | null) => void;
 }
@@ -137,11 +138,24 @@ export const useRoomStore = create<RoomStore>((set) => ({
   setMembers: (members) => set({ members }),
 
   addMember: (member) =>
-    set((state) =>
-      state.members.some((m) => m.id === member.id)
-        ? state
-        : { members: [...state.members, member] },
-    ),
+    set((state) => {
+      const existing = state.members.find((m) => m.id === member.id || m.userId === member.userId);
+      if (existing) {
+        return {
+          members: state.members.map((m) =>
+            m.id === existing.id
+              ? {
+                  ...m,
+                  displayName: member.displayName || m.displayName,
+                  avatarUrl: member.avatarUrl !== undefined ? member.avatarUrl : m.avatarUrl,
+                  role: member.role || m.role,
+                }
+              : m,
+          ),
+        };
+      }
+      return { members: [...state.members, member] };
+    }),
 
   removeMember: (memberId) =>
     set((state) => ({
@@ -197,8 +211,12 @@ export const useRoomStore = create<RoomStore>((set) => ({
     
   addSharedFile: (file) =>
     set((state) => ({
-      sharedFiles: [...state.sharedFiles, file],
+      sharedFiles: state.sharedFiles.some((f) => f.id === file.id)
+        ? state.sharedFiles.map((f) => (f.id === file.id ? file : f))
+        : [...state.sharedFiles, file],
     })),
+    
+  setSharedFiles: (files) => set({ sharedFiles: files }),
     
   removeSharedFile: (fileId) =>
     set((state) => {

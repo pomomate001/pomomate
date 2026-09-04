@@ -51,12 +51,12 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
   const handleShareMyCode = async () => {
     try {
       const shareUrl = `https://pomomate.app/join?friend=${myCode}`;
-      const message = `PomoMate'de birlikte odaklanalım! Beni arkadaş olarak eklemek için aşağıdaki bağlantıya tıkla:\n${shareUrl}\n\nVeya arkadaşlık kodum (kopyalamak için üzerine dokun):\n\`\`\`${myCode}\`\`\``;
+      const message = t('friends.shareInviteMessage', { url: shareUrl, code: myCode });
 
       await Share.share({
         message,
         url: shareUrl,
-        title: 'PomoMate Arkadaşlık Daveti',
+        title: t('friends.shareInviteTitle'),
       });
     } catch {
       // User cancelled
@@ -65,7 +65,10 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
 
   const handleCopyCode = async () => {
     await Clipboard.setStringAsync(myCode);
-    Alert.alert('Kopyalandı', `Arkadaşlık kodun (${myCode}) panoya kopyalandı.`);
+    Alert.alert(
+      t('friends.copiedAlertTitle'),
+      t('friends.copiedAlertBody', { code: myCode }),
+    );
   };
 
   const handlePasteFromClipboard = async () => {
@@ -73,7 +76,10 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
     if (text) {
       const extracted = extractFriendCode(text);
       setFriendIdInput(extracted);
-      Alert.alert('Yapıştırıldı', 'Arkadaşlık kodu panodan başarıyla yapıştırıldı.');
+      Alert.alert(
+        t('friends.pastedAlertTitle'),
+        t('friends.pastedAlertBody'),
+      );
     }
   };
 
@@ -215,7 +221,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
                 ) : (
                   <Pressable onPress={handlePasteFromClipboard} style={{ padding: 4, flexDirection: 'row', alignItems: 'center' }}>
                     <Ionicons name="clipboard-outline" size={18} color={colors.primary} />
-                    <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 3 }]}>Yapıştır</Text>
+                    <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 3 }]}>{t('common.paste')}</Text>
                   </Pressable>
                 )}
               </View>

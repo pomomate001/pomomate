@@ -209,4 +209,37 @@ describe('Future Date Task Booking (Rezervasyon) and Home Screen Isolation', () 
     const pastTasks = getTasksForDate(tasks, yesterdayStr);
     expect(pastTasks.some((t) => t.id === 'yesterday-1')).toBe(true);
   });
+
+  it('does NOT project virtual recurring tasks to past dates', () => {
+    const todayStr = toLocalDateStr(new Date());
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - 2);
+    const pastDateStr = toLocalDateStr(pastDate);
+
+    const recurringTask: Task = {
+      id: 'recur-test-1',
+      userId: 'u1',
+      title: 'Tekrarlanan Spor',
+      completed: false,
+      pomodoroCount: 0,
+      targetDate: todayStr,
+      recurrence: { type: 'daily' },
+      createdAt: `${todayStr}T10:00:00Z`,
+    };
+    useTaskStore.getState().addTask(recurringTask);
+
+    const tasks = useTaskStore.getState().tasks;
+
+    // Past date should not receive virtual recurring task
+    const pastTasks = getTasksForDate(tasks, pastDateStr);
+    expect(pastTasks.length).toBe(0);
+
+    // Future date should receive virtual recurring task
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 2);
+    const futureDateStr = toLocalDateStr(futureDate);
+    const futureTasks = getTasksForDate(tasks, futureDateStr);
+    expect(futureTasks.length).toBe(1);
+    expect(futureTasks[0].isVirtualRecurring).toBe(true);
+  });
 });

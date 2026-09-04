@@ -83,10 +83,9 @@ PomoMate is a productivity app that combines the Pomodoro Technique with real-ti
 - RevenueCat (subscriptions)
 
 **Infrastructure:**
-- Nginx (reverse proxy + SSL)
-- PostgreSQL (data persistence)
-- Let's Encrypt (SSL certificates)
-- Abacus SuperComputer (hosting)
+- Supabase Cloud (PostgreSQL, Auth, Realtime)
+- Vercel (Web Landing, Deep Links, Legal Pages)
+- WebRTC P2P (Mesh Data & Media Streams)
 
 ### Modules
 
@@ -97,7 +96,7 @@ PomoMate is a productivity app that combines the Pomodoro Technique with real-ti
 | **M03** | Backend + Supabase | ✅ Complete |
 | **M04** | WebRTC — P2P Rooms | ✅ Complete |
 | **M05** | Mobile — Native Features | ✅ Complete |
-| **M07** | Abacus Infrastructure | ✅ Complete |
+| **M07** | Cloud Infrastructure & Vercel | ✅ Complete |
 | **M08** | Auth + Security + Monetization | ✅ Complete |
 | **M09** | QA + Integration + Deployment | ✅ Complete |
 
@@ -220,8 +219,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **Pomodoro Technique**: Francesco Cirillo
-- **Abacus.AI**: Infrastructure & deployment platform
 - **Supabase**: Backend-as-a-Service
+- **Vercel**: Static hosting & edge redirects
 - **RevenueCat**: Subscription management
 - **Expo**: React Native toolchain
 

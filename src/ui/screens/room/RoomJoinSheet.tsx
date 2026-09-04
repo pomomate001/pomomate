@@ -97,7 +97,7 @@ export function RoomJoinSheet({ visible, onClose, onJoin }: RoomJoinSheetProps) 
           onPress={handlePasteFromClipboard}
         >
           <Ionicons name="clipboard-outline" size={16} color={colors.primary} style={{ marginRight: 6 }} />
-          <Text style={[typography.captionBold, { color: colors.primary }]}>Panodan Yapıştır</Text>
+          <Text style={[typography.captionBold, { color: colors.primary }]}>{t('common.pasteFromClipboard')}</Text>
         </Pressable>
         
         <View style={styles.footer}>

@@ -39,6 +39,8 @@ interface RoomBottomBarProps {
   onShare: () => void;
   onLeave: () => void;
   onPickFile: () => void;
+  onSelectFile?: (fileId: string) => void;
+  onRemoveFile?: (fileId: string) => void;
 }
 
 const COLLAPSED_HEIGHT = 80;
@@ -61,6 +63,8 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
   onShare,
   onLeave,
   onPickFile,
+  onSelectFile,
+  onRemoveFile,
 }) => {
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -249,7 +253,14 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
           
           <View style={styles.tabContentArea}>
             {activeTab === 'chat' && <RoomChat roomId={roomId} isHost={isHost} />}
-            {activeTab === 'files' && <RoomFilesBoard isHost={isHost} onPickFile={onPickFile} />}
+            {activeTab === 'files' && (
+              <RoomFilesBoard
+                isHost={isHost}
+                onPickFile={onPickFile}
+                onSelectFile={onSelectFile}
+                onRemoveFile={onRemoveFile}
+              />
+            )}
             {activeTab === 'settings' && isHost && <RoomSettingsPanel roomId={roomId} />}
           </View>
         </Animated.View>

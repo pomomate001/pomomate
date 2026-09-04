@@ -7,7 +7,14 @@ import { spacing } from '../../../theme/spacing';
 import { radius } from '../../../theme/radius';
 import { useRoomStore } from '../../../../state';
 
-export function RoomFilesBoard({ isHost, onPickFile }: { isHost: boolean; onPickFile: () => void }) {
+export interface RoomFilesBoardProps {
+  isHost: boolean;
+  onPickFile: () => void;
+  onSelectFile?: (fileId: string) => void;
+  onRemoveFile?: (fileId: string) => void;
+}
+
+export function RoomFilesBoard({ isHost, onPickFile, onSelectFile, onRemoveFile }: RoomFilesBoardProps) {
   const colors = useColors();
   const sharedFiles = useRoomStore((s: any) => s.sharedFiles);
   const activeSharedFileId = useRoomStore((s: any) => s.activeSharedFileId);
@@ -43,7 +50,13 @@ export function RoomFilesBoard({ isHost, onPickFile }: { isHost: boolean; onPick
                     borderWidth: 2,
                   }
                 ]}
-                onPress={() => setActiveSharedFileId(file.id)}
+                onPress={() => {
+                  if (onSelectFile) {
+                    onSelectFile(file.id);
+                  } else {
+                    setActiveSharedFileId(file.id);
+                  }
+                }}
               >
                 <View style={styles.previewContainer}>
                   {isImage ? (
@@ -61,7 +74,13 @@ export function RoomFilesBoard({ isHost, onPickFile }: { isHost: boolean; onPick
                 {(isHost || roomSettings.allowFiles) && (
                   <Pressable
                     style={styles.deleteBtn}
-                    onPress={() => removeSharedFile(file.id)}
+                    onPress={() => {
+                      if (onRemoveFile) {
+                        onRemoveFile(file.id);
+                      } else {
+                        removeSharedFile(file.id);
+                      }
+                    }}
                     hitSlop={12}
                   >
                     <Ionicons name="trash-outline" size={16} color={colors.error} />

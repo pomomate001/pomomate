@@ -63,6 +63,8 @@ export interface RoomMember {
   id: ID;
   roomId: ID;
   userId: ID;
+  displayName?: string;
+  avatarUrl?: string | null;
   role: RoomMemberRole;
   joinedAt: ISODateString;
 }
@@ -194,6 +196,7 @@ export interface BuddySession {
   guestId?: ID | null;
   status: BuddySessionStatus;
   timerMode: TimerMode;
+  timerDuration?: number;
   timerRemainingSeconds: number;
   timerIsRunning: boolean;
   currentCycle: number;

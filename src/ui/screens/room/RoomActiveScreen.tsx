@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Share, Alert, AppState, Platform, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,7 +15,7 @@ import { RoomViewToggles } from './features/RoomViewToggles';
 import { RoomBottomBar } from './RoomBottomBar';
 import { RoomInviteSheet } from './RoomInviteSheet';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
-import { useRoomStore, useUserStore, useTaskStore } from '../../../state';
+import { useRoomStore, useUserStore, useTaskStore, usePiPStore } from '../../../state';
 import { mediaService } from '../../../services/mobile/media/MediaService';
 import { permissionManager } from '../../../services/mobile/permissions/PermissionManager';
 import { pipService } from '../../../services/mobile/pip/PiPService';
@@ -35,6 +35,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
   const [screenShareOn, setScreenShareOn] = useState(false);
+  const [screenQuality, setScreenQuality] = useState<'720p' | '1080p'>('1080p');
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteScreenSharer, setRemoteScreenSharer] = useState<{ userId: string; userName: string } | null>(null);
@@ -49,19 +50,31 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
     const removePiPListener = pipService.addPiPListener((inPiP) => {
       setIsInPiP(inPiP);
+      usePiPStore.getState().setIsInPiP(inPiP);
+    });
+
+    const removeActionListener = pipService.addPiPActionListener((action) => {
+      if (action === 'toggleMic') {
+        handleToggleMicRef.current?.();
+      } else if (action === 'toggleCam') {
+        handleToggleCamRef.current?.();
+      }
     });
 
     const appStateSub = AppState.addEventListener('change', async () => {
       const inPiP = await pipService.isInPiPMode();
       setIsInPiP(inPiP);
+      usePiPStore.getState().setIsInPiP(inPiP);
     });
 
     pipService.setAutoPiPEnabled(true);
 
     return () => {
       removePiPListener();
+      removeActionListener();
       appStateSub.remove();
       pipService.setAutoPiPEnabled(false);
+      usePiPStore.getState().setIsInPiP(false);
     };
   }, []);
 
@@ -110,14 +123,14 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   useEffect(() => {
     if (!roomId || !user) return;
     
-    const signalingUrl = process.env.EXPO_PUBLIC_WEBRTC_SIGNALING_URL || 'wss://api.pomomate.app/ws/signaling';
-    
     const client = new RoomClient({
-      signalingUrl,
-      token: 'temp-token',
       roomId,
       userId: user.id,
-      isHost: !room?.hostId || room.hostId === user.id
+      isHost: !room?.hostId || room.hostId === user.id,
+      userProfile: {
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl ?? undefined,
+      },
     });
     
     roomClientRef.current = client;
@@ -125,6 +138,10 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     
     const cleanupStream = client.onRemoteStream((peerId: string, stream: MediaStream) => {
       setRemoteStreams(prev => ({ ...prev, [peerId]: stream }));
+    });
+
+    const cleanupQuality = client.getAdaptiveQualityController().onQualityChange((metrics) => {
+      setScreenQuality(metrics.quality);
     });
 
     const cleanupState = client.onPeerStateChange((peerId: string, state) => {
@@ -141,6 +158,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     
     return () => {
       cleanupStream();
+      cleanupQuality();
       cleanupState();
       mediaService.stopUserMedia();
       client.disconnect();
@@ -252,6 +270,81 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     };
   }, [roomId, user?.id, viewToggles.screen, toggleView]);
 
+  // Hydrate room members with user profiles from database
+  useEffect(() => {
+    if (!roomId) return;
+    void roomService.fetchRoomMembersWithProfiles(roomId).then((dbMembers) => {
+      if (dbMembers && dbMembers.length > 0) {
+        dbMembers.forEach((m) => {
+          if (m.userId !== user?.id) {
+            useRoomStore.getState().addMember(m);
+          }
+        });
+      }
+    });
+  }, [roomId, user?.id]);
+
+  // Synchronize shared files across all room participants
+  useEffect(() => {
+    if (!roomId) return;
+    const filesChannel = supabase.channel(`room_files_${roomId}`, {
+      config: { broadcast: { ack: false } },
+    });
+
+    filesChannel
+      .on('broadcast', { event: 'file_action' }, ({ payload }) => {
+        if (!payload) return;
+        if (payload.action === 'add' && payload.file) {
+          addSharedFile(payload.file);
+          if (payload.makeActive) {
+            setActiveSharedFileId(payload.file.id);
+            if (!viewToggles.screen) {
+              toggleView('screen');
+            }
+          }
+        } else if (payload.action === 'setActive') {
+          setActiveSharedFileId(payload.fileId ?? null);
+          if (payload.fileId && !viewToggles.screen) {
+            toggleView('screen');
+          }
+        } else if (payload.action === 'remove' && payload.fileId) {
+          removeSharedFile(payload.fileId);
+        } else if (payload.action === 'sync_request') {
+          const currentFiles = useRoomStore.getState().sharedFiles;
+          const currentActiveId = useRoomStore.getState().activeSharedFileId;
+          if (currentFiles.length > 0) {
+            filesChannel.send({
+              type: 'broadcast',
+              event: 'file_action',
+              payload: {
+                action: 'sync_response',
+                files: currentFiles,
+                activeSharedFileId: currentActiveId,
+              },
+            });
+          }
+        } else if (payload.action === 'sync_response' && payload.files) {
+          useRoomStore.getState().setSharedFiles(payload.files);
+          if (payload.activeSharedFileId !== undefined) {
+            setActiveSharedFileId(payload.activeSharedFileId);
+          }
+        }
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          filesChannel.send({
+            type: 'broadcast',
+            event: 'file_action',
+            payload: { action: 'sync_request' },
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(filesChannel);
+    };
+  }, [roomId, addSharedFile, setActiveSharedFileId, removeSharedFile, viewToggles.screen, toggleView]);
+
   const activeScreenStream = screenShareOn
     ? screenStream
     : remoteScreenSharer
@@ -272,10 +365,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     },
     ...members.map((m) => {
       const isPresentingScreen = remoteScreenSharer?.userId === m.userId;
+      const fallbackName = m.userId.length > 8 ? `Katılımcı (${m.userId.slice(0, 4)})` : m.userId;
       return {
         userId: m.userId,
-        displayName: m.userId.slice(0, 6),
-        avatarUrl: undefined,
+        displayName: m.displayName || fallbackName,
+        avatarUrl: m.avatarUrl || undefined,
         hasCamera: !isPresentingScreen && !!remoteStreams[m.userId],
         hasMic: false,
         stream: isPresentingScreen ? null : remoteStreams[m.userId] || null,
@@ -468,14 +562,33 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     }
   }, [screenShareOn, isHost, viewToggles.screen, toggleView, t, roomId, user, screenStream]);
 
+  const handleToggleMicRef = useRef(handleToggleMic);
+  const handleToggleCamRef = useRef(handleToggleCam);
+  useEffect(() => {
+    handleToggleMicRef.current = handleToggleMic;
+    handleToggleCamRef.current = handleToggleCam;
+  });
+
+  // Sync mic/cam state to native Android PiP actions
+  useEffect(() => {
+    if (isInPiP) {
+      void pipService.updatePiPActions(micOn, camOn);
+    }
+  }, [micOn, camOn, isInPiP]);
+
   /* ─── Share Handler ─── */
 
   const handleSystemShare = useCallback(async () => {
     try {
-      const roomName = room?.name ?? 'PomoMate Çalışma Odası';
+      const roomName = room?.name ?? t('rooms.defaultRoomName');
       const webUrl = `https://pomomate.app/join?room=${inviteCode}`;
       const appUrl = `pomomate://join?room=${inviteCode}`;
-      const message = `🎯 PomoMate Çalışma Odama Davetlisin!\n\nOda: ${roomName}\n\n📋 Katılım Kodu:\n${inviteCode}\n\nUygulamadan 'Odaya Katıl' diyerek bu kodu girebilir veya doğrudan bağlantıya tıklayabilirsin:\n${webUrl}\n\n(Uygulama yüklüyse doğrudan aç: ${appUrl})`;
+      const message = t('rooms.shareRoomInviteMessage', {
+        roomName,
+        inviteCode,
+        webUrl,
+        appUrl,
+      });
 
       await Share.share({
         message,
@@ -485,9 +598,9 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     } catch {
       // User cancelled share
     }
-  }, [room, inviteCode]);
+  }, [room, inviteCode, t]);
 
-  /* ─── File Pick Handler ─── */
+  /* ─── File Pick & Sync Handlers ─── */
 
   const handlePickFile = useCallback(async () => {
     if (!isHost && !roomSettings.allowFiles) {
@@ -499,7 +612,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: false,
-        quality: 0.8,
+        quality: 0.7,
+        base64: true,
       });
 
       if (!result.canceled && result.assets[0]) {
@@ -507,29 +621,101 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         const fileName = asset.fileName ?? asset.uri.split('/').pop() ?? 'file';
         const fileType = asset.mimeType?.startsWith('image') ? 'image' : 'other';
         const newFileId = generateId();
-        addSharedFile({
+
+        const universalUri = asset.base64
+          ? `data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`
+          : asset.uri;
+
+        const newFile = {
           id: newFileId,
-          uri: asset.uri,
+          uri: universalUri,
           fileName,
           fileType,
           sharedBy: user?.id ?? 'my-user',
-        });
+        };
+
+        addSharedFile(newFile);
         setActiveSharedFileId(newFileId);
         // Auto-show screen panel when file is shared
         if (!viewToggles.screen) {
           toggleView('screen');
         }
+
+        // Broadcast to all peers via Supabase Realtime channel
+        const filesChannel = supabase.channel(`room_files_${roomId}`);
+        filesChannel.send({
+          type: 'broadcast',
+          event: 'file_action',
+          payload: {
+            action: 'add',
+            file: newFile,
+            makeActive: true,
+          },
+        });
+
+        // Also notify via WebRTC data channel
+        if (roomClientRef.current) {
+          (roomClientRef.current as any).peerManager?.broadcast({
+            type: 'file-shared',
+            payload: {
+              action: 'add',
+              file: newFile,
+              fileId: newFileId,
+            },
+          });
+        }
       }
     } catch {
       Alert.alert(t('rooms.filePickTitle'), t('rooms.filePickError'));
     }
-  }, [addSharedFile, setActiveSharedFileId, user, viewToggles.screen, toggleView, isHost, roomSettings.allowFiles, t]);
+  }, [roomId, addSharedFile, setActiveSharedFileId, user, viewToggles.screen, toggleView, isHost, roomSettings.allowFiles, t]);
+
+  const handleSelectSharedFile = useCallback((fileId: string) => {
+    setActiveSharedFileId(fileId);
+    if (!viewToggles.screen) {
+      toggleView('screen');
+    }
+    const filesChannel = supabase.channel(`room_files_${roomId}`);
+    filesChannel.send({
+      type: 'broadcast',
+      event: 'file_action',
+      payload: {
+        action: 'setActive',
+        fileId,
+      },
+    });
+    if (roomClientRef.current) {
+      (roomClientRef.current as any).peerManager?.broadcast({
+        type: 'file-shared',
+        payload: {
+          action: 'setActive',
+          fileId,
+        },
+      });
+    }
+  }, [roomId, setActiveSharedFileId, viewToggles.screen, toggleView]);
 
   const handleRemoveFile = useCallback((fileId: string) => {
     removeSharedFile(fileId);
-    // If we removed the active file, shrink the screen to avoid empty space if desired
-    // Or we just let it show the dropzone
-  }, [removeSharedFile]);
+    const filesChannel = supabase.channel(`room_files_${roomId}`);
+    filesChannel.send({
+      type: 'broadcast',
+      event: 'file_action',
+      payload: {
+        action: 'remove',
+        fileId,
+      },
+    });
+    if (roomClientRef.current) {
+      (roomClientRef.current as any).peerManager?.broadcast({
+        type: 'file-shared',
+        payload: {
+          action: 'remove',
+          fileId,
+        },
+      });
+    }
+  }, [roomId, removeSharedFile]);
 
   /* ─── Task Handler ─── */
 
@@ -566,7 +752,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
           <View style={styles.pipLiveBadge}>
             <View style={styles.pipLiveDot} />
             <Text style={styles.pipLiveText} numberOfLines={1}>
-              {room?.name || 'Canlı Oda'}
+              {room?.name || 'Canlı'}
             </Text>
           </View>
 
@@ -575,22 +761,25 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
             <Pressable
               style={[styles.pipButton, micOn ? styles.pipBtnActiveGreen : styles.pipBtnInactive]}
               onPress={handleToggleMic}
+              hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
             >
-              <Ionicons name={micOn ? 'mic' : 'mic-off'} size={18} color="#FFF" />
+              <Ionicons name={micOn ? 'mic' : 'mic-off'} size={16} color="#FFF" />
             </Pressable>
 
             <Pressable
               style={[styles.pipButton, camOn ? styles.pipBtnActiveGreen : styles.pipBtnInactive]}
               onPress={handleToggleCam}
+              hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
             >
-              <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={18} color="#FFF" />
+              <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={16} color="#FFF" />
             </Pressable>
 
             <Pressable
               style={[styles.pipButton, screenShareOn ? styles.pipBtnActivePurple : styles.pipBtnInactive]}
               onPress={handleToggleScreen}
+              hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
             >
-              <Ionicons name={screenShareOn ? 'desktop' : 'desktop-outline'} size={18} color="#FFF" />
+              <Ionicons name={screenShareOn ? 'desktop' : 'desktop-outline'} size={16} color="#FFF" />
             </Pressable>
           </View>
         </View>
@@ -672,6 +861,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
               isScreenSharing={isAnyScreenSharing}
               screenStream={activeScreenStream}
               presenterName={remoteScreenSharer ? remoteScreenSharer.userName : undefined}
+              screenQuality={screenQuality}
               isHost={isHost}
               allowFiles={roomSettings.allowFiles}
               onPickFile={handlePickFile}
@@ -739,6 +929,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         onShare={() => setShowInvite(true)}
         onLeave={onLeave}
         onPickFile={handlePickFile}
+        onSelectFile={handleSelectSharedFile}
+        onRemoveFile={handleRemoveFile}
       />
     </View>
   );
@@ -776,32 +968,36 @@ const styles = StyleSheet.create({
     right: spacing.sm,
     zIndex: 50,
   },
-  /* ─── PiP compact view styles ─── */
+  /* ─── PiP compact view styles (Ultra-Slim Pill) ─── */
   pipContainer: {
     flex: 1,
-    backgroundColor: '#0D0D14',
+    backgroundColor: '#07090E',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 6,
+    paddingHorizontal: 8,
   },
   pipBar: {
     width: '100%',
-    height: '100%',
-    backgroundColor: '#181824',
-    borderRadius: 22,
+    height: 48,
+    backgroundColor: 'rgba(15, 18, 28, 0.95)',
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(168, 85, 247, 0.3)',
-    elevation: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1.2,
+    borderColor: 'rgba(168, 85, 247, 0.45)',
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 10,
   },
   pipLiveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    flex: 1,
+    gap: 7,
+    flexShrink: 1,
     marginRight: 8,
   },
   pipLiveDot: {
@@ -809,32 +1005,40 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#22C55E',
+    shadowColor: '#22C55E',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 2,
   },
   pipLiveText: {
-    color: '#FFF',
-    fontSize: 13,
+    color: '#F8FAFC',
+    fontSize: 12,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
   pipControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   pipButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     justifyContent: 'center',
     alignItems: 'center',
   },
   pipBtnActiveGreen: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#16A34A',
   },
   pipBtnActivePurple: {
-    backgroundColor: '#A855F7',
+    backgroundColor: '#9333EA',
   },
   pipBtnInactive: {
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
   },
   /* ─── Mini Mod floating button ─── */
   miniModButton: {

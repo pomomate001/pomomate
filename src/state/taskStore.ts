@@ -18,6 +18,14 @@ export function getTasksForDate(allTasks: Task[], dateStr: string): Task[] {
   // 1. Concrete tasks specifically targeting dateStr
   const concreteTasks = allTasks.filter((t) => t.targetDate === dateStr);
 
+  const todayStr = toLocalDateStr(new Date());
+  // If the target date is in the past, only return historical concrete tasks (no virtual recurring tasks)
+  if (dateStr < todayStr) {
+    const uncompleted = concreteTasks.filter((t) => !t.completed);
+    const completed = concreteTasks.filter((t) => t.completed);
+    return [...uncompleted, ...completed];
+  }
+
   // Set of signatures for concrete tasks on this date
   const concreteSignatures = new Set(concreteTasks.map((t) => `${t.title}-${t.tag || ''}`));
 

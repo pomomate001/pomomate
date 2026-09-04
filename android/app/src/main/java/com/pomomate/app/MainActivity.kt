@@ -2,7 +2,14 @@ package com.pomomate.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.app.PictureInPictureParams
+import android.app.PendingIntent
+import android.app.RemoteAction
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.res.Configuration
+import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
 import android.util.Rational
@@ -23,6 +30,10 @@ class MainActivity : ReactActivity() {
     var isInPiPMode: Boolean = false
     var autoPiPEnabled: Boolean = false
   }
+
+  private var pipReceiver: BroadcastReceiver? = null
+  private var currentMicOn: Boolean = true
+  private var currentCamOn: Boolean = false
 
   override fun onUserLeaveHint() {
     super.onUserLeaveHint()
@@ -45,11 +56,37 @@ class MainActivity : ReactActivity() {
 
     super.onCreate(null)
     instance = this
+
+    // Register receiver for PiP RemoteActions
+    val filter = IntentFilter().apply {
+      addAction("com.pomomate.app.ACTION_TOGGLE_MIC")
+      addAction("com.pomomate.app.ACTION_TOGGLE_CAM")
+    }
+    pipReceiver = object : BroadcastReceiver() {
+      override fun onReceive(context: Context?, intent: Intent?) {
+        when (intent?.action) {
+          "com.pomomate.app.ACTION_TOGGLE_MIC" -> PiPModule.notifyPiPAction("toggleMic")
+          "com.pomomate.app.ACTION_TOGGLE_CAM" -> PiPModule.notifyPiPAction("toggleCam")
+        }
+      }
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      registerReceiver(pipReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+    } else {
+      registerReceiver(pipReceiver, filter)
+    }
   }
 
   override fun onDestroy() {
     autoPiPEnabled = false
     isInPiPMode = false
+    pipReceiver?.let {
+      try {
+        unregisterReceiver(it)
+      } catch (e: Exception) {
+      }
+      pipReceiver = null
+    }
     if (instance == this) {
       instance = null
     }
@@ -78,12 +115,18 @@ class MainActivity : ReactActivity() {
   }
 
   /**
-   * Enter Picture-in-Picture mode with a 16:9 aspect ratio
+   * Enter Picture-in-Picture mode with slim aspect ratio and native actions
    */
   fun enterPiPMode() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val builder = PictureInPictureParams.Builder()
         .setAspectRatio(Rational(239, 100))
+
+      val actions = createPiPActions(currentMicOn, currentCamOn)
+      if (actions.isNotEmpty()) {
+        builder.setActions(actions)
+      }
+
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         builder.setAutoEnterEnabled(autoPiPEnabled)
       }
@@ -91,13 +134,57 @@ class MainActivity : ReactActivity() {
     }
   }
 
+  fun updatePiPActions(micOn: Boolean, camOn: Boolean) {
+    currentMicOn = micOn
+    currentCamOn = camOn
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val builder = PictureInPictureParams.Builder()
+        .setAspectRatio(Rational(239, 100))
+      val actions = createPiPActions(micOn, camOn)
+      if (actions.isNotEmpty()) {
+        builder.setActions(actions)
+      }
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        builder.setAutoEnterEnabled(autoPiPEnabled)
+      }
+      setPictureInPictureParams(builder.build())
+    }
+  }
+
+  private fun createPiPActions(micOn: Boolean, camOn: Boolean): List<RemoteAction> {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return emptyList()
+    val actions = mutableListOf<RemoteAction>()
+
+    try {
+      val micIntent = Intent("com.pomomate.app.ACTION_TOGGLE_MIC").setPackage(packageName)
+      val micFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+      } else {
+        PendingIntent.FLAG_UPDATE_CURRENT
+      }
+      val micPendingIntent = PendingIntent.getBroadcast(this, 101, micIntent, micFlags)
+      val micIcon = Icon.createWithResource(this, android.R.drawable.ic_btn_speak_now)
+      actions.add(RemoteAction(micIcon, if (micOn) "Mute" else "Unmute", if (micOn) "Mute Mic" else "Unmute Mic", micPendingIntent))
+
+      val camIntent = Intent("com.pomomate.app.ACTION_TOGGLE_CAM").setPackage(packageName)
+      val camPendingIntent = PendingIntent.getBroadcast(this, 102, camIntent, micFlags)
+      val camIcon = Icon.createWithResource(this, android.R.drawable.ic_menu_camera)
+      actions.add(RemoteAction(camIcon, if (camOn) "Cam Off" else "Cam On", if (camOn) "Turn Off Cam" else "Turn On Cam", camPendingIntent))
+    } catch (e: Exception) {
+    }
+    return actions
+  }
+
   fun updateAutoPiP(enabled: Boolean) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-      val params = PictureInPictureParams.Builder()
+      val builder = PictureInPictureParams.Builder()
         .setAspectRatio(Rational(239, 100))
         .setAutoEnterEnabled(enabled)
-        .build()
-      setPictureInPictureParams(params)
+      val actions = createPiPActions(currentMicOn, currentCamOn)
+      if (actions.isNotEmpty()) {
+        builder.setActions(actions)
+      }
+      setPictureInPictureParams(builder.build())
     }
   }
 

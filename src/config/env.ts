@@ -62,10 +62,8 @@ export const isProd = config.env === 'prod';
  */
 export function validateConfig(cfg: AppConfig = config): string[] {
   const missing: string[] = [];
-  if (!cfg.apiUrl) missing.push('EXPO_PUBLIC_API_URL');
   if (!cfg.supabaseUrl) missing.push('EXPO_PUBLIC_SUPABASE_URL');
   if (!cfg.supabaseAnonKey) missing.push('EXPO_PUBLIC_SUPABASE_ANON_KEY');
-  if (!cfg.webrtcSignalingUrl) missing.push('EXPO_PUBLIC_WEBRTC_SIGNALING_URL');
 
   if (missing.length > 0 && isDev) {
     console.warn(

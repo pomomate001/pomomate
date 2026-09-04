@@ -12,15 +12,23 @@ export class BuddyService {
   /** Create a new buddy session (host initiates). */
   async createSession(hostId: string): Promise<BuddySession | null> {
     try {
+      const timerState = useTimerStore.getState();
+      const initialMode = timerState.mode || 'work';
+      const initialDuration = timerState.duration || 1500;
+      const initialRemaining = timerState.remainingSeconds || initialDuration;
+      const initialRunning = timerState.isRunning || false;
+      const initialCycle = timerState.currentCycle || 1;
+
       const { data, error } = await supabase
         .from('buddy_sessions')
         .insert({
           host_id: hostId,
           status: 'pending',
-          timer_mode: 'work',
-          timer_remaining_seconds: 1500,
-          timer_is_running: false,
-          current_cycle: 1,
+          timer_mode: initialMode,
+          timer_duration: initialDuration,
+          timer_remaining_seconds: initialRemaining,
+          timer_is_running: initialRunning,
+          current_cycle: initialCycle,
         })
         .select()
         .single();
@@ -100,6 +108,21 @@ export class BuddyService {
       useBuddyStore.getState().setActiveSession(session);
       useBuddyStore.getState().setMyRole('guest');
       useBuddyStore.getState().setPendingInvite(null);
+
+      // Immediately sync local timer store with the session's duration and state
+      const targetEndTime = session.timerIsRunning
+        ? Date.now() + session.timerRemainingSeconds * 1000
+        : null;
+
+      useTimerStore.getState().setTimerState({
+        duration: session.timerDuration ?? session.timerRemainingSeconds,
+        remainingSeconds: session.timerRemainingSeconds,
+        mode: session.timerMode,
+        isRunning: session.timerIsRunning,
+        currentCycle: session.currentCycle,
+        targetEndTime,
+      });
+
       return session;
     } catch (err: any) {
       logger.warn('[BuddyService] acceptInvite error:', err);
@@ -145,21 +168,24 @@ export class BuddyService {
     }
   }
 
-  /** Update timer state (host only). Broadcasts to guest. */
+  /** Update timer state. Broadcasts to buddy. */
   async updateTimerState(
     sessionId: string,
     state: {
       timerMode?: TimerMode;
+      timerDuration?: number;
       timerRemainingSeconds?: number;
       timerIsRunning?: boolean;
       currentCycle?: number;
       activeTaskTitle?: string | null;
       targetEndTime?: number | null;
+      senderId?: string;
     },
   ): Promise<void> {
     try {
       const dbPatch: any = {};
       if (state.timerMode !== undefined) dbPatch.timer_mode = state.timerMode;
+      if (state.timerDuration !== undefined) dbPatch.timer_duration = state.timerDuration;
       if (state.timerRemainingSeconds !== undefined) dbPatch.timer_remaining_seconds = state.timerRemainingSeconds;
       if (state.timerIsRunning !== undefined) dbPatch.timer_is_running = state.timerIsRunning;
       if (state.currentCycle !== undefined) dbPatch.current_cycle = state.currentCycle;
@@ -187,6 +213,15 @@ export class BuddyService {
   /** Send an emoji reaction. */
   async sendEmoji(sessionId: string, senderId: string, emojiCode: BuddyEmojiCode): Promise<void> {
     try {
+      // Add immediately to local store so sender sees their own reaction
+      useBuddyStore.getState().addEmoji({
+        id: Date.now().toString(),
+        sessionId,
+        senderId,
+        emojiCode,
+        createdAt: new Date().toISOString(),
+      });
+
       // Save to DB
       await supabase.from('buddy_emojis').insert({
         session_id: sessionId,
@@ -238,14 +273,25 @@ export class BuddyService {
 
     this.channel
       .on('broadcast', { event: 'timer_update' }, (payload) => {
-        callbacks.onTimerUpdate?.(payload.payload);
-        useBuddyStore.getState().updateTimerState(payload.payload);
-        
-        // Also update local timerStore for guest
         const state = payload.payload;
-        const updates: any = { isRemoteUpdate: true };
+        // Skip if this update was broadcast by ourselves
+        if (state.senderId && state.senderId === userId) {
+          return;
+        }
+
+        callbacks.onTimerUpdate?.(state);
+        useBuddyStore.getState().updateTimerState(state);
+        
+        const updates: any = {};
         if (state.timerMode !== undefined) updates.mode = state.timerMode;
-        if (state.timerRemainingSeconds !== undefined) updates.remainingSeconds = state.timerRemainingSeconds;
+        if (state.timerDuration !== undefined) updates.duration = state.timerDuration;
+        if (state.timerRemainingSeconds !== undefined) {
+          updates.remainingSeconds = state.timerRemainingSeconds;
+          const curDur = useTimerStore.getState().duration;
+          if (state.timerDuration === undefined && state.timerRemainingSeconds > curDur) {
+            updates.duration = state.timerRemainingSeconds;
+          }
+        }
         if (state.timerIsRunning !== undefined) updates.isRunning = state.timerIsRunning;
         if (state.currentCycle !== undefined) updates.currentCycle = state.currentCycle;
         if (state.targetEndTime !== undefined) updates.targetEndTime = state.targetEndTime;
@@ -300,6 +346,23 @@ export class BuddyService {
             status: 'active'
           });
         }
+
+        // Host broadcasts current live timer state to the guest
+        const timer = useTimerStore.getState();
+        this.channel?.send({
+          type: 'broadcast',
+          event: 'timer_update',
+          payload: {
+            timerMode: timer.mode,
+            timerDuration: timer.duration,
+            timerRemainingSeconds: timer.remainingSeconds,
+            timerIsRunning: timer.isRunning,
+            currentCycle: timer.currentCycle,
+            targetEndTime: timer.targetEndTime,
+            senderId: userId,
+          },
+        });
+
         callbacks.onGuestJoined?.(guestId);
       })
       .subscribe();
@@ -334,6 +397,7 @@ export class BuddyService {
       guestId: row.guest_id,
       status: row.status,
       timerMode: row.timer_mode,
+      timerDuration: row.timer_duration ?? row.timer_remaining_seconds ?? 1500,
       timerRemainingSeconds: row.timer_remaining_seconds,
       timerIsRunning: row.timer_is_running,
       currentCycle: row.current_cycle,

@@ -10,6 +10,7 @@ import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { useFriendsStore, useUserStore } from '../../../state';
 import { roomInviteService } from '../../../services/room';
+import { useTranslation } from '../../../i18n';
 
 interface RoomInviteSheetProps {
   visible: boolean;
@@ -29,24 +30,25 @@ export function RoomInviteSheet({
   roomName,
 }: RoomInviteSheetProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const friends = useFriendsStore((s: any) => s.friends);
   const currentUser = useUserStore((s) => s.user);
   const [invitingId, setInvitingId] = useState<string | null>(null);
 
   const handleCopyCode = async () => {
     await Clipboard.setStringAsync(inviteCode);
-    Alert.alert('Kopyalandı', `Oda kodu (${inviteCode}) panoya kopyalandı.`);
+    Alert.alert(t('rooms.copiedTitle'), t('rooms.codeCopiedAlert', { code: inviteCode }));
   };
 
   const handleCopyLink = async () => {
     const link = `https://pomomate.app/join?room=${inviteCode}`;
     await Clipboard.setStringAsync(link);
-    Alert.alert('Kopyalandı', 'Oda katılım bağlantısı panoya kopyalandı.');
+    Alert.alert(t('rooms.copiedTitle'), t('rooms.linkCopiedAlert'));
   };
 
   const handleInviteFriend = async (friendId: string, friendName: string) => {
     if (!roomId) {
-      Alert.alert('Hata', 'Oda bilgisi alınamadı.');
+      Alert.alert(t('common.error'), t('rooms.roomInfoError'));
       return;
     }
 
@@ -56,20 +58,20 @@ export function RoomInviteSheet({
         friendId,
         {
           id: roomId,
-          name: roomName || 'Çalışma Odası',
+          name: roomName || t('rooms.defaultRoomName'),
           inviteCode,
         },
         {
           id: currentUser?.id || 'host',
-          displayName: currentUser?.displayName || 'Bir arkadaşın',
+          displayName: currentUser?.displayName || t('common.friend'),
           avatarUrl: currentUser?.avatarUrl,
         }
       );
 
       if (success) {
-        Alert.alert('Davet Gönderildi', `${friendName} adlı arkadaşına anlık oda daveti iletildi!`);
+        Alert.alert(t('rooms.inviteSentTitle'), t('rooms.inviteSentAlert', { name: friendName }));
       } else {
-        Alert.alert('Başarısız', 'Davet iletilemedi. Lütfen bağlantı kodunu paylaşın.');
+        Alert.alert(t('rooms.inviteFailedTitle'), t('rooms.inviteFailedAlert'));
       }
     } finally {
       setInvitingId(null);
@@ -80,16 +82,16 @@ export function RoomInviteSheet({
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={[typography.h3, { color: colors.textPrimary }]}>Odaya Davet Et</Text>
+          <Text style={[typography.h3, { color: colors.textPrimary }]}>{t('rooms.inviteToRoomTitle')}</Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-            Arkadaşlarını tek tıkla odaya çağır veya katılım kodunu paylaş.
+            {t('rooms.inviteToRoomSubtitle')}
           </Text>
         </View>
 
         {/* Quick Code & Link Action Bar */}
         <View style={[styles.codeBox, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
           <View style={styles.codeTextContainer}>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Oda Katılım Kodu</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.roomJoinCodeLabel')}</Text>
             <Text style={[typography.h2, { color: colors.primary, letterSpacing: 3 }]}>{inviteCode}</Text>
           </View>
           <View style={styles.codeActions}>
@@ -98,20 +100,20 @@ export function RoomInviteSheet({
               onPress={handleCopyCode}
             >
               <Ionicons name="copy-outline" size={18} color={colors.primary} />
-              <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 4 }]}>Kodu Kopyala</Text>
+              <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 4 }]}>{t('rooms.copyCode')}</Text>
             </Pressable>
             <Pressable
               style={[styles.smallActionBtn, { backgroundColor: colors.surface }]}
               onPress={handleCopyLink}
             >
               <Ionicons name="link-outline" size={18} color={colors.primary} />
-              <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 4 }]}>Linki Kopyala</Text>
+              <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 4 }]}>{t('rooms.copyLink')}</Text>
             </Pressable>
           </View>
         </View>
 
         <Button
-          title="Diğer Uygulamalarla Paylaş (WhatsApp, vb.)"
+          title={t('rooms.shareWithOtherApps')}
           variant="outline"
           icon={<Ionicons name="share-social-outline" size={20} color={colors.primary} />}
           onPress={async () => {
@@ -123,7 +125,7 @@ export function RoomInviteSheet({
         />
 
         <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-          Uygulama İçi Arkadaşlarım
+          {t('rooms.inAppFriends')}
         </Text>
 
         <FlatList
@@ -152,7 +154,7 @@ export function RoomInviteSheet({
                   disabled={invitingId === fId}
                 >
                   <Text style={[typography.captionBold, { color: colors.primary }]}>
-                    {invitingId === fId ? 'Gönderiliyor...' : 'Davet Et'}
+                    {invitingId === fId ? t('rooms.sendingInvite') : t('rooms.inviteBtn')}
                   </Text>
                 </Pressable>
               </View>
@@ -160,7 +162,7 @@ export function RoomInviteSheet({
           }}
           ListEmptyComponent={
             <Text style={[typography.body, { color: colors.textDisabled, textAlign: 'center', marginTop: spacing.md }]}>
-              Henüz ekli bir arkadaşın bulunmuyor.
+              {t('rooms.noFriendsYet')}
             </Text>
           }
           style={styles.list}

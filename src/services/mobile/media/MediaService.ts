@@ -100,19 +100,31 @@ export class MediaService {
       let stream: MediaStream | null = null;
       const screenConstraints = {
         video: {
-          width: { ideal: 720, max: 1080 },
-          height: { ideal: 1280, max: 1920 },
-          frameRate: { ideal: 20, max: 24 },
+          width: { ideal: 1080, max: 1920 },
+          height: { ideal: 1920, max: 1920 },
+          frameRate: { ideal: 30, max: 30 },
         },
       };
 
       if (Platform.OS === 'web') {
         stream = (await navigator.mediaDevices.getDisplayMedia(screenConstraints as any)) as unknown as MediaStream;
       } else {
-        // Use optimized constraints for mobile to avoid CPU lag & stutter
+        // High quality screen sharing constraints
         stream = (await mediaDevices.getDisplayMedia(screenConstraints as any)) as unknown as MediaStream;
       }
-      logger.info('[Media] Screen display media acquired successfully (optimized 720p/20-24fps)');
+
+      if (stream) {
+        // Prioritize sharp text and detail over aggressive compression
+        const videoTracks = stream.getVideoTracks();
+        if (videoTracks.length > 0) {
+          const track = videoTracks[0];
+          if ('contentHint' in track) {
+            (track as any).contentHint = 'detail';
+          }
+        }
+      }
+
+      logger.info('[Media] Screen display media acquired successfully (HD 720p/1080p detail)');
       return stream;
     } catch (err) {
       logger.warn('[Media] Failed to get display media:', err);

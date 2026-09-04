@@ -12,9 +12,10 @@ interface TaskItemProps {
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
   onPress?: (task: Task) => void;
+  onLongPress?: () => void;
 }
 
-export function TaskItem({ task, onToggle, onDelete, onPress }: TaskItemProps) {
+export function TaskItem({ task, onToggle, onDelete, onPress, onLongPress }: TaskItemProps) {
   const colors = useColors();
   const { t } = useTranslation();
   const [scaleAnim] = useState(() => new Animated.Value(1));
@@ -41,7 +42,12 @@ export function TaskItem({ task, onToggle, onDelete, onPress }: TaskItemProps) {
       </Pressable>
 
       {/* Title + tag + pomodoro count */}
-      <Pressable style={styles.content} onPress={() => onPress && onPress(task)}>
+      <Pressable
+        style={styles.content}
+        onPress={() => onPress && onPress(task)}
+        onLongPress={onLongPress}
+        delayLongPress={200}
+      >
         <Text
           style={[
             typography.bodyBold,

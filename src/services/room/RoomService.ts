@@ -6,7 +6,7 @@
  */
 import { supabase } from '../auth/supabaseClient';
 import { logger } from '../../utils/logger';
-import type { Room } from '../../types';
+import type { Room, RoomMember } from '../../types';
 
 function generateRandomInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -215,6 +215,49 @@ export class RoomService {
     } catch (err: any) {
       logger.warn('[RoomService] getRoomSettings exception:', err?.message || err);
       return null;
+    }
+  }
+
+  /**
+   * Fetch active room members with their profiles (display name, avatar).
+   */
+  async fetchRoomMembersWithProfiles(roomId: string): Promise<RoomMember[]> {
+    try {
+      const { data, error } = await supabase
+        .from('room_members')
+        .select(`
+          id,
+          room_id,
+          user_id,
+          role,
+          joined_at,
+          users:user_id (
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('room_id', roomId);
+
+      if (error || !data) {
+        logger.warn('[RoomService] fetchRoomMembersWithProfiles error:', error?.message);
+        return [];
+      }
+
+      return data.map((item: any) => {
+        const profile = Array.isArray(item.users) ? item.users[0] : item.users;
+        return {
+          id: item.id || item.user_id,
+          roomId: item.room_id,
+          userId: item.user_id,
+          displayName: profile?.display_name || undefined,
+          avatarUrl: profile?.avatar_url || undefined,
+          role: (item.role as 'host' | 'member') || 'member',
+          joinedAt: item.joined_at || new Date().toISOString(),
+        };
+      });
+    } catch (err: any) {
+      logger.warn('[RoomService] fetchRoomMembersWithProfiles exception:', err);
+      return [];
     }
   }
 }

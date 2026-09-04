@@ -24,6 +24,19 @@ class PiPModule(private val reactContext: ReactApplicationContext) : ReactContex
         }
       }
     }
+
+    fun notifyPiPAction(action: String) {
+      instance?.let { module ->
+        try {
+          if (module.reactContext.hasActiveReactInstance()) {
+            module.reactContext
+              .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+              ?.emit("onPiPAction", action)
+          }
+        } catch (e: Exception) {
+        }
+      }
+    }
   }
 
   init {
@@ -71,6 +84,15 @@ class PiPModule(private val reactContext: ReactApplicationContext) : ReactContex
     val activity = (reactContext.currentActivity ?: MainActivity.instance) as? MainActivity
     activity?.runOnUiThread {
       activity.updateAutoPiP(enabled)
+    }
+    promise.resolve(true)
+  }
+
+  @ReactMethod
+  fun updatePiPActions(micOn: Boolean, camOn: Boolean, promise: Promise) {
+    val activity = (reactContext.currentActivity ?: MainActivity.instance) as? MainActivity
+    activity?.runOnUiThread {
+      activity.updatePiPActions(micOn, camOn)
     }
     promise.resolve(true)
   }

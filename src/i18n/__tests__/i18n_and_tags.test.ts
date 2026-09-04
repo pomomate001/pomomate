@@ -98,4 +98,57 @@ describe('i18n and Tags Localized Handling', () => {
       expect(getCountryName('US', 'en')).toBe('United States');
     });
   });
+
+  describe('Appearance & Sound settings and Paste localization', () => {
+    it('translates common paste and clipboard strings', () => {
+      expect(translate('common.paste', 'tr')).toBe('Yapıştır');
+      expect(translate('common.paste', 'en')).toBe('Paste');
+      expect(translate('common.pasteFromClipboard', 'tr')).toBe('Panodan Yapıştır');
+      expect(translate('common.pasteFromClipboard', 'en')).toBe('Paste from Clipboard');
+      expect(translate('friends.pastedAlertTitle', 'tr')).toBe('Yapıştırıldı');
+      expect(translate('friends.pastedAlertTitle', 'en')).toBe('Pasted');
+      expect(translate('buddy.waiting', 'tr')).toBe('Bekleniyor...');
+      expect(translate('buddy.waiting', 'en')).toBe('Waiting...');
+    });
+
+    it('translates appearance options in both languages', () => {
+      expect(translate('appearanceOptions.video_windmill.title', 'tr')).toBe('Rüzgar Değirmeni');
+      expect(translate('appearanceOptions.video_windmill.title', 'en')).toBe('Windmill');
+      expect(translate('appearanceOptions.theme_neon.title', 'tr')).toBe('Neon Cyber');
+      expect(translate('appearanceOptions.theme_neon.title', 'en')).toBe('Cyber Neon');
+      expect(translate('appearanceOptions.design_minimal.title', 'tr')).toBe('Minimalist');
+      expect(translate('appearanceOptions.design_minimal.title', 'en')).toBe('Minimalist');
+      expect(translate('appearanceOptions.none_effect.title', 'tr')).toBe('Sade');
+      expect(translate('appearanceOptions.none_effect.title', 'en')).toBe('Minimal');
+      expect(translate('appearanceOptions.cat_tail.title', 'tr')).toBe('Neşeli Kedi');
+      expect(translate('appearanceOptions.cat_tail.title', 'en')).toBe('Playful Cat');
+    });
+
+    it('translates sound options in both languages', () => {
+      expect(translate('soundOptions.notify_default.title', 'tr')).toBe('Dijital Melodi');
+      expect(translate('soundOptions.notify_default.title', 'en')).toBe('Digital Melody');
+      expect(translate('soundOptions.ambient_rain.title', 'tr')).toBe('Yağmur Sesi');
+      expect(translate('soundOptions.ambient_rain.title', 'en')).toBe('Rain Sound');
+      expect(translate('soundOptions.ambient_none.title', 'tr')).toBe('Ortam Sesi Yok');
+      expect(translate('soundOptions.ambient_none.title', 'en')).toBe('No Ambient Sound');
+    });
+
+    it('translates friend request sharing and invite messages in both languages', () => {
+      const shareUrl = 'https://pomomate.app/join?friend=test-123';
+      const myCode = 'test-123';
+      const trMessage = translate('friends.shareInviteMessage', 'tr', { url: shareUrl, code: myCode });
+      const enMessage = translate('friends.shareInviteMessage', 'en', { url: shareUrl, code: myCode });
+
+      expect(trMessage).toContain('Beni arkadaş olarak eklemek için');
+      expect(trMessage).toContain('https://pomomate.app/join?friend=test-123');
+      expect(enMessage).toContain('Tap the link below to add me as a friend');
+      expect(enMessage).toContain('https://pomomate.app/join?friend=test-123');
+
+      expect(translate('friends.requestSentSuccess', 'tr', { name: 'Ahmet' })).toBe('Ahmet kullanıcısına arkadaşlık isteği gönderildi!');
+      expect(translate('friends.requestSentSuccess', 'en', { name: 'Ahmet' })).toBe('Friend request sent to Ahmet!');
+
+      expect(translate('rooms.inviteToRoomTitle', 'tr')).toBe('Odaya Davet Et');
+      expect(translate('rooms.inviteToRoomTitle', 'en')).toBe('Invite to Room');
+    });
+  });
 });

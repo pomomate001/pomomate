@@ -18,7 +18,6 @@ import { IconButton } from '../../components/IconButton';
 import { Button } from '../../components/Button';
 import { TimerFace } from './TimerFace';
 import { BackgroundEffect, FocusAnimation } from '../../animations';
-import { AdPlacement } from '../../ads';
 import { notificationService } from '../../../services/mobile';
 import { soundService } from '../../../services/mobile/sound/SoundService';
 import { adMobService } from '../../../services/monetization';
@@ -226,25 +225,105 @@ export function TimerScreen() {
     });
   }, [user?.id]);
 
-  // Sync timer with buddy session
-  useEffect(() => {
-    if (activeSession) {
-      const state = useTimerStore.getState() as any;
-      if (state.isRemoteUpdate) {
-        // Clear flag and skip broadcast
-        useTimerStore.getState().clearRemoteUpdateFlag();
-        return;
-      }
-      
+  // Explicit timer synchronization helpers for buddy sessions
+  const syncTimerToBuddy = useCallback(
+    (overrides?: {
+      mode?: TimerMode;
+      duration?: number;
+      remainingSeconds?: number;
+      isRunning?: boolean;
+      currentCycle?: number;
+      targetEndTime?: number | null;
+    }) => {
+      if (!activeSession) return;
+      const s = useTimerStore.getState();
       buddyService.updateTimerState(activeSession.id, {
-        timerMode: state.mode,
-        timerRemainingSeconds: state.remainingSeconds,
-        timerIsRunning: state.isRunning,
-        currentCycle: state.currentCycle,
-        targetEndTime: state.targetEndTime,
+        timerMode: overrides?.mode ?? s.mode,
+        timerDuration: overrides?.duration ?? s.duration,
+        timerRemainingSeconds: overrides?.remainingSeconds ?? s.remainingSeconds,
+        timerIsRunning: overrides?.isRunning !== undefined ? overrides.isRunning : s.isRunning,
+        currentCycle: overrides?.currentCycle ?? s.currentCycle,
+        targetEndTime: overrides?.targetEndTime !== undefined ? overrides.targetEndTime : s.targetEndTime,
+        senderId: user?.id,
       });
+    },
+    [activeSession, user?.id],
+  );
+
+  const handleStart = useCallback(() => {
+    start();
+    const s = useTimerStore.getState();
+    syncTimerToBuddy({
+      isRunning: true,
+      duration: s.duration,
+      remainingSeconds: s.remainingSeconds,
+      targetEndTime: Date.now() + s.remainingSeconds * 1000,
+    });
+  }, [start, syncTimerToBuddy]);
+
+  const handlePause = useCallback(() => {
+    pause();
+    const s = useTimerStore.getState();
+    syncTimerToBuddy({
+      isRunning: false,
+      targetEndTime: null,
+      duration: s.duration,
+      remainingSeconds: s.remainingSeconds,
+    });
+  }, [pause, syncTimerToBuddy]);
+
+  const handleReset = useCallback(() => {
+    reset();
+    const s = useTimerStore.getState();
+    syncTimerToBuddy({
+      isRunning: false,
+      targetEndTime: null,
+      remainingSeconds: s.remainingSeconds,
+      duration: s.duration,
+    });
+  }, [reset, syncTimerToBuddy]);
+
+  const handleNext = useCallback(() => {
+    next();
+    const s = useTimerStore.getState();
+    syncTimerToBuddy({
+      mode: s.mode,
+      duration: s.duration,
+      remainingSeconds: s.remainingSeconds,
+      isRunning: false,
+      targetEndTime: null,
+      currentCycle: s.currentCycle,
+    });
+  }, [next, syncTimerToBuddy]);
+
+  const handleSetMode = useCallback(
+    (m: TimerMode) => {
+      setMode(m);
+      const s = useTimerStore.getState();
+      syncTimerToBuddy({
+        mode: m,
+        duration: s.duration,
+        remainingSeconds: s.remainingSeconds,
+        isRunning: false,
+        targetEndTime: null,
+      });
+    },
+    [setMode, syncTimerToBuddy],
+  );
+
+  // Keep buddy updated if timer duration changes while in a paused buddy session
+  const prevDurationRef = useRef(duration);
+  useEffect(() => {
+    if (activeSession && !isRunning && prevDurationRef.current !== duration) {
+      prevDurationRef.current = duration;
+      syncTimerToBuddy({
+        duration,
+        remainingSeconds,
+      });
+    } else {
+      prevDurationRef.current = duration;
     }
-  }, [activeSession, isRunning, mode, currentCycle]);
+  }, [duration, remainingSeconds, isRunning, activeSession, syncTimerToBuddy]);
 
   const handleSendEmoji = useCallback((code: BuddyEmojiCode) => {
     if (activeSession && user?.id) {
@@ -401,7 +480,7 @@ export function TimerScreen() {
                 title={modeLabels[m]}
                 variant={mode === m ? 'primary' : 'ghost'}
                 size="sm"
-                onPress={() => setMode(m)}
+                onPress={() => handleSetMode(m)}
                 style={styles.modeBtn}
               />
             ))}
@@ -437,12 +516,14 @@ export function TimerScreen() {
           {activeSession && activeSession.status !== 'ended' && (
             <BuddyAvatarBar
               hostProfile={{
+                id: activeSession.hostId,
                 displayName: myRole === 'host' ? (user?.displayName ?? '') : (buddyProfile?.displayName ?? ''),
                 avatarUrl: myRole === 'host' ? (user?.avatarUrl ?? undefined) : buddyProfile?.avatarUrl,
               }}
               guestProfile={
                 activeSession.guestId && buddyProfile
                   ? {
+                      id: activeSession.guestId,
                       displayName: myRole === 'guest' ? (user?.displayName ?? '') : (buddyProfile?.displayName ?? ''),
                       avatarUrl: myRole === 'guest' ? (user?.avatarUrl ?? undefined) : buddyProfile?.avatarUrl,
                     }
@@ -472,7 +553,7 @@ export function TimerScreen() {
           <View style={styles.controls}>
             <IconButton
               icon={<Ionicons name="refresh" size={15} color="#FFFFFF" />}
-              onPress={reset}
+              onPress={handleReset}
               size={32}
               style={{ backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)', borderWidth: 1 }}
             />
@@ -484,13 +565,13 @@ export function TimerScreen() {
                   color={colors.textInverse}
                 />
               }
-              onPress={isRunning ? pause : start}
+              onPress={isRunning ? handlePause : handleStart}
               size={42}
               style={{ backgroundColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 6 }}
             />
             <IconButton
               icon={<Ionicons name="play-skip-forward" size={15} color="#FFFFFF" />}
-              onPress={next}
+              onPress={handleNext}
               size={32}
               style={{ backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)', borderWidth: 1 }}
             />
@@ -556,9 +637,6 @@ export function TimerScreen() {
             )}
           </View>
         </View>
-
-        {/* Ad banner */}
-        <AdPlacement size="banner" />
       </ScrollView>
 
       <AddTaskSheet 

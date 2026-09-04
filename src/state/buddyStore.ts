@@ -24,7 +24,7 @@ interface BuddyActions {
   addEmoji: (emoji: BuddyEmoji) => void;
   clearEmojis: () => void;
   setPendingInvite: (invite: { sessionId: string; hostProfile: BuddyProfile } | null) => void;
-  updateTimerState: (patch: { timerMode?: TimerMode; timerRemainingSeconds?: number; timerIsRunning?: boolean; currentCycle?: number }) => void;
+  updateTimerState: (patch: { timerMode?: TimerMode; timerDuration?: number; timerRemainingSeconds?: number; timerIsRunning?: boolean; currentCycle?: number }) => void;
   setConnecting: (connecting: boolean) => void;
   setError: (error: string | null) => void;
   endSession: () => void;

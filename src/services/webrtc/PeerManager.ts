@@ -9,7 +9,9 @@
  */
 import { logger } from '../../utils/logger';
 import { SignalingClient } from './SignalingClient';
-import type { PeerInfo, DataChannelMessage, ConnectionState, SignalingMessage } from './types';
+import type { PeerInfo, DataChannelMessage, ConnectionState, SignalingMessage, RoomUserProfile } from './types';
+import type { ScreenQuality } from './AdaptiveQualityController';
+import { useRoomStore } from '../../state';
 import { RTCPeerConnection, RTCIceCandidate, RTCSessionDescription, type MediaStream } from 'react-native-webrtc';
 
 
@@ -23,12 +25,23 @@ type DataMessageHandler = (msg: DataChannelMessage) => void;
 type MediaStreamHandler = (userId: string, stream: MediaStream) => void;
 type StateChangeHandler = (userId: string, state: ConnectionState) => void;
 
+function setSdpBitrate(sdp: string, bitrateKbps: number = 2500): string {
+  if (!sdp || !sdp.includes('m=video')) return sdp;
+  if (sdp.includes('b=AS:')) {
+    return sdp.replace(/b=AS:\d+/g, `b=AS:${bitrateKbps}`).replace(/b=TIAS:\d+/g, `b=TIAS:${bitrateKbps * 1000}`);
+  }
+  return sdp.replace(/(m=video[^\r\n]+[\r\n]+)/g, `$1b=AS:${bitrateKbps}\r\nb=TIAS:${bitrateKbps * 1000}\r\n`);
+}
+
 export class PeerManager {
   private peers = new Map<string, PeerInfo>();
   private signaling: SignalingClient;
   private localUserId: string;
   private roomId: string;
   private isHost: boolean;
+  private userProfile?: RoomUserProfile;
+  private peerProfiles = new Map<string, RoomUserProfile>();
+  private currentVideoProfile: ScreenQuality = '1080p';
   private localStream: MediaStream | null = null;
 
   private dataHandlers = new Set<DataMessageHandler>();
@@ -40,11 +53,13 @@ export class PeerManager {
     localUserId: string,
     roomId: string,
     isHost: boolean,
+    userProfile?: RoomUserProfile,
   ) {
     this.signaling = signaling;
     this.localUserId = localUserId;
     this.roomId = roomId;
     this.isHost = isHost;
+    this.userProfile = userProfile;
 
     this.signaling.onMessage(this.handleSignalingMessage.bind(this));
   }
@@ -57,6 +72,10 @@ export class PeerManager {
       type: 'join',
       roomId: this.roomId,
       userId: this.localUserId,
+      payload: this.userProfile ? {
+        displayName: this.userProfile.displayName,
+        avatarUrl: this.userProfile.avatarUrl,
+      } : undefined,
     });
   }
 
@@ -152,18 +171,77 @@ export class PeerManager {
     }
   }
 
-  private async optimizeVideoSender(sender: any): Promise<void> {
+  getPeerProfile(userId: string): RoomUserProfile | undefined {
+    return this.peerProfiles.get(userId);
+  }
+
+  async setVideoEncodingProfile(profile: ScreenQuality): Promise<void> {
+    this.currentVideoProfile = profile;
+    for (const peer of this.peers.values()) {
+      if (peer.connection && typeof peer.connection.getSenders === 'function') {
+        const senders = peer.connection.getSenders();
+        for (const sender of senders) {
+          if (sender.track && sender.track.kind === 'video') {
+            await this.optimizeVideoSender(sender, profile);
+          }
+        }
+      }
+    }
+  }
+
+  async getPeerTelemetry(): Promise<{ avgRtt: number; packetLossRatio: number }> {
+    let totalRtt = 0;
+    let rttCount = 0;
+    let totalLost = 0;
+    let totalSent = 0;
+
+    for (const peer of this.peers.values()) {
+      if (!peer.connection || typeof peer.connection.getStats !== 'function') continue;
+      try {
+        const stats = await peer.connection.getStats();
+        if (stats && typeof stats.forEach === 'function') {
+          stats.forEach((report: any) => {
+            if (report.type === 'candidate-pair' && report.state === 'succeeded' && typeof report.currentRoundTripTime === 'number') {
+              totalRtt += report.currentRoundTripTime;
+              rttCount++;
+            }
+            if (report.type === 'outbound-rtp' && report.kind === 'video') {
+              if (typeof report.packetsSent === 'number') totalSent += report.packetsSent;
+            }
+            if (report.type === 'remote-inbound-rtp' && report.kind === 'video') {
+              if (typeof report.packetsLost === 'number') totalLost += report.packetsLost;
+            }
+          });
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    return {
+      avgRtt: rttCount > 0 ? totalRtt / rttCount : 0,
+      packetLossRatio: totalSent > 0 ? totalLost / totalSent : 0,
+    };
+  }
+
+  private async optimizeVideoSender(sender: any, profile: ScreenQuality = this.currentVideoProfile): Promise<void> {
     if (!sender || typeof sender.getParameters !== 'function') return;
     try {
       const params = sender.getParameters();
       if (!params.encodings || params.encodings.length === 0) {
         params.encodings = [{}];
       }
-      // 1.5 Mbps bitrate cap (prevents bandwidth spikes, packet loss & thermal throttling)
-      params.encodings[0].maxBitrate = 1500000;
-      // Cap at 24 fps for smooth rendering without GPU overheating
-      params.encodings[0].maxFramerate = 24;
-      // Crucial for screen sharing: preserve text crispness during network jitter
+      if (profile === '1080p') {
+        params.encodings[0].maxBitrate = 2500000;
+        params.encodings[0].minBitrate = 800000;
+        params.encodings[0].maxFramerate = 30;
+        params.encodings[0].scaleResolutionDownBy = 1.0;
+      } else {
+        params.encodings[0].maxBitrate = 1200000;
+        params.encodings[0].minBitrate = 400000;
+        params.encodings[0].maxFramerate = 24;
+        params.encodings[0].scaleResolutionDownBy = 1.5;
+      }
       (params as any).degradationPreference = 'maintain-resolution';
       if (typeof sender.setParameters === 'function') {
         await sender.setParameters(params);
@@ -176,13 +254,16 @@ export class PeerManager {
   private async renegotiatePeer(peer: PeerInfo): Promise<void> {
     try {
       const offer = await peer.connection.createOffer({});
-      await peer.connection.setLocalDescription(offer);
+      const enhancedOffer = offer.sdp
+        ? new RTCSessionDescription({ type: offer.type, sdp: setSdpBitrate(offer.sdp, 2500) })
+        : offer;
+      await peer.connection.setLocalDescription(enhancedOffer);
       this.signaling.send({
         type: 'offer',
         roomId: this.roomId,
         userId: this.localUserId,
         targetUserId: peer.userId,
-        payload: offer,
+        payload: enhancedOffer,
       });
     } catch (err) {
       logger.warn('[PeerManager] Renegotiation failed:', err);
@@ -219,6 +300,19 @@ export class PeerManager {
     switch (msg.type) {
       case 'join':
         if (msg.userId && msg.userId !== this.localUserId) {
+          if (msg.payload && typeof msg.payload === 'object') {
+            const profile = msg.payload as RoomUserProfile;
+            this.peerProfiles.set(msg.userId, profile);
+            useRoomStore.getState().addMember({
+              id: msg.userId,
+              roomId: this.roomId,
+              userId: msg.userId,
+              displayName: profile.displayName,
+              avatarUrl: profile.avatarUrl,
+              role: 'member',
+              joinedAt: new Date().toISOString(),
+            });
+          }
           // If previous peer connection exists for this user, clean up first
           if (this.peers.has(msg.userId)) {
             this.removePeer(msg.userId);
@@ -326,13 +420,16 @@ export class PeerManager {
       this.setupDataChannel(dc, userId);
 
       const offer = await connection.createOffer({});
-      await connection.setLocalDescription(offer);
+      const enhancedOffer = offer.sdp
+        ? new RTCSessionDescription({ type: offer.type, sdp: setSdpBitrate(offer.sdp, 2500) })
+        : offer;
+      await connection.setLocalDescription(enhancedOffer);
       this.signaling.send({
         type: 'offer',
         roomId: this.roomId,
         userId: this.localUserId,
         targetUserId: userId,
-        payload: offer,
+        payload: enhancedOffer,
       });
     } else {
       // Wait for data channel from remote
@@ -349,6 +446,19 @@ export class PeerManager {
     dc.onmessage = (e: any) => {
       try {
         const msg: DataChannelMessage = JSON.parse(e.data);
+        if (msg.type === 'presence-update' && msg.payload && typeof msg.payload === 'object') {
+          const profile = msg.payload as RoomUserProfile;
+          this.peerProfiles.set(msg.senderId, profile);
+          useRoomStore.getState().addMember({
+            id: msg.senderId,
+            roomId: this.roomId,
+            userId: msg.senderId,
+            displayName: profile.displayName,
+            avatarUrl: profile.avatarUrl,
+            role: 'member',
+            joinedAt: new Date().toISOString(),
+          });
+        }
         this.dataHandlers.forEach((h) => h(msg));
       } catch {
         logger.warn('[PeerManager] Failed to parse data channel message');
@@ -357,6 +467,13 @@ export class PeerManager {
 
     dc.onopen = () => {
       logger.info(`[PeerManager] DataChannel open with ${userId}`);
+      // Announce profile to the connected peer
+      if (this.userProfile) {
+        this.sendTo(userId, {
+          type: 'presence-update',
+          payload: this.userProfile,
+        });
+      }
       // If host, send current room state to new peer
       if (this.isHost) {
         this.sendRoomStateToNewPeer(userId);
@@ -368,13 +485,16 @@ export class PeerManager {
     const peer = await this.createPeerConnection(userId, false);
     await peer.connection.setRemoteDescription(new RTCSessionDescription(sdp));
     const answer = await peer.connection.createAnswer();
-    await peer.connection.setLocalDescription(answer);
+    const enhancedAnswer = answer.sdp
+      ? new RTCSessionDescription({ type: answer.type, sdp: setSdpBitrate(answer.sdp, 2500) })
+      : answer;
+    await peer.connection.setLocalDescription(enhancedAnswer);
     this.signaling.send({
       type: 'answer',
       roomId: this.roomId,
       userId: this.localUserId,
       targetUserId: userId,
-      payload: answer as any,
+      payload: enhancedAnswer as any,
     });
   }
 

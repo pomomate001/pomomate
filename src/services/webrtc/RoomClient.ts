@@ -18,26 +18,30 @@ import {
 } from './features';
 import { useRoomStore, useChatStore } from '../../state';
 import { logger } from '../../utils/logger';
-import type { ConnectionState } from './types';
+import type { ConnectionState, RoomUserProfile } from './types';
 import type { Message } from '../../types';
 import { mediaService } from '../mobile/media/MediaService';
 import type { MediaStream } from 'react-native-webrtc';
+import { AdaptiveQualityController } from './AdaptiveQualityController';
 
-interface RoomClientOptions {
-  signalingUrl: string;
-  token: string;
+export interface RoomClientOptions {
+  signalingUrl?: string;
+  token?: string;
   roomId: string;
   userId: string;
   isHost: boolean;
+  userProfile?: RoomUserProfile;
 }
 
 export class RoomClient {
   private signaling: SignalingClient;
   private peerManager: PeerManager;
   private featureRegistry: RoomFeatureRegistry;
+  private adaptiveQualityController: AdaptiveQualityController;
   private roomId: string;
   private userId: string;
   private isHost: boolean;
+  private userProfile?: RoomUserProfile;
   private syncInterval: ReturnType<typeof setInterval> | null = null;
   private screenStream: MediaStream | null = null;
 
@@ -45,6 +49,7 @@ export class RoomClient {
     this.roomId = options.roomId;
     this.userId = options.userId;
     this.isHost = options.isHost;
+    this.userProfile = options.userProfile;
 
     // Signaling
     this.signaling = new SignalingClient(options.roomId);
@@ -55,7 +60,14 @@ export class RoomClient {
       options.userId,
       options.roomId,
       options.isHost,
+      options.userProfile,
     );
+
+    // Adaptive Quality Controller
+    this.adaptiveQualityController = new AdaptiveQualityController({
+      setVideoEncodingProfile: (quality) => this.peerManager.setVideoEncodingProfile(quality),
+      getPeerTelemetry: () => this.peerManager.getPeerTelemetry(),
+    });
 
     // Feature Registry
     this.featureRegistry = new RoomFeatureRegistry();
@@ -134,6 +146,7 @@ export class RoomClient {
       if (stream) {
         this.screenStream = stream;
         this.peerManager.setLocalStream(stream);
+        this.adaptiveQualityController.startMonitoring();
       }
       return stream;
     } catch (err) {
@@ -143,6 +156,7 @@ export class RoomClient {
   }
 
   stopScreenShare(): void {
+    this.adaptiveQualityController.stopMonitoring();
     if (this.screenStream) {
       try {
         for (const track of this.screenStream.getTracks()) {
@@ -156,6 +170,10 @@ export class RoomClient {
     // Restore local camera/mic stream if available
     const camStream = mediaService.getLocalStream();
     this.peerManager.setLocalStream(camStream);
+  }
+
+  getAdaptiveQualityController(): AdaptiveQualityController {
+    return this.adaptiveQualityController;
   }
 
   stopMedia(): void {
@@ -239,10 +257,13 @@ export class RoomClient {
     logger.info(`[RoomClient] Peer ${userId} state: ${state}`);
 
     if (state === 'connected') {
+      const profile = this.peerManager.getPeerProfile(userId);
       useRoomStore.getState().addMember({
         id: userId,
         roomId: this.roomId,
         userId,
+        displayName: profile?.displayName,
+        avatarUrl: profile?.avatarUrl,
         role: 'member',
         joinedAt: new Date().toISOString(),
       });

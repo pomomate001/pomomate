@@ -8,6 +8,7 @@ import { useFriendsStore, FriendSummary, FriendRequest } from '../../state/frien
 import { logger } from '../../utils/logger';
 import { statsService } from '../stats';
 import type { SuggestedUser } from '../../state/friendsStore';
+import { t } from '../../i18n';
 
 export class FriendService {
   /** Fetch list of accepted friends and update the store. */
@@ -76,7 +77,7 @@ export class FriendService {
   /** Send a friend request to a user ID. */
   async sendFriendRequest(fromUserId: string, toUserId: string): Promise<{ success: boolean; message: string }> {
     if (!toUserId || toUserId.trim().length === 0) {
-      return { success: false, message: 'Geçersiz kullanıcı ID veya kodu.' };
+      return { success: false, message: t('friends.invalidUserIdOrCode') };
     }
 
     // Try to extract a UUID from the input string in case user pasted the whole share message
@@ -85,12 +86,12 @@ export class FriendService {
     const cleanToUserId = match ? match[0].toLowerCase() : toUserId.trim();
 
     if (cleanToUserId === fromUserId) {
-      return { success: false, message: 'Kendinize arkadaşlık isteği gönderemezsiniz.' };
+      return { success: false, message: t('friends.cannotSendToSelf') };
     }
 
     // Validate if it's a valid UUID
     if (!uuidRegex.test(cleanToUserId)) {
-      return { success: false, message: 'Geçersiz arkadaşlık kodu formatı.' };
+      return { success: false, message: t('friends.invalidCodeFormat') };
     }
 
     try {
@@ -102,13 +103,13 @@ export class FriendService {
         .limit(1);
       
       if (blockData && blockData.length > 0) {
-        return { success: false, message: 'Bu kullanıcıyla etkileşime geçilemez.' };
+        return { success: false, message: t('friends.cannotInteractWithUser') };
       }
 
       // 2. Check request limit BEFORE sending
       const limitInfo = await this.checkRequestLimit(fromUserId, cleanToUserId);
       if (!limitInfo.canSend) {
-        return { success: false, message: 'Bu kişiye en fazla 2 istek gönderebilirsiniz.' };
+        return { success: false, message: t('friends.requestLimitReached') };
       }
 
       // Check if user exists
@@ -119,7 +120,7 @@ export class FriendService {
         .single();
 
       if (uErr || !targetUser) {
-        return { success: false, message: 'Bu koda sahip kullanıcı bulunamadı.' };
+        return { success: false, message: t('friends.userNotFound') };
       }
 
       // Check if already friends
@@ -130,7 +131,7 @@ export class FriendService {
         .single();
 
       if (existingFriendship) {
-        return { success: false, message: 'Zaten bu kullanıcıyla arkadaşsınız.' };
+        return { success: false, message: t('friends.alreadyFriendsWithUser') };
       }
 
       // Find existing request
@@ -143,10 +144,10 @@ export class FriendService {
 
       if (existingReq) {
         if (existingReq.status === 'pending') {
-          return { success: false, message: 'Zaten bekleyen bir arkadaşlık isteğiniz var.' };
+          return { success: false, message: t('friends.requestAlreadyPending') };
         }
         if (existingReq.status === 'accepted') {
-          return { success: false, message: 'Zaten bu kullanıcıyla arkadaşsınız.' };
+          return { success: false, message: t('friends.alreadyFriendsWithUser') };
         }
         
         // If rejected, update status to pending and increment request_count
@@ -160,7 +161,7 @@ export class FriendService {
             .eq('id', existingReq.id);
             
           if (updErr) return { success: false, message: updErr.message };
-          return { success: true, message: `${targetUser.display_name || 'Kullanıcıya'} arkadaşlık isteği gönderildi!` };
+          return { success: true, message: t('friends.requestSentSuccess', { name: targetUser.display_name || t('common.friend') }) };
         }
       }
 
@@ -176,14 +177,14 @@ export class FriendService {
 
       if (reqErr) {
         if (reqErr.code === '23505') {
-          return { success: false, message: 'Zaten bekleyen bir arkadaşlık isteğiniz var.' };
+          return { success: false, message: t('friends.requestAlreadyPending') };
         }
         return { success: false, message: reqErr.message };
       }
 
-      return { success: true, message: `${targetUser.display_name || 'Kullanıcıya'} arkadaşlık isteği gönderildi!` };
+      return { success: true, message: t('friends.requestSentSuccess', { name: targetUser.display_name || t('common.friend') }) };
     } catch (err: any) {
-      return { success: false, message: err.message ?? 'İstek gönderilemedi.' };
+      return { success: false, message: err.message ?? t('friends.requestSendFailed') };
     }
   }
 

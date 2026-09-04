@@ -42,6 +42,28 @@ export function SoundSettings() {
 
   const [previewingId, setPreviewingId] = useState<string | null>(null);
 
+  const getNotifyTitle = (id: string, fallback: string) => {
+    const key = `soundOptions.notify_${id}.title` as any;
+    const val = t(key);
+    return val !== key ? val : fallback;
+  };
+  const getNotifyDesc = (id: string, fallback: string) => {
+    const key = `soundOptions.notify_${id}.desc` as any;
+    const val = t(key);
+    return val !== key ? val : fallback;
+  };
+
+  const getAmbientTitle = (id: string, fallback: string) => {
+    const key = `soundOptions.ambient_${id}.title` as any;
+    const val = t(key);
+    return val !== key ? val : fallback;
+  };
+  const getAmbientDesc = (id: string, fallback: string) => {
+    const key = `soundOptions.ambient_${id}.desc` as any;
+    const val = t(key);
+    return val !== key ? val : fallback;
+  };
+
   const handleSelectCompletionSound = async (item: SoundItem) => {
     setSoundId(item.id);
     setPreviewingId(item.id);
@@ -124,8 +146,8 @@ export function SoundSettings() {
               </View>
 
               <View style={styles.infoCol}>
-                <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{s.label}</Text>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>{s.description}</Text>
+                <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{getNotifyTitle(s.id, s.label)}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{getNotifyDesc(s.id, s.description)}</Text>
               </View>
 
               {isPlaying ? (
@@ -187,8 +209,8 @@ export function SoundSettings() {
               </View>
 
               <View style={styles.infoCol}>
-                <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{s.label}</Text>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>{s.description}</Text>
+                <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{getAmbientTitle(s.id, s.label)}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{getAmbientDesc(s.id, s.description)}</Text>
               </View>
 
               {isPlaying ? (

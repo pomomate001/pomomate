@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS buddy_sessions (
     CHECK (status IN ('pending', 'active', 'ended')),
   timer_mode TEXT NOT NULL DEFAULT 'work'
     CHECK (timer_mode IN ('work', 'shortBreak', 'longBreak')),
+  timer_duration INT NOT NULL DEFAULT 1500,
   timer_remaining_seconds INT NOT NULL DEFAULT 1500,
   timer_is_running BOOLEAN NOT NULL DEFAULT false,
   current_cycle INT NOT NULL DEFAULT 1,

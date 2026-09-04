@@ -14,6 +14,11 @@ export type SignalingMessageType =
   | 'presence'
   | 'error';
 
+export interface RoomUserProfile {
+  displayName?: string;
+  avatarUrl?: string | null;
+}
+
 export interface SignalingMessage {
   type: SignalingMessageType;
   roomId?: string;

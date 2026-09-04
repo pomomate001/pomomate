@@ -85,6 +85,7 @@ export function DraggableTaskList({
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: () => dragState.draggingIndex !== -1,
+      onMoveShouldSetPanResponderCapture: () => dragState.draggingIndex !== -1,
       onPanResponderGrant: () => {
         translateY.setValue(0);
       },
@@ -176,13 +177,13 @@ export function DraggableTaskList({
             <Pressable
               onLongPress={() => handleStartDrag(task, index)}
               delayLongPress={220}
-              style={{ transform: [{ scale: 0.95 }] }}
             >
               <TaskItem
                 task={task}
                 onToggle={onToggle}
                 onDelete={onDelete}
                 onPress={onPress}
+                onLongPress={() => handleStartDrag(task, index)}
               />
             </Pressable>
           </Animated.View>

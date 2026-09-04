@@ -22,6 +22,7 @@ interface RoomScreenPanelProps {
   isScreenSharing: boolean;
   screenStream?: MediaStream | null;
   presenterName?: string;
+  screenQuality?: '720p' | '1080p';
   isHost: boolean;
   allowFiles: boolean;
   onPickFile: () => void;
@@ -35,6 +36,7 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   isScreenSharing,
   screenStream,
   presenterName,
+  screenQuality,
   isHost,
   allowFiles,
   onPickFile,
@@ -170,12 +172,22 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
         )}
 
         <View style={[styles.broadcastOverlay, streamUrl ? styles.broadcastOverlayActive : null]}>
-          {/* Top Live Pill */}
-          <View style={styles.liveBadge}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>
-              {presenterName ? `${presenterName.toUpperCase()} EKRANINI PAYLAŞIYOR` : 'CANLI EKRAN YAYINI'}
-            </Text>
+          {/* Top Live + Quality Pills */}
+          <View style={styles.topBadgesRow}>
+            <View style={styles.liveBadge}>
+              <View style={styles.liveDot} />
+              <Text style={styles.liveText}>
+                {presenterName ? `${presenterName.toUpperCase()} EKRANINI PAYLAŞIYOR` : 'CANLI EKRAN YAYINI'}
+              </Text>
+            </View>
+            {screenQuality && (
+              <View style={styles.qualityBadge}>
+                <Ionicons name="sparkles" size={10} color="#C084FC" />
+                <Text style={styles.qualityText}>
+                  {screenQuality === '1080p' ? '1080p HD' : '720p HD'}
+                </Text>
+              </View>
+            )}
           </View>
 
           {!streamUrl && (
@@ -298,6 +310,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(18, 18, 28, 0.7)',
     padding: 24,
   },
+  topBadgesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 20,
+    flexWrap: 'wrap',
+  },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -307,8 +326,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    marginBottom: 20,
     gap: 6,
+  },
+  qualityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(168, 85, 247, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(168, 85, 247, 0.45)',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+  },
+  qualityText: {
+    color: '#E9D5FF',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   liveDot: {
     width: 8,
