@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       build_type:
-        description: 'Build Type (apk or aab)'
+        description: 'Build Type (both, aab, or apk)'
         required: true
-        default: 'apk'
+        default: 'both'
         type: choice
         options:
-          - apk
+          - both
           - aab
+          - apk
 
 jobs:
   build-android:
@@ -95,8 +96,7 @@ jobs:
             echo "No release keystore secret provided, default debug keystore will be used."
           fi
 
-      - name: 🔨 Build APK
-        if: "${{ github.event.inputs.build_type != 'aab' }}"
+      - name: 🔨 Build Android (APK / AAB)
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -106,35 +106,22 @@ jobs:
           export NODE_PATH="$(pwd)/node_modules"
           cd android
           chmod +x gradlew
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            ./gradlew assembleRelease --no-daemon --stacktrace \
-              -Pandroid.injected.signing.store.file=$(pwd)/app/release.keystore \
-              -Pandroid.injected.signing.store.password=$ANDROID_KEYSTORE_PASSWORD \
-              -Pandroid.injected.signing.key.alias=$ANDROID_KEY_ALIAS \
-              -Pandroid.injected.signing.key.password=$ANDROID_KEY_PASSWORD
-          else
-            ./gradlew assembleRelease --no-daemon --stacktrace
+
+          GRADLE_TASKS="assembleRelease bundleRelease"
+          if [ "${{ github.event.inputs.build_type }}" = "apk" ]; then
+            GRADLE_TASKS="assembleRelease"
+          elif [ "${{ github.event.inputs.build_type }}" = "aab" ]; then
+            GRADLE_TASKS="bundleRelease"
           fi
 
-      - name: 🔨 Build AAB (App Bundle for Play Store)
-        if: "${{ github.event.inputs.build_type == 'aab' }}"
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          export NODE_PATH="$(pwd)/node_modules"
-          cd android
-          chmod +x gradlew
           if [ -n "$KEYSTORE_BASE64" ]; then
-            ./gradlew bundleRelease --no-daemon --stacktrace \
+            ./gradlew $GRADLE_TASKS --no-daemon --stacktrace \
               -Pandroid.injected.signing.store.file=$(pwd)/app/release.keystore \
               -Pandroid.injected.signing.store.password=$ANDROID_KEYSTORE_PASSWORD \
               -Pandroid.injected.signing.key.alias=$ANDROID_KEY_ALIAS \
               -Pandroid.injected.signing.key.password=$ANDROID_KEY_PASSWORD
           else
-            ./gradlew bundleRelease --no-daemon --stacktrace
+            ./gradlew $GRADLE_TASKS --no-daemon --stacktrace
           fi
 
       - name: 📤 Upload APK Artifact
@@ -146,7 +133,7 @@ jobs:
           retention-days: 30
 
       - name: 📤 Upload AAB Artifact
-        if: "${{ github.event.inputs.build_type == 'aab' }}"
+        if: "${{ github.event.inputs.build_type != 'apk' }}"
         uses: actions/upload-artifact@v4
         with:
           name: PomoMate-PlayStore-AAB
