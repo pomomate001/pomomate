@@ -6,7 +6,6 @@ import {
 } from '../AdaptiveQualityController';
 import { useRoomStore } from '../../../state/roomStore';
 import { createFileSharingHandler } from '../features/fileSharing';
-import { Dimensions, PixelRatio } from 'react-native';
 import * as Network from 'expo-network';
 
 let mockScreenDimensions = { width: 1080, height: 1920 };
@@ -45,20 +44,16 @@ jest.mock('expo-network', () => ({
 
 describe('AdaptiveQualityController', () => {
   let mockDelegate: AdaptiveQualityDelegate;
-  let appliedQuality: ScreenQuality | null = null;
   let mockTelemetry = { avgRtt: 0.05, packetLossRatio: 0.002 };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    appliedQuality = null;
     mockTelemetry = { avgRtt: 0.05, packetLossRatio: 0.002 };
     mockScreenDimensions = { width: 1080, height: 1920 };
     mockPixelRatio = 2;
 
     mockDelegate = {
-      setVideoEncodingProfile: jest.fn(async (q: ScreenQuality) => {
-        appliedQuality = q;
-      }),
+      setVideoEncodingProfile: jest.fn(async () => {}),
       getPeerTelemetry: jest.fn(async () => mockTelemetry),
     };
 

@@ -24,13 +24,13 @@ export interface FileSharedPayload {
     sharedBy: string;
   };
   fileId?: string | null;
-  files?: Array<{
+  files?: {
     id: string;
     uri: string;
     fileName: string;
     fileType: string;
     sharedBy: string;
-  }>;
+  }[];
   activeSharedFileId?: string | null;
 }
 
