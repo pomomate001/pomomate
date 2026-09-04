@@ -127,7 +127,7 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
         <View style={styles.linksRow}>
           <Pressable
             style={[styles.linkBtn, { borderColor: colors.border }]}
-            onPress={() => handleOpenUrl('https://pomomate.app/privacy')}
+            onPress={() => handleOpenUrl('https://pomomate.vercel.app/privacy')}
           >
             <Ionicons name="shield-checkmark-outline" size={14} color={colors.textSecondary} />
             <Text style={[styles.linkText, { color: colors.textSecondary }]}>
@@ -137,7 +137,7 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
 
           <Pressable
             style={[styles.linkBtn, { borderColor: colors.border }]}
-            onPress={() => handleOpenUrl('https://pomomate.app/terms')}
+            onPress={() => handleOpenUrl('https://pomomate.vercel.app/terms')}
           >
             <Ionicons name="document-text-outline" size={14} color={colors.textSecondary} />
             <Text style={[styles.linkText, { color: colors.textSecondary }]}>

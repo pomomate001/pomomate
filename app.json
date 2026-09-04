@@ -76,12 +76,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "pomomate.app",
-              "pathPrefix": "/join"
-            },
-            {
-              "scheme": "https",
-              "host": "www.pomomate.app",
+              "host": "pomomate.vercel.app",
               "pathPrefix": "/join"
             }
           ],

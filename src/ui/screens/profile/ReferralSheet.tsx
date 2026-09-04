@@ -46,7 +46,7 @@ export function ReferralSheet({ visible, onClose }: ReferralSheetProps) {
   const [isApplying, setIsApplying] = useState(false);
 
   const referralCode = stats.myCode || (user?.id ? user.id.slice(0, 8).toUpperCase() : 'POMO-PRO');
-  const referralLink = `https://pomomate.app/join?ref=${referralCode}`;
+  const referralLink = `https://pomomate.vercel.app/join?ref=${referralCode}`;
 
   const [isPremiumActive, setIsPremiumActive] = useState<boolean>(false);
 

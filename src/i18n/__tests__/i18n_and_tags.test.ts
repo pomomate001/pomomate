@@ -134,15 +134,15 @@ describe('i18n and Tags Localized Handling', () => {
     });
 
     it('translates friend request sharing and invite messages in both languages', () => {
-      const shareUrl = 'https://pomomate.app/join?friend=test-123';
+      const shareUrl = 'https://pomomate.vercel.app/join?friend=test-123';
       const myCode = 'test-123';
       const trMessage = translate('friends.shareInviteMessage', 'tr', { url: shareUrl, code: myCode });
       const enMessage = translate('friends.shareInviteMessage', 'en', { url: shareUrl, code: myCode });
 
       expect(trMessage).toContain('Beni arkadaş olarak eklemek için');
-      expect(trMessage).toContain('https://pomomate.app/join?friend=test-123');
+      expect(trMessage).toContain('https://pomomate.vercel.app/join?friend=test-123');
       expect(enMessage).toContain('Tap the link below to add me as a friend');
-      expect(enMessage).toContain('https://pomomate.app/join?friend=test-123');
+      expect(enMessage).toContain('https://pomomate.vercel.app/join?friend=test-123');
 
       expect(translate('friends.requestSentSuccess', 'tr', { name: 'Ahmet' })).toBe('Ahmet kullanıcısına arkadaşlık isteği gönderildi!');
       expect(translate('friends.requestSentSuccess', 'en', { name: 'Ahmet' })).toBe('Friend request sent to Ahmet!');

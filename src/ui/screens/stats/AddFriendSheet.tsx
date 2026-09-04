@@ -50,7 +50,7 @@ export function AddFriendSheet({ visible, onClose }: AddFriendSheetProps) {
 
   const handleShareMyCode = async () => {
     try {
-      const shareUrl = `https://pomomate.app/join?friend=${myCode}`;
+      const shareUrl = `https://pomomate.vercel.app/join?friend=${myCode}`;
       const message = t('friends.shareInviteMessage', { url: shareUrl, code: myCode });
 
       await Share.share({

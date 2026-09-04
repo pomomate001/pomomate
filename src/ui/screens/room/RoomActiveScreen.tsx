@@ -581,7 +581,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const handleSystemShare = useCallback(async () => {
     try {
       const roomName = room?.name ?? t('rooms.defaultRoomName');
-      const webUrl = `https://pomomate.app/join?room=${inviteCode}`;
+      const webUrl = `https://pomomate.vercel.app/join?room=${inviteCode}`;
       const appUrl = `pomomate://join?room=${inviteCode}`;
       const message = t('rooms.shareRoomInviteMessage', {
         roomName,

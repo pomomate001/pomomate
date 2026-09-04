@@ -41,7 +41,7 @@ export function RoomInviteSheet({
   };
 
   const handleCopyLink = async () => {
-    const link = `https://pomomate.app/join?room=${inviteCode}`;
+    const link = `https://pomomate.vercel.app/join?room=${inviteCode}`;
     await Clipboard.setStringAsync(link);
     Alert.alert(t('rooms.copiedTitle'), t('rooms.linkCopiedAlert'));
   };
