@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import {
   AdaptiveQualityController,
   type AdaptiveQualityDelegate,
-  type ScreenQuality,
 } from '../AdaptiveQualityController';
 import { useRoomStore } from '../../../state/roomStore';
 import { createFileSharingHandler } from '../features/fileSharing';
