@@ -58,6 +58,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         handleToggleMicRef.current?.();
       } else if (action === 'toggleCam') {
         handleToggleCamRef.current?.();
+      } else if (action === 'toggleScreen') {
+        handleToggleScreenRef.current?.();
       }
     });
 
@@ -564,17 +566,19 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const handleToggleMicRef = useRef(handleToggleMic);
   const handleToggleCamRef = useRef(handleToggleCam);
+  const handleToggleScreenRef = useRef(handleToggleScreen);
   useEffect(() => {
     handleToggleMicRef.current = handleToggleMic;
     handleToggleCamRef.current = handleToggleCam;
+    handleToggleScreenRef.current = handleToggleScreen;
   });
 
-  // Sync mic/cam state to native Android PiP actions
+  // Sync mic/cam/screen state to native Android PiP actions
   useEffect(() => {
     if (isInPiP) {
-      void pipService.updatePiPActions(micOn, camOn);
+      void pipService.updatePiPActions(micOn, camOn, screenShareOn);
     }
-  }, [micOn, camOn, isInPiP]);
+  }, [micOn, camOn, screenShareOn, isInPiP]);
 
   /* ─── Share Handler ─── */
 
@@ -743,44 +747,30 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const activeSharedFile = sharedFiles.find(f => f.id === activeSharedFileId) || null;
 
-  /* ─── PiP Compact View (Mini Floating Bar: Only Mic, Cam, Screen Share) ─── */
+  /* ─── PiP Compact View (Dynamic Island — Status Only, Controls via Native Actions) ─── */
   if (isInPiP) {
     return (
       <View style={styles.pipContainer}>
-        <View style={styles.pipBar}>
-          {/* Left: Room Badge / Live Dot */}
-          <View style={styles.pipLiveBadge}>
-            <View style={styles.pipLiveDot} />
-            <Text style={styles.pipLiveText} numberOfLines={1}>
-              {room?.name || 'Canlı'}
-            </Text>
-          </View>
+        <View style={styles.pipIsland}>
+          {/* Left: Live indicator dot */}
+          <View style={[styles.pipDot, screenShareOn && styles.pipDotRed]} />
 
-          {/* Right: Camera, Mic, Screen Share Controls */}
-          <View style={styles.pipControls}>
-            <Pressable
-              style={[styles.pipButton, micOn ? styles.pipBtnActiveGreen : styles.pipBtnInactive]}
-              onPress={handleToggleMic}
-              hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
-            >
-              <Ionicons name={micOn ? 'mic' : 'mic-off'} size={16} color="#FFF" />
-            </Pressable>
+          {/* Center: Room name */}
+          <Text style={styles.pipRoomName} numberOfLines={1}>
+            {room?.name || 'Canlı'}
+          </Text>
 
-            <Pressable
-              style={[styles.pipButton, camOn ? styles.pipBtnActiveGreen : styles.pipBtnInactive]}
-              onPress={handleToggleCam}
-              hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
-            >
-              <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={16} color="#FFF" />
-            </Pressable>
-
-            <Pressable
-              style={[styles.pipButton, screenShareOn ? styles.pipBtnActivePurple : styles.pipBtnInactive]}
-              onPress={handleToggleScreen}
-              hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
-            >
-              <Ionicons name={screenShareOn ? 'desktop' : 'desktop-outline'} size={16} color="#FFF" />
-            </Pressable>
+          {/* Right: Status indicator icons (non-interactive) */}
+          <View style={styles.pipStatusIcons}>
+            <View style={[styles.pipStatusIcon, micOn ? styles.pipIconActive : styles.pipIconInactive]}>
+              <Ionicons name={micOn ? 'mic' : 'mic-off'} size={13} color="#FFF" />
+            </View>
+            <View style={[styles.pipStatusIcon, camOn ? styles.pipIconActive : styles.pipIconInactive]}>
+              <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={13} color="#FFF" />
+            </View>
+            <View style={[styles.pipStatusIcon, screenShareOn ? styles.pipIconScreen : styles.pipIconInactive]}>
+              <Ionicons name={screenShareOn ? 'desktop' : 'desktop-outline'} size={13} color="#FFF" />
+            </View>
           </View>
         </View>
       </View>
@@ -968,77 +958,67 @@ const styles = StyleSheet.create({
     right: spacing.sm,
     zIndex: 50,
   },
-  /* ─── PiP compact view styles (Ultra-Slim Pill) ─── */
+  /* ─── PiP Dynamic Island styles (compact status pill) ─── */
   pipContainer: {
     flex: 1,
-    backgroundColor: '#07090E',
+    backgroundColor: '#0A0C14',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
-  pipBar: {
+  pipIsland: {
     width: '100%',
-    height: 48,
-    backgroundColor: 'rgba(15, 18, 28, 0.95)',
+    height: 40,
+    backgroundColor: 'rgba(20, 22, 35, 0.97)',
     borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    borderWidth: 1.2,
-    borderColor: 'rgba(168, 85, 247, 0.45)',
-    shadowColor: '#A855F7',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(168, 85, 247, 0.35)',
+    gap: 8,
   },
-  pipLiveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    flexShrink: 1,
-    marginRight: 8,
-  },
-  pipLiveDot: {
-    width: 8,
-    height: 8,
+  pipDot: {
+    width: 7,
+    height: 7,
     borderRadius: 4,
     backgroundColor: '#22C55E',
-    shadowColor: '#22C55E',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  pipLiveText: {
-    color: '#F8FAFC',
+  pipDotRed: {
+    backgroundColor: '#EF4444',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  pipRoomName: {
+    flex: 1,
+    color: '#E2E8F0',
     fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
-  pipControls: {
+  pipStatusIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
-  pipButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  pipStatusIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pipBtnActiveGreen: {
-    backgroundColor: '#16A34A',
+  pipIconActive: {
+    backgroundColor: 'rgba(34, 197, 94, 0.35)',
   },
-  pipBtnActivePurple: {
-    backgroundColor: '#9333EA',
+  pipIconInactive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  pipBtnInactive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+  pipIconScreen: {
+    backgroundColor: 'rgba(239, 68, 68, 0.4)',
   },
   /* ─── Mini Mod floating button ─── */
   miniModButton: {

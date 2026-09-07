@@ -89,10 +89,10 @@ class PiPModule(private val reactContext: ReactApplicationContext) : ReactContex
   }
 
   @ReactMethod
-  fun updatePiPActions(micOn: Boolean, camOn: Boolean, promise: Promise) {
+  fun updatePiPActions(micOn: Boolean, camOn: Boolean, screenShareOn: Boolean, promise: Promise) {
     val activity = (reactContext.currentActivity ?: MainActivity.instance) as? MainActivity
     activity?.runOnUiThread {
-      activity.updatePiPActions(micOn, camOn)
+      activity.updatePiPActions(micOn, camOn, screenShareOn)
     }
     promise.resolve(true)
   }

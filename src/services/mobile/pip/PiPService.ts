@@ -99,14 +99,14 @@ export class PiPService {
   }
 
   /**
-   * Update native PiP overlay action buttons (Mic, Camera)
+   * Update native PiP overlay action buttons (Mic, Camera, Screen Share)
    */
-  async updatePiPActions(micOn: boolean, camOn: boolean): Promise<boolean> {
+  async updatePiPActions(micOn: boolean, camOn: boolean, screenShareOn: boolean): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
     if (!PiPModule?.updatePiPActions) return false;
 
     try {
-      return await PiPModule.updatePiPActions(micOn, camOn);
+      return await PiPModule.updatePiPActions(micOn, camOn, screenShareOn);
     } catch {
       return false;
     }
