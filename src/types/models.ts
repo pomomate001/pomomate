@@ -28,6 +28,8 @@ export interface User {
   displayName: string;
   avatarUrl?: string | null;
   countryCode?: string | null;
+  /** Short bio / about text ("Benim Köşem"), max 120 chars. */
+  bio?: string | null;
   tags?: Tag[];
   subscriptionTier: SubscriptionTier;
   referralCode?: string;

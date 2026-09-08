@@ -180,6 +180,16 @@ export function DiscoverUsersTab() {
               </View>
             </View>
 
+            {/* Bio */}
+            {!!su.bio && (
+              <Text
+                style={[typography.caption, { color: colors.textSecondary, fontStyle: 'italic', marginTop: spacing.xs, paddingHorizontal: spacing.xs }]}
+                numberOfLines={2}
+              >
+                "{su.bio}"
+              </Text>
+            )}
+
             {/* Tags */}
             {su.tags.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagScroll}>

@@ -23,6 +23,7 @@ Bu dosyayı adım adım takip ederek uygulamanızı Google Play Store'a yayınla
   server/migrations/010_friend_stats_rpc.sql
   server/migrations/011_referral_reward_system.sql
   server/migrations/012_discover_country_filter.sql
+  server/migrations/013_user_bio.sql
   ```
 - [ ] Authentication → Providers → **Email** (aktif)
 - [ ] Authentication → Providers → **Google** (isteğe bağlı, aşağıda)

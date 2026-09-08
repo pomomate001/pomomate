@@ -315,7 +315,7 @@ export class FriendService {
       if (!userRows || userRows.length === 0) {
         let query = supabase
           .from('users')
-          .select('id, display_name, avatar_url, country_code')
+          .select('id, display_name, avatar_url, country_code, bio')
           .neq('id', _userId);
 
         if (sameCountryOnly && userCountryCode) {
@@ -333,6 +333,7 @@ export class FriendService {
             display_name: u.display_name,
             avatar_url: u.avatar_url,
             country_code: u.country_code,
+            bio: u.bio ?? null,
             match_score: 50,
             matching_tag_count: 0,
             tags: [],
@@ -350,6 +351,7 @@ export class FriendService {
         displayName: (row.display_name && row.display_name.trim().length > 0) ? row.display_name : 'Kullanıcı',
         avatarUrl: row.avatar_url,
         countryCode: row.country_code,
+        bio: row.bio ?? null,
         matchScore: row.match_score ?? 0,
         matchingTagCount: row.matching_tag_count ?? 0,
         tags: (row.tags ?? []).map((t: any) => ({

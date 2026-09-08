@@ -8,4 +8,5 @@ export { PremiumPaywallSheet } from './PremiumPaywallSheet';
 export { AboutSheet } from './AboutSheet';
 export { LanguageSheet } from './LanguageSheet';
 export { AppearanceOptionCard } from './AppearanceOptionCard';
+export { EditBioSheet } from './EditBioSheet';
 

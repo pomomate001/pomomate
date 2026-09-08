@@ -181,7 +181,7 @@ export class SupabaseAuthService implements AuthService {
     logger.info('[Auth] Signed out');
   }
 
-  async updateProfile(userId: string, patch: { displayName?: string; avatarUrl?: string | null }): Promise<void> {
+  async updateProfile(userId: string, patch: { displayName?: string; avatarUrl?: string | null; bio?: string | null }): Promise<void> {
     try {
       const updatePayload: Record<string, any> = {
         updated_at: new Date().toISOString(),
@@ -191,6 +191,9 @@ export class SupabaseAuthService implements AuthService {
       }
       if (patch.avatarUrl !== undefined) {
         updatePayload.avatar_url = patch.avatarUrl;
+      }
+      if (patch.bio !== undefined) {
+        updatePayload.bio = patch.bio;
       }
 
       // 1. Update database users table

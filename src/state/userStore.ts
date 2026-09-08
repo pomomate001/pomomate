@@ -42,11 +42,12 @@ export const useUserStore = create<UserStore>((set, get) => ({
     set({ user: updatedUser });
 
     // 2. Persist profile changes to Supabase database & auth
-    if (currentUser.id && (patch.displayName !== undefined || patch.avatarUrl !== undefined)) {
+    if (currentUser.id && (patch.displayName !== undefined || patch.avatarUrl !== undefined || patch.bio !== undefined)) {
       try {
         await authService.updateProfile(currentUser.id, {
           displayName: patch.displayName,
           avatarUrl: patch.avatarUrl,
+          bio: patch.bio,
         });
       } catch (e) {
         logger.warn('[UserStore] Failed to persist profile changes to Supabase:', e);

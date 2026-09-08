@@ -31,6 +31,8 @@ export interface SuggestedUser {
   displayName: string;
   avatarUrl?: string;
   countryCode?: string;
+  /** Short bio / about text ("Benim Köşem"). */
+  bio?: string | null;
   tags: Tag[];
   matchingTagCount: number;
   matchScore: number;

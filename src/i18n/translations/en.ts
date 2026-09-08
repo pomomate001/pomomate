@@ -335,6 +335,10 @@ export const en: TranslationSchema = {
     privacyAlert: 'PomoMate stores your data locally and in a secure Supabase database.',
     about: 'About',
     signOut: 'Sign Out',
+    myCorner: 'My Corner',
+    myCornerPlaceholder: 'Tell us about yourself...',
+    myCornerHint: 'Write a short text about yourself (max 120 chars)',
+    bioSaved: 'Bio saved',
   },
   appearance: {
     videoBackgrounds: '🎥 Live Video Backgrounds',
@@ -487,6 +491,11 @@ export const en: TranslationSchema = {
     loadMore: 'Load more',
     discoverButton: 'Discover',
     refresh: 'Refresh Discover',
+    skip: 'Skip',
+    sendRequestAction: 'Send Request',
+    allSeen: "You've seen everyone!",
+    allSeenHint: 'Refresh to discover new people',
+    noBio: 'No bio yet',
   },
   appearanceOptions: {
     video_windmill: { title: 'Windmill', desc: 'Crop field with spinning windmill' },

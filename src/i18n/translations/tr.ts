@@ -335,6 +335,10 @@ export const tr: TranslationSchema = {
     privacyAlert: 'PomoMate verilerinizi yerel ve güvenli Supabase veritabanında saklar.',
     about: 'Hakkında',
     signOut: 'Çıkış Yap',
+    myCorner: 'Benim Köşem',
+    myCornerPlaceholder: 'Kendini kısaca tanıt...',
+    myCornerHint: 'Kendine ait kısa bir metin yaz (maks 120 karakter)',
+    bioSaved: 'Bio kaydedildi',
   },
   appearance: {
     videoBackgrounds: '🎥 Canlı Video Arka Planlar',
@@ -487,6 +491,11 @@ export const tr: TranslationSchema = {
     loadMore: 'Daha fazla yükle',
     discoverButton: 'Keşfet',
     refresh: 'Keşfeti Yenile',
+    skip: 'Geç',
+    sendRequestAction: 'İstek At',
+    allSeen: 'Herkesi gördün!',
+    allSeenHint: 'Yeni kişileri keşfetmek için yenile',
+    noBio: 'Henüz bir şey yazmamış',
   },
   appearanceOptions: {
     video_windmill: { title: 'Rüzgar Değirmeni', desc: 'Ekin tarlası ve dönen yel değirmeni' },

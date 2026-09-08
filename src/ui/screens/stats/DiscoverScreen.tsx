@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   Pressable,
-  FlatList,
   ActivityIndicator,
-  RefreshControl,
   ScrollView,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +19,7 @@ import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
+import { shadows } from '../../theme/shadows';
 import { Avatar } from '../../components/Avatar';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
@@ -30,10 +31,11 @@ import { useTranslation } from '../../../i18n';
 import type { StatsStackParamList } from '../../../navigation/types';
 import type { SuggestedUser } from '../../../state/friendsStore';
 
-
 type Props = NativeStackScreenProps<StatsStackParamList, 'Discover'>;
 
 const PAGE_SIZE = 10;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = SCREEN_WIDTH - spacing.lg * 2;
 
 export function DiscoverScreen({ navigation }: Props) {
   const colors = useColors();
@@ -46,16 +48,21 @@ export function DiscoverScreen({ navigation }: Props) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [sendingRequests, setSendingRequests] = useState<Record<string, boolean>>({});
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [sendingRequest, setSendingRequest] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  // Default filter: Match only users in the same country (can be toggled off)
   const [sameCountryOnly, setSameCountryOnly] = useState(true);
 
   const userCountryCode = user?.countryCode || countryService.detectCountryCode() || 'TR';
   const userCountryFlag = getCountryFlag(userCountryCode);
   const userCountryName = getCountryName(userCountryCode, language);
+
+  // Animation refs
+  const cardOpacity = useRef(new Animated.Value(1)).current;
+  const cardTranslateX = useRef(new Animated.Value(0)).current;
+  const cardScale = useRef(new Animated.Value(1)).current;
 
   // Debounce search
   useEffect(() => {
@@ -83,6 +90,7 @@ export function DiscoverScreen({ navigation }: Props) {
       .then(() => {
         if (isMounted) {
           setIsLoading(false);
+          setCurrentIndex(0);
         }
       })
       .catch(() => {
@@ -103,30 +111,81 @@ export function DiscoverScreen({ navigation }: Props) {
     const search = debouncedSearch.trim() || null;
     try {
       await friendService.discoverUsers(user.id, PAGE_SIZE, 0, null, search, sameCountryOnly, userCountryCode);
+      setCurrentIndex(0);
     } finally {
       setIsRefreshing(false);
     }
   };
 
+  // Animate card out and move to next
+  const animateCardOut = useCallback((direction: 'left' | 'right', onComplete: () => void) => {
+    const toX = direction === 'left' ? -SCREEN_WIDTH : SCREEN_WIDTH;
+    Animated.parallel([
+      Animated.timing(cardTranslateX, {
+        toValue: toX,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardScale, {
+        toValue: 0.9,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onComplete();
+      // Reset and animate in the new card
+      cardTranslateX.setValue(0);
+      cardScale.setValue(0.95);
+      cardOpacity.setValue(0);
+      Animated.parallel([
+        Animated.spring(cardScale, {
+          toValue: 1,
+          friction: 8,
+          tension: 80,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardOpacity, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+  }, [cardTranslateX, cardOpacity, cardScale]);
 
+  const handleSkip = useCallback(() => {
+    animateCardOut('left', () => {
+      setCurrentIndex((prev) => prev + 1);
+    });
+  }, [animateCardOut]);
 
-  const handleSendRequest = async (targetUserId: string) => {
-    if (!user?.id) return;
-    
-    setSendingRequests((prev) => ({ ...prev, [targetUserId]: true }));
-    
+  const handleSendRequest = useCallback(async (targetUserId: string) => {
+    if (!user?.id || sendingRequest) return;
+
+    setSendingRequest(true);
     const result = await friendService.sendFriendRequest(user.id, targetUserId);
-    
-    if (result.success) {
-      // Temporarily update local state to show "Request Sent" without refetching all
-      useFriendsStore.getState().setSuggestedUsers(
-        suggestedUsers.filter((u) => u.userId !== targetUserId)
-      );
-    } else {
-      setSendingRequests((prev) => ({ ...prev, [targetUserId]: false }));
-    }
-  };
+    setSendingRequest(false);
 
+    if (result.success) {
+      animateCardOut('right', () => {
+        // Remove the user from suggestions
+        useFriendsStore.getState().setSuggestedUsers(
+          suggestedUsers.filter((u) => u.userId !== targetUserId)
+        );
+        // Don't increment currentIndex since we're removing the item
+      });
+    }
+  }, [user?.id, sendingRequest, suggestedUsers, animateCardOut]);
+
+  const currentUser: SuggestedUser | undefined = suggestedUsers[currentIndex];
+  const allSeen = !isLoading && (suggestedUsers.length === 0 || currentIndex >= suggestedUsers.length);
+
+  // ─── HEADER ───
   const renderHeader = () => (
     <View style={styles.headerWrap}>
       <LinearGradient
@@ -166,7 +225,7 @@ export function DiscoverScreen({ navigation }: Props) {
           )}
         </View>
 
-        {/* Country Filter Toggle Bar (Single option: Match only my country OR all countries) */}
+        {/* Country Filter Toggle Bar */}
         <View style={styles.filterBar}>
           <Pressable
             onPress={() => setSameCountryOnly(!sameCountryOnly)}
@@ -197,57 +256,90 @@ export function DiscoverScreen({ navigation }: Props) {
               style={{ marginLeft: 6 }}
             />
           </Pressable>
+
+          {/* Card counter */}
+          {!allSeen && suggestedUsers.length > 0 && (
+            <View style={[styles.counterBadge, { backgroundColor: `${colors.primary}15` }]}>
+              <Text style={[typography.captionBold, { color: colors.primary, fontSize: 11 }]}>
+                {currentIndex + 1}/{suggestedUsers.length}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </View>
   );
 
-  const renderUserCard = ({ item }: { item: SuggestedUser }) => (
-    <View style={[styles.userCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <View style={styles.cardHeader}>
-        <Avatar uri={item.avatarUrl} name={item.displayName} size={50} />
-        <View style={styles.cardInfo}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-            <Text style={[typography.bodyBold, { color: colors.textPrimary }]} numberOfLines={1}>
-              {item.displayName}
+  // ─── PROFILE CARD ───
+  const renderProfileCard = (suggestedUser: SuggestedUser) => (
+    <Animated.View
+      style={[
+        styles.profileCard,
+        shadows.lg,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          transform: [
+            { translateX: cardTranslateX },
+            { scale: cardScale },
+          ],
+          opacity: cardOpacity,
+        },
+      ]}
+    >
+      {/* Avatar & Identity */}
+      <View style={styles.cardIdentity}>
+        <Avatar uri={suggestedUser.avatarUrl} name={suggestedUser.displayName} size={100} showGradientBorder />
+
+        <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center' }]}>
+          {suggestedUser.displayName}
+        </Text>
+
+        {/* Country Tag */}
+        {!!suggestedUser.countryCode && (
+          <View style={[styles.countryTag, { backgroundColor: `${colors.info}12`, borderColor: `${colors.info}25` }]}>
+            <Text style={{ fontSize: 12, marginRight: 4 }}>{getCountryFlag(suggestedUser.countryCode)}</Text>
+            <Text style={[typography.caption, { color: colors.info }]}>
+              {getCountryName(suggestedUser.countryCode, language)}
             </Text>
-            {!!item.countryCode && (
-              <View style={[styles.userCountryTag, { backgroundColor: `${colors.info}15`, borderColor: `${colors.info}30` }]}>
-                <Text style={{ fontSize: 10, marginRight: 3 }}>{getCountryFlag(item.countryCode)}</Text>
-                <Text style={[typography.overline, { color: colors.info, fontSize: 9 }]}>
-                  {getCountryName(item.countryCode, language)}
-                </Text>
-              </View>
-            )}
           </View>
-          <View style={styles.matchScoreBadge}>
-            <Ionicons name="flash" size={12} color={colors.warning} />
-            <Text style={[typography.captionBold, { color: colors.warning, marginLeft: 4 }]}>
-              {item.matchScore > 0 
-                ? t('discover.matchScore').replace('%{score}', String(item.matchScore))
-                : t('discover.matchingTagsCount', { count: item.matchingTagCount })}
-            </Text>
-          </View>
+        )}
+      </View>
+
+      {/* Bio (Benim Köşem) */}
+      <View style={[styles.bioBox, { backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}15` }]}>
+        {suggestedUser.bio ? (
+          <Text style={[typography.body, { color: colors.textPrimary, fontStyle: 'italic', textAlign: 'center', lineHeight: 22 }]}>
+            "{suggestedUser.bio}"
+          </Text>
+        ) : (
+          <Text style={[typography.body, { color: colors.textDisabled, fontStyle: 'italic', textAlign: 'center' }]}>
+            {t('discover.noBio')}
+          </Text>
+        )}
+      </View>
+
+      {/* Match Score */}
+      <View style={styles.matchRow}>
+        <View style={[styles.matchBadge, { backgroundColor: 'rgba(255, 193, 7, 0.12)' }]}>
+          <Ionicons name="flash" size={14} color={colors.warning} />
+          <Text style={[typography.captionBold, { color: colors.warning, marginLeft: 4 }]}>
+            {suggestedUser.matchScore > 0
+              ? t('discover.matchScore').replace('%{score}', String(suggestedUser.matchScore))
+              : t('discover.matchingTagsCount', { count: suggestedUser.matchingTagCount })}
+          </Text>
         </View>
-        <Button
-          title={sendingRequests[item.userId] ? t('discover.requestSent') : t('discover.sendRequest')}
-          size="sm"
-          variant={sendingRequests[item.userId] ? 'outline' : 'primary'}
-          onPress={() => handleSendRequest(item.userId)}
-          disabled={sendingRequests[item.userId]}
-          icon={
-            sendingRequests[item.userId] 
-              ? <Ionicons name="checkmark" size={14} color={colors.primary} />
-              : <Ionicons name="person-add" size={14} color="#FFF" />
-          }
-        />
       </View>
 
       {/* Tags */}
-      {item.tags.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagScroll}>
-          {item.tags.map((tag) => {
-            // Determine if this tag is one of my tags
+      {suggestedUser.tags.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tagScroll}
+          contentContainerStyle={styles.tagContainer}
+        >
+          {suggestedUser.tags.map((tag) => {
             const isMatch = userTags.some((myTag) => myTag.id === tag.id);
             return (
               <View
@@ -255,12 +347,12 @@ export function DiscoverScreen({ navigation }: Props) {
                 style={[
                   styles.tagChip,
                   {
-                    backgroundColor: isMatch ? colors.primary + '20' : colors.surfaceVariant,
-                    borderColor: isMatch ? colors.primary + '40' : colors.border,
+                    backgroundColor: isMatch ? `${colors.primary}18` : colors.surfaceVariant,
+                    borderColor: isMatch ? `${colors.primary}40` : colors.border,
                   },
                 ]}
               >
-                {tag.icon && <Text style={{ fontSize: 12, marginRight: 4 }}>{tag.icon}</Text>}
+                {tag.icon && <Text style={{ fontSize: 13, marginRight: 4 }}>{tag.icon}</Text>}
                 <Text style={[typography.caption, { color: isMatch ? colors.primary : colors.textSecondary }]}>
                   {getTagName(tag, language)}
                 </Text>
@@ -269,15 +361,57 @@ export function DiscoverScreen({ navigation }: Props) {
           })}
         </ScrollView>
       )}
+    </Animated.View>
+  );
+
+  // ─── ACTION BUTTONS ───
+  const renderActionButtons = (suggestedUser: SuggestedUser) => (
+    <View style={styles.actionRow}>
+      {/* Skip Button (Red) */}
+      <Pressable
+        onPress={handleSkip}
+        style={({ pressed }) => [
+          styles.actionBtn,
+          styles.skipBtn,
+          {
+            backgroundColor: pressed ? '#FF3B3020' : `${colors.error}12`,
+            borderColor: colors.error,
+            transform: [{ scale: pressed ? 0.92 : 1 }],
+          },
+        ]}
+      >
+        <Ionicons name="close" size={32} color={colors.error} />
+      </Pressable>
+
+      {/* Send Request Button (Green) */}
+      <Pressable
+        onPress={() => handleSendRequest(suggestedUser.userId)}
+        disabled={sendingRequest}
+        style={({ pressed }) => [
+          styles.actionBtn,
+          styles.requestBtn,
+          {
+            backgroundColor: pressed ? '#4CAF5020' : `${colors.success}12`,
+            borderColor: colors.success,
+            transform: [{ scale: pressed ? 0.92 : 1 }],
+            opacity: sendingRequest ? 0.6 : 1,
+          },
+        ]}
+      >
+        {sendingRequest ? (
+          <ActivityIndicator size="small" color={colors.success} />
+        ) : (
+          <Ionicons name="checkmark" size={32} color={colors.success} />
+        )}
+      </Pressable>
     </View>
   );
 
-  const renderEmptyState = () => {
-    if (isLoading) return null;
-
+  // ─── ALL SEEN / EMPTY STATE ───
+  const renderAllSeen = () => {
     if (userTags.length === 0) {
       return (
-        <View style={styles.emptyContainer}>
+        <View style={styles.allSeenContainer}>
           <EmptyState
             icon={<Ionicons name="pricetags-outline" size={64} color={colors.primary} />}
             title={t('discover.addTagsFirst')}
@@ -294,38 +428,29 @@ export function DiscoverScreen({ navigation }: Props) {
     }
 
     return (
-      <View style={styles.emptyContainer}>
-        <EmptyState
-          icon={<Ionicons name="search-outline" size={64} color={colors.textDisabled} />}
-          title={t('discover.noResults')}
-          message={t('discover.noResultsHint')}
-          action={
-            <Button
-              title={t('common.search')}
-              variant="outline"
-              onPress={() => setSearchQuery('')}
-            />
-          }
-        />
-      </View>
-    );
-  };
-
-  const renderFooter = () => {
-    if (isLoading || suggestedUsers.length === 0) return <View style={{ height: spacing.xxxl }} />;
-    return (
-      <View style={{ paddingVertical: spacing.xl, paddingBottom: spacing.xxxl, alignItems: 'center' }}>
+      <View style={styles.allSeenContainer}>
+        <View style={[styles.allSeenIcon, { backgroundColor: `${colors.primary}12` }]}>
+          <Ionicons name="checkmark-done-circle-outline" size={72} color={colors.primary} />
+        </View>
+        <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.lg, textAlign: 'center' }]}>
+          {t('discover.allSeen')}
+        </Text>
+        <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>
+          {t('discover.allSeenHint')}
+        </Text>
         <Button
           title={t('discover.refresh')}
           variant="outline"
           icon={<Ionicons name="refresh" size={16} color={colors.primary} />}
           onPress={handleRefresh}
           loading={isRefreshing}
+          style={{ marginTop: spacing.xl }}
         />
       </View>
     );
   };
 
+  // ─── MAIN RENDER ───
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {renderHeader()}
@@ -334,24 +459,14 @@ export function DiscoverScreen({ navigation }: Props) {
         <View style={styles.loadingCenter}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      ) : (
-        <FlatList
-          data={suggestedUsers}
-          keyExtractor={(item) => item.userId}
-          renderItem={renderUserCard}
-          contentContainerStyle={[styles.listContent, suggestedUsers.length === 0 && { flex: 1 }]}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={renderEmptyState}
-          ListFooterComponent={renderFooter}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.primary}
-            />
-          }
-        />
-      )}
+      ) : allSeen ? (
+        renderAllSeen()
+      ) : currentUser ? (
+        <View style={styles.cardArea}>
+          {renderProfileCard(currentUser)}
+          {renderActionButtons(currentUser)}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -394,6 +509,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   countryFilterChip: {
     flexDirection: 'row',
@@ -403,75 +519,112 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     borderWidth: 1,
   },
-  userCountryTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  categoryScroll: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  categoryPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    borderRadius: radius.full,
-    borderWidth: 1,
-  },
-  listContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xs,
-  },
-  userCard: {
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginBottom: spacing.md,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cardInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-    marginRight: spacing.sm,
-  },
-  matchScoreBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    backgroundColor: 'rgba(255, 193, 7, 0.1)',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  tagScroll: {
-    marginTop: spacing.md,
-  },
-  tagChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  counterBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: radius.full,
-    borderWidth: 1,
-    marginRight: spacing.xs,
   },
   loadingCenter: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyContainer: {
+
+  // ─── Card Area ───
+  cardArea: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  profileCard: {
+    width: CARD_WIDTH,
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+  },
+  cardIdentity: {
+    alignItems: 'center',
+  },
+  countryTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    marginTop: spacing.sm,
+  },
+  bioBox: {
+    width: '100%',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  matchRow: {
+    marginTop: spacing.md,
+    alignItems: 'center',
+  },
+  matchBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  tagScroll: {
+    marginTop: spacing.md,
+    maxHeight: 40,
+  },
+  tagContainer: {
+    paddingHorizontal: spacing.xs,
+    gap: spacing.xs,
+  },
+  tagChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+    borderWidth: 1,
+  },
+
+  // ─── Action Buttons ───
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xl,
+    gap: spacing.xxxl,
+  },
+  actionBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
+  skipBtn: {},
+  requestBtn: {},
+
+  // ─── All Seen ───
+  allSeenContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: spacing.xxxl,
+    paddingHorizontal: spacing.xl,
+  },
+  allSeenIcon: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

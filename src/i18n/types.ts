@@ -335,6 +335,10 @@ export interface TranslationSchema {
     privacyAlert: string;
     about: string;
     signOut: string;
+    myCorner: string;
+    myCornerPlaceholder: string;
+    myCornerHint: string;
+    bioSaved: string;
   };
   appearance: {
     videoBackgrounds: string;
@@ -487,6 +491,11 @@ export interface TranslationSchema {
     loadMore: string;
     discoverButton: string;
     refresh: string;
+    skip: string;
+    sendRequestAction: string;
+    allSeen: string;
+    allSeenHint: string;
+    noBio: string;
   };
   appearanceOptions: {
     video_windmill: { title: string; desc: string };

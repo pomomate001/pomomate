@@ -19,6 +19,7 @@ import { AdPlacement } from '../../ads';
 import { useTranslation } from '../../../i18n';
 import { TagSelectionSheet } from './TagSelectionSheet';
 import { EditNameSheet } from './EditNameSheet';
+import { EditBioSheet } from './EditBioSheet';
 import { ManageSubscriptionSheet } from './ManageSubscriptionSheet';
 import { tagService, getTagName } from '../../../services/tags';
 import { countryService, getCountryFlag, getCountryName } from '../../../services/location';
@@ -68,6 +69,7 @@ export function ProfileScreen({
   const [showLanguage, setShowLanguage] = React.useState(false);
   const [showTagSelection, setShowTagSelection] = React.useState(false);
   const [showEditName, setShowEditName] = React.useState(false);
+  const [showEditBio, setShowEditBio] = React.useState(false);
   const [showManageSubscription, setShowManageSubscription] = React.useState(false);
   const userTags = useTagStore((s) => s.userTags);
   const isPremium = useSettingsStore((s) => s.isPremium);
@@ -168,6 +170,30 @@ export function ProfileScreen({
         </View>
 
         <View style={styles.contentWrap}>
+          {/* Benim Köşem (My Corner) — Bio Section */}
+          <Pressable
+            onPress={() => setShowEditBio(true)}
+            style={[styles.bioSection, shadows.sm, { backgroundColor: colors.surface }]}
+          >
+            <View style={styles.bioHeader}>
+              <Ionicons name="chatbubble-ellipses-outline" size={18} color={colors.primary} />
+              <Text style={[typography.captionBold, { color: colors.primary, marginLeft: spacing.xs }]}>
+                {t('profile.myCorner')}
+              </Text>
+              <View style={{ flex: 1 }} />
+              <Ionicons name="pencil" size={14} color={colors.textDisabled} />
+            </View>
+            {user?.bio ? (
+              <Text style={[typography.body, { color: colors.textPrimary, marginTop: spacing.sm, fontStyle: 'italic' }]} numberOfLines={3}>
+                "{user.bio}"
+              </Text>
+            ) : (
+              <Text style={[typography.body, { color: colors.textDisabled, marginTop: spacing.sm, fontStyle: 'italic' }]}>
+                {t('profile.myCornerPlaceholder')}
+              </Text>
+            )}
+          </Pressable>
+
           {/* Premium / Referral */}
           <PremiumReferralCard
             onPremiumPress={() => setShowPaywall(true)}
@@ -250,6 +276,11 @@ export function ProfileScreen({
         onClose={() => setShowEditName(false)}
       />
 
+      <EditBioSheet
+        visible={showEditBio}
+        onClose={() => setShowEditBio(false)}
+      />
+
       <ManageSubscriptionSheet
         visible={showManageSubscription}
         onClose={() => setShowManageSubscription(false)}
@@ -330,6 +361,15 @@ const styles = StyleSheet.create({
   contentWrap: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
+  },
+  bioSection: {
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  bioHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   settingsSection: {
     borderRadius: radius.lg,
