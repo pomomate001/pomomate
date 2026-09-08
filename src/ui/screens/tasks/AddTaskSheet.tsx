@@ -44,9 +44,19 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
       setTitle(initialTask?.title || '');
       setTag(initialTask?.tag || '');
       setRecurrence(initialTask?.recurrence?.type || 'none');
-      setTargetPomodoroCount(initialTask?.targetPomodoroCount || 1);
+      setTargetPomodoroCount(initialTask?.targetPomodoroCount !== undefined ? initialTask.targetPomodoroCount : 1);
     }
   }
+
+  const pomodoroOptions: { label: string; value: number }[] = [
+    { label: `∞ ${t('tasks.untimed')}`, value: 0 },
+    { label: '1 🍅', value: 1 },
+    { label: '2 🍅', value: 2 },
+    { label: '3 🍅', value: 3 },
+    { label: '4 🍅', value: 4 },
+    { label: '5 🍅', value: 5 },
+    { label: '6 🍅', value: 6 },
+  ];
 
   const handleSave = () => {
     const trimmedTitle = title.trim();
@@ -95,12 +105,12 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
       </Text>
       
       <View style={styles.pomodoroRow}>
-        {[1, 2, 3, 4, 5, 6].map((num) => {
-          const isSelected = targetPomodoroCount === num;
+        {pomodoroOptions.map((opt) => {
+          const isSelected = targetPomodoroCount === opt.value;
           return (
             <Pressable
-              key={num}
-              onPress={() => setTargetPomodoroCount(num)}
+              key={opt.value}
+              onPress={() => setTargetPomodoroCount(opt.value)}
               style={[
                 styles.pomoChip,
                 {
@@ -113,7 +123,7 @@ export function AddTaskSheet({ visible, onClose, onAdd, onEdit, initialDate, ini
                 typography.captionBold,
                 { color: isSelected ? colors.textInverse : colors.textPrimary }
               ]}>
-                {num} Pomo
+                {opt.label}
               </Text>
             </Pressable>
           );

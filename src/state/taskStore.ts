@@ -120,7 +120,7 @@ export const useTaskStore = create<TaskStore>()(
           const normalizedTask: Task = {
             ...task,
             targetDate: task.targetDate || toLocalDateStr(),
-            targetPomodoroCount: task.targetPomodoroCount || 1,
+            targetPomodoroCount: task.targetPomodoroCount !== undefined ? task.targetPomodoroCount : 1,
             pomodoroCount: task.pomodoroCount || 0,
           };
           // Insert before any completed tasks if present

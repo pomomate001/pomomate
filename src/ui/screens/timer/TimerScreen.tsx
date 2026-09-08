@@ -31,6 +31,9 @@ import { statsService } from '../../../services/stats';
 import { BuddyInviteSheet } from './BuddyInviteSheet';
 import { BuddyAvatarBar } from './BuddyAvatarBar';
 import { BuddyInviteNotification } from './BuddyInviteNotification';
+import { AchievementCardModal } from './AchievementCardModal';
+import { DurationPickerSheet } from './DurationPickerSheet';
+import { useDeepFocus } from '../../../hooks/useDeepFocus';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -59,6 +62,12 @@ export function TimerScreen() {
   const buddyProfile = useBuddyStore((s) => s.buddyProfile);
   const myRole = useBuddyStore((s) => s.myRole);
   const [showBuddyInvite, setShowBuddyInvite] = useState(false);
+  const [showAchievementCard, setShowAchievementCard] = useState(false);
+  const [showDurationPicker, setShowDurationPicker] = useState(false);
+  const completedDurationRef = useRef(0);
+
+  // Deep focus mode — suppresses in-app notifications while timer runs
+  useDeepFocus();
 
   const modeLabels: Record<TimerMode, string> = {
     work: t('timer.work'),
@@ -164,10 +173,10 @@ export function TimerScreen() {
         );
         if (activeTask) {
           const currentCount = activeTask.pomodoroCount || 0;
-          const targetCount = activeTask.targetPomodoroCount || 1;
+          const targetCount = activeTask.targetPomodoroCount !== undefined ? activeTask.targetPomodoroCount : 1;
           const updatedCount = currentCount + 1;
 
-          if (updatedCount >= targetCount) {
+          if (targetCount > 0 && updatedCount >= targetCount) {
             // Reached target pomodoro count! Automatically mark completed and move to bottom
             useTaskStore.getState().updateTask(activeTask.id, { 
               pomodoroCount: updatedCount,
@@ -196,6 +205,10 @@ export function TimerScreen() {
         if (!isPremium) {
           adMobService.showInterstitial();
         }
+
+        // Show achievement card after a short delay (allow ad to show first)
+        completedDurationRef.current = duration;
+        setTimeout(() => setShowAchievementCard(true), isPremium ? 300 : 1500);
       } else {
         soundService.playCompletionSound();
         notificationService.scheduleTimerComplete(
@@ -372,7 +385,7 @@ export function TimerScreen() {
         targetDate: targetDate || new Date().toISOString().split('T')[0],
         completed: false,
         pomodoroCount: 0,
-        targetPomodoroCount: targetPomodoroCount || 1,
+        targetPomodoroCount: targetPomodoroCount !== undefined ? targetPomodoroCount : 1,
         createdAt: nowIso(),
       };
       addTask(task);
@@ -502,6 +515,7 @@ export function TimerScreen() {
               duration={duration}
               mode={mode}
               isRunning={isRunning}
+              onPress={!isRunning ? () => setShowDurationPicker(true) : undefined}
             />
           </View>
 
@@ -650,6 +664,21 @@ export function TimerScreen() {
       <BuddyInviteSheet
         visible={showBuddyInvite}
         onClose={() => setShowBuddyInvite(false)}
+      />
+
+      <AchievementCardModal
+        visible={showAchievementCard}
+        onClose={() => {
+          setShowAchievementCard(false);
+          handleNext();
+        }}
+        completedDurationSeconds={completedDurationRef.current}
+      />
+
+      <DurationPickerSheet
+        visible={showDurationPicker}
+        onClose={() => setShowDurationPicker(false)}
+        mode={mode}
       />
     </BackgroundEffect>
   );

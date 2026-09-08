@@ -37,6 +37,7 @@ export interface SettingsState {
 
   // Ad-free flag — toggled by subscription status (M08)
   isPremium: boolean;
+  deepFocusEnabled: boolean;
 }
 
 interface SettingsActions {
@@ -55,6 +56,7 @@ interface SettingsActions {
   setLongBreakDuration: (seconds: number) => void;
   setCyclesBeforeLongBreak: (n: number) => void;
   setIsPremium: (premium: boolean) => void;
+  setDeepFocusEnabled: (enabled: boolean) => void;
   revertToFreeDefaults: () => void;
   reset: () => void;
 }
@@ -75,6 +77,7 @@ const initialSettings: SettingsState = {
   longBreakDuration: 15 * 60,
   cyclesBeforeLongBreak: 4,
   isPremium: false,
+  deepFocusEnabled: false,
 };
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()(
@@ -97,6 +100,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       setLongBreakDuration: (longBreakDuration) => set({ longBreakDuration }),
       setCyclesBeforeLongBreak: (cyclesBeforeLongBreak) => set({ cyclesBeforeLongBreak }),
       setIsPremium: (isPremium) => set({ isPremium }),
+      setDeepFocusEnabled: (deepFocusEnabled) => set({ deepFocusEnabled }),
       revertToFreeDefaults: () =>
         set((state) => {
           const updates: Partial<SettingsState> = {};

@@ -68,7 +68,9 @@ export function TaskItem({ task, onToggle, onDelete, onPress, onLongPress }: Tas
           )}
           <View style={[styles.tagBadge, { backgroundColor: `${colors.primary}18` }]}>
             <Text style={[typography.captionBold, { color: task.completed ? colors.textDisabled : colors.primary, fontSize: 11 }]}>
-              ⏱️ {task.pomodoroCount || 0}/{task.targetPomodoroCount || 1} Pomo
+              {task.targetPomodoroCount === 0
+                ? `⏱️ ${task.pomodoroCount || 0}/∞ Pomo`
+                : `⏱️ ${task.pomodoroCount || 0}/${task.targetPomodoroCount || 1} Pomo`}
             </Text>
           </View>
           {task.recurrence && task.recurrence.type !== 'none' && (

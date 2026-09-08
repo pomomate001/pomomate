@@ -13,6 +13,9 @@ PomoMate is a productivity app that combines the Pomodoro Technique with real-ti
 
 ### 🕐 Pomodoro Timer & Native PiP
 - **Customizable durations**: Work (25min), Short Break (5min), Long Break (15min)
+- **Quick Timer Picker**: Interactive horizontal scroll ruler to quickly adjust timer duration directly from the timer face
+- **Deep Focus Mode**: Built-in toggle to temporarily suppress all in-app notifications and distractions while working
+- **Achievement Share Cards**: Beautiful, Forest-inspired visual summary cards generated after every work session, ready to share to social media
 - **5 Unique Timer Designs**: Minimalist, Classic Circle, Modern Digital, Curved Arc (Pro), and Neon Glow (Pro)
 - **Live Video & Atmosphere Backgrounds**:
   - Full-screen looping videos: Deep Space & Stars, Windmill Meadow, Rain Window

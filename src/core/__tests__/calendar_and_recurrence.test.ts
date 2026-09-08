@@ -3,6 +3,30 @@ import { useTaskStore, getTasksForDate } from '../../state/taskStore';
 import { toLocalDateStr } from '../../utils/datetime';
 import type { Task } from '../../types';
 
+function getFutureDate(daysAhead: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  return toLocalDateStr(d);
+}
+
+function getNextWeekday(daysAhead = 1): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  while (d.getDay() === 0 || d.getDay() === 6) {
+    d.setDate(d.getDate() + 1);
+  }
+  return toLocalDateStr(d);
+}
+
+function getNextWeekendDay(daysAhead = 1): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  while (d.getDay() !== 0 && d.getDay() !== 6) {
+    d.setDate(d.getDate() + 1);
+  }
+  return toLocalDateStr(d);
+}
+
 describe('Local Date Formatting and Timezone Isolation', () => {
   it('formats dates consistently as YYYY-MM-DD in local time', () => {
     const fixedDate = new Date(2026, 8, 3, 2, 30, 0); // Month 8 is September (0-indexed)
@@ -21,87 +45,85 @@ describe('Calendar Task Projection and Recurrence', () => {
   });
 
   it('reflects daily recurring tasks on future calendar days as uncompleted', () => {
+    const todayStr = toLocalDateStr(new Date());
     const dailyTask: Task = {
       id: 'daily-1',
       userId: 'u1',
       title: 'İngilizce Çalış',
       completed: false,
       pomodoroCount: 0,
-      targetDate: '2026-09-03',
+      targetDate: todayStr,
       recurrence: { type: 'daily' },
-      createdAt: '2026-09-03T10:00:00Z',
+      createdAt: `${todayStr}T10:00:00Z`,
     };
     useTaskStore.getState().addTask(dailyTask);
 
     const tasks = useTaskStore.getState().tasks;
 
-    // Tomorrow: 2026-09-04
-    const tomorrowTasks = getTasksForDate(tasks, '2026-09-04');
+    // Tomorrow (future)
+    const tomorrowStr = getFutureDate(1);
+    const tomorrowTasks = getTasksForDate(tasks, tomorrowStr);
     expect(tomorrowTasks.length).toBe(1);
     expect(tomorrowTasks[0].title).toBe('İngilizce Çalış');
     expect(tomorrowTasks[0].completed).toBe(false);
     expect(tomorrowTasks[0].isVirtualRecurring).toBe(true);
 
-    // 10 days later: 2026-09-13
-    const futureTasks = getTasksForDate(tasks, '2026-09-13');
+    // 10 days later (future)
+    const futureStr = getFutureDate(10);
+    const futureTasks = getTasksForDate(tasks, futureStr);
     expect(futureTasks.length).toBe(1);
     expect(futureTasks[0].title).toBe('İngilizce Çalış');
     expect(futureTasks[0].completed).toBe(false);
   });
 
   it('reflects weekdays recurring tasks only on Monday through Friday', () => {
+    const todayStr = toLocalDateStr(new Date());
     const weekdayTask: Task = {
       id: 'wk-1',
       userId: 'u1',
       title: 'Ofis Görevleri',
       completed: false,
       pomodoroCount: 0,
-      targetDate: '2026-09-03', // Thursday
+      targetDate: todayStr,
       recurrence: { type: 'weekdays' },
-      createdAt: '2026-09-03T10:00:00Z',
+      createdAt: `${todayStr}T10:00:00Z`,
     };
     useTaskStore.getState().addTask(weekdayTask);
 
     const tasks = useTaskStore.getState().tasks;
 
-    // 2026-09-04 is Friday (weekday) -> Should appear
-    const fridayTasks = getTasksForDate(tasks, '2026-09-04');
-    expect(fridayTasks.some((t) => t.title === 'Ofis Görevleri')).toBe(true);
+    const nextWeekday = getNextWeekday(1);
+    const weekdayTasks = getTasksForDate(tasks, nextWeekday);
+    expect(weekdayTasks.some((t) => t.title === 'Ofis Görevleri')).toBe(true);
 
-    // 2026-09-05 is Saturday (weekend) -> Should NOT appear
-    const saturdayTasks = getTasksForDate(tasks, '2026-09-05');
-    expect(saturdayTasks.some((t) => t.title === 'Ofis Görevleri')).toBe(false);
-
-    // 2026-09-06 is Sunday (weekend) -> Should NOT appear
-    const sundayTasks = getTasksForDate(tasks, '2026-09-06');
-    expect(sundayTasks.some((t) => t.title === 'Ofis Görevleri')).toBe(false);
-
-    // 2026-09-07 is Monday (weekday) -> Should appear
-    const mondayTasks = getTasksForDate(tasks, '2026-09-07');
-    expect(mondayTasks.some((t) => t.title === 'Ofis Görevleri')).toBe(true);
+    const nextWeekend = getNextWeekendDay(1);
+    const weekendTasks = getTasksForDate(tasks, nextWeekend);
+    expect(weekendTasks.some((t) => t.title === 'Ofis Görevleri')).toBe(false);
   });
 
   it('removes recurring tasks from future days when deleted or recurrence removed', () => {
+    const todayStr = toLocalDateStr(new Date());
+    const futureStr = getFutureDate(5);
     const task: Task = {
       id: 'rem-1',
       userId: 'u1',
       title: 'Kitap Oku',
       completed: false,
       pomodoroCount: 0,
-      targetDate: '2026-09-03',
+      targetDate: todayStr,
       recurrence: { type: 'daily' },
-      createdAt: '2026-09-03T10:00:00Z',
+      createdAt: `${todayStr}T10:00:00Z`,
     };
     useTaskStore.getState().addTask(task);
 
     // Verify it appears in future
-    expect(getTasksForDate(useTaskStore.getState().tasks, '2026-09-10').length).toBe(1);
+    expect(getTasksForDate(useTaskStore.getState().tasks, futureStr).length).toBe(1);
 
     // Delete the task
     useTaskStore.getState().removeTask('rem-1');
 
     // Should no longer appear on future days
-    expect(getTasksForDate(useTaskStore.getState().tasks, '2026-09-10').length).toBe(0);
+    expect(getTasksForDate(useTaskStore.getState().tasks, futureStr).length).toBe(0);
   });
 });
 
@@ -111,36 +133,41 @@ describe('Recurrence Exceptions (Skip for a specific date)', () => {
   });
 
   it('skips a recurring task on a specific day without modifying general recurrence', () => {
+    const todayStr = toLocalDateStr(new Date());
+    const day1Future = getFutureDate(1);
+    const day2Future = getFutureDate(2);
+    const day3Future = getFutureDate(3);
+
     const dailyTask: Task = {
       id: 'daily-exc',
       userId: 'u1',
       title: 'Spor Yap',
       completed: false,
       pomodoroCount: 0,
-      targetDate: '2026-09-03',
+      targetDate: todayStr,
       recurrence: { type: 'daily' },
-      createdAt: '2026-09-03T10:00:00Z',
+      createdAt: `${todayStr}T10:00:00Z`,
     };
     useTaskStore.getState().addTask(dailyTask);
 
-    // Add exception for 2026-09-05 (user taking a day off on Saturday)
-    useTaskStore.getState().addRecurrenceException('daily-exc', '2026-09-05');
+    // Add exception for day2Future (user taking a day off on that day)
+    useTaskStore.getState().addRecurrenceException('daily-exc', day2Future);
 
     const tasks = useTaskStore.getState().tasks;
 
-    // 2026-09-04 (Friday): should be visible
-    expect(getTasksForDate(tasks, '2026-09-04').length).toBe(1);
+    // day1: should be visible
+    expect(getTasksForDate(tasks, day1Future).length).toBe(1);
 
-    // 2026-09-05 (Saturday): should be SKIPPED / NOT visible
-    expect(getTasksForDate(tasks, '2026-09-05').length).toBe(0);
+    // day2: should be SKIPPED / NOT visible
+    expect(getTasksForDate(tasks, day2Future).length).toBe(0);
 
-    // 2026-09-06 (Sunday): should be visible again
-    expect(getTasksForDate(tasks, '2026-09-06').length).toBe(1);
+    // day3: should be visible again
+    expect(getTasksForDate(tasks, day3Future).length).toBe(1);
 
     // Undoing the exception
-    useTaskStore.getState().removeRecurrenceException('daily-exc', '2026-09-05');
+    useTaskStore.getState().removeRecurrenceException('daily-exc', day2Future);
     const updatedTasks = useTaskStore.getState().tasks;
-    expect(getTasksForDate(updatedTasks, '2026-09-05').length).toBe(1);
+    expect(getTasksForDate(updatedTasks, day2Future).length).toBe(1);
   });
 });
 
@@ -150,10 +177,10 @@ describe('Future Date Task Booking (Rezervasyon) and Home Screen Isolation', () 
   });
 
   it('allows scheduling a task for a future date without showing on today home screen', () => {
-    const todayStr = '2026-09-03';
-    const futureDateStr = '2026-09-10';
+    const todayStr = toLocalDateStr(new Date());
+    const futureDateStr = getFutureDate(7);
 
-    // User books a task for September 10th
+    // User books a task for future date
     const futureTask: Task = {
       id: 'future-1',
       userId: 'u1',
@@ -162,16 +189,16 @@ describe('Future Date Task Booking (Rezervasyon) and Home Screen Isolation', () 
       pomodoroCount: 0,
       targetDate: futureDateStr,
       recurrence: { type: 'none' },
-      createdAt: '2026-09-03T10:00:00Z',
+      createdAt: `${todayStr}T10:00:00Z`,
     };
     useTaskStore.getState().addTask(futureTask);
 
     const tasks = useTaskStore.getState().tasks;
 
-    // 1. In calendar for September 10th, the task appears
-    const sep10Tasks = getTasksForDate(tasks, futureDateStr);
-    expect(sep10Tasks.length).toBe(1);
-    expect(sep10Tasks[0].title).toBe('Diş Hekimi Randevusu');
+    // 1. In calendar for the future date, the task appears
+    const futureDateTasks = getTasksForDate(tasks, futureDateStr);
+    expect(futureDateTasks.length).toBe(1);
+    expect(futureDateTasks[0].title).toBe('Diş Hekimi Randevusu');
 
     // 2. On today home screen, the task is strictly excluded
     const todayTasks = tasks.filter((t) => t.targetDate === todayStr);
@@ -183,8 +210,10 @@ describe('Future Date Task Booking (Rezervasyon) and Home Screen Isolation', () 
   });
 
   it('ensures yesterday uncompleted one-off task does not stay on today home screen', () => {
-    const todayStr = '2026-09-03';
-    const yesterdayStr = '2026-09-02';
+    const todayStr = toLocalDateStr(new Date());
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = toLocalDateStr(yesterday);
 
     // Uncompleted task from yesterday
     const yesterdayTask: Task = {
@@ -195,7 +224,7 @@ describe('Future Date Task Booking (Rezervasyon) and Home Screen Isolation', () 
       pomodoroCount: 0,
       targetDate: yesterdayStr,
       recurrence: { type: 'none' },
-      createdAt: '2026-09-02T10:00:00Z',
+      createdAt: `${yesterdayStr}T10:00:00Z`,
     };
     useTaskStore.getState().addTask(yesterdayTask);
 

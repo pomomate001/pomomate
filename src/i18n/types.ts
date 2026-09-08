@@ -96,6 +96,15 @@ export interface TranslationSchema {
     pomodoroCompletedBody: string;
     breakCompletedTitle: string;
     breakCompletedBody: string;
+    achievementTitle: string;
+    achievementSubtitle: string;
+    achievementTodayPomodoros: string;
+    achievementTodayDuration: string;
+    achievementStreak: string;
+    achievementTask: string;
+    achievementShare: string;
+    achievementContinue: string;
+    durationPickerTitle: string;
   };
   tasks: {
     title: string;
@@ -115,6 +124,7 @@ export interface TranslationSchema {
     emptyTasks: string;
     emptyTasksSubtitle: string;
     targetPomodoros: string;
+    untimed: string;
     quickAddPlaceholder: string;
   };
   stats: {
@@ -342,6 +352,10 @@ export interface TranslationSchema {
     longBreak: string;
     cyclesBeforeLongBreak: string;
     minUnit: string;
+    deepFocusTitle: string;
+    deepFocusDesc: string;
+    deepFocusGuide: string;
+    openSystemSettings: string;
   };
   soundSettings: {
     effectsTitle: string;

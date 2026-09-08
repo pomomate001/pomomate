@@ -116,6 +116,13 @@
 - [x] Task recurrence badges localized (Daily, Weekdays, Weekends)
 - [x] Discover screen refresh button localized in TR and EN
 
+### New Timer Features
+- [x] Timer face is tappable when idle to open the Duration Picker
+- [x] Duration Picker syncs reliably with settingsStore and buddy/room state
+- [x] Deep Focus mode toggle persists and suppresses notifications correctly
+- [x] Achievement Share Card appears correctly after work pomodoros (after interstitial ads)
+- [x] Achievement Share Card snapshot functionality works and exports high-quality image
+
 ### Security
 - [ ] RLS blocks unauthorized access
 - [ ] Friend stats respect sharing preferences

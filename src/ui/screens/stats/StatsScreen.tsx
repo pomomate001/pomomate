@@ -334,7 +334,9 @@ export function StatsScreen() {
                             </Text>
                           )}
                           <Text style={[typography.overline, { color: colors.textSecondary }]}>
-                            ⏱️ {tItem.pomodoroCount || 0}/{tItem.targetPomodoroCount || 1} Pomo
+                            {tItem.targetPomodoroCount === 0
+                              ? `⏱️ ${tItem.pomodoroCount || 0}/∞ Pomo`
+                              : `⏱️ ${tItem.pomodoroCount || 0}/${tItem.targetPomodoroCount || 1} Pomo`}
                           </Text>
                         </View>
                       </View>
@@ -399,7 +401,7 @@ export function StatsScreen() {
             targetDate: effectiveDate,
             completed: false,
             pomodoroCount: 0,
-            targetPomodoroCount: targetPomodoroCount || 1,
+            targetPomodoroCount: targetPomodoroCount !== undefined ? targetPomodoroCount : 1,
             createdAt: nowIso(),
           };
           addTask(newTask);

@@ -87,6 +87,54 @@ describe('Task Management and Reordering', () => {
     expect(stored?.targetPomodoroCount).toBe(4);
   });
 
+  it('supports untimed tasks with targetPomodoroCount: 0 without overwriting to 1', () => {
+    const task: Task = {
+      id: 'task-untimed',
+      userId: 'u1',
+      title: 'Zamansız Görev (Ders Çalış)',
+      completed: false,
+      pomodoroCount: 0,
+      targetPomodoroCount: 0,
+      createdAt: new Date().toISOString(),
+    };
+
+    useTaskStore.getState().addTask(task);
+    const stored = useTaskStore.getState().tasks.find((t) => t.id === 'task-untimed');
+
+    expect(stored).toBeDefined();
+    expect(stored?.targetPomodoroCount).toBe(0);
+  });
+
+  it('untimed tasks (targetPomodoroCount: 0) never auto-complete when pomodoro finishes', () => {
+    const untimedTask: Task = {
+      id: 't-untimed',
+      userId: 'u1',
+      title: 'Uzun Maraton Çalışması',
+      completed: false,
+      pomodoroCount: 0,
+      targetPomodoroCount: 0,
+      createdAt: new Date().toISOString(),
+    };
+    useTaskStore.getState().addTask(untimedTask);
+
+    // Simulate completion logic as in TimerScreen:
+    const activeTask = useTaskStore.getState().tasks.find((t) => t.id === 't-untimed')!;
+    const currentCount = activeTask.pomodoroCount || 0;
+    const targetCount = activeTask.targetPomodoroCount !== undefined ? activeTask.targetPomodoroCount : 1;
+    const updatedCount = currentCount + 1;
+
+    // targetCount is 0, so targetCount > 0 condition is false
+    const shouldAutoComplete = targetCount > 0 && updatedCount >= targetCount;
+    expect(shouldAutoComplete).toBe(false);
+
+    // Instead, it just increments pomodoroCount and remains uncompleted
+    useTaskStore.getState().updateTask(activeTask.id, { pomodoroCount: updatedCount });
+
+    const updated = useTaskStore.getState().tasks.find((t) => t.id === 't-untimed')!;
+    expect(updated.completed).toBe(false);
+    expect(updated.pomodoroCount).toBe(1);
+  });
+
   it('moves task to the bottom of the list when completed', () => {
     const task1: Task = {
       id: 't1',

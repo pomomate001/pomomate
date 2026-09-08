@@ -5,6 +5,7 @@
  * New designs are registered in timerDesigns.ts and rendered here.
  */
 import React from 'react';
+import { Pressable } from 'react-native';
 import { TimerFaceMinimal } from './TimerFaceMinimal';
 import { TimerFaceCircle } from './TimerFaceCircle';
 import { TimerFaceDigital } from './TimerFaceDigital';
@@ -18,20 +19,29 @@ interface TimerFaceProps {
   duration: number;
   mode: TimerMode;
   isRunning: boolean;
+  onPress?: () => void;
 }
 
-export function TimerFace({ designId, ...rest }: TimerFaceProps) {
-  switch (designId) {
-    case 'circle':
-      return <TimerFaceCircle {...rest} />;
-    case 'digital':
-      return <TimerFaceDigital {...rest} />;
-    case 'arc':
-      return <TimerFaceArc {...rest} />;
-    case 'neon':
-      return <TimerFaceNeon {...rest} />;
-    case 'minimal':
-    default:
-      return <TimerFaceMinimal {...rest} />;
+export function TimerFace({ designId, onPress, ...rest }: TimerFaceProps) {
+  const face = (() => {
+    switch (designId) {
+      case 'circle':
+        return <TimerFaceCircle {...rest} />;
+      case 'digital':
+        return <TimerFaceDigital {...rest} />;
+      case 'arc':
+        return <TimerFaceArc {...rest} />;
+      case 'neon':
+        return <TimerFaceNeon {...rest} />;
+      case 'minimal':
+      default:
+        return <TimerFaceMinimal {...rest} />;
+    }
+  })();
+
+  if (onPress) {
+    return <Pressable onPress={onPress}>{face}</Pressable>;
   }
+
+  return face;
 }
