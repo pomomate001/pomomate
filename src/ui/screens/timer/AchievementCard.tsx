@@ -1,10 +1,6 @@
 import React, { forwardRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import ViewShot from 'react-native-view-shot';
-import { useColors } from '../../theme';
-import { typography } from '../../theme/typography';
-import { spacing } from '../../theme/spacing';
-import { radius } from '../../theme/radius';
 import { Avatar } from '../../components/Avatar';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../../i18n';
@@ -22,7 +18,6 @@ interface AchievementCardProps {
 
 export const AchievementCard = forwardRef<any, AchievementCardProps>(
   function AchievementCard({ userName, avatarUrl, taskName, todayPomodoros, todayDurationMinutes, streak, completedDurationMinutes }, ref) {
-    const colors = useColors();
     const { t } = useTranslation();
     
     const formatDuration = (minutes: number) => {

@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useEffect, useState } from 'react';
+import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, Pressable, Linking, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { BottomSheet } from '../../components/BottomSheet';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
-import { radius } from '../../theme/radius';
 import { useSettingsStore } from '../../../state';
 import { useTranslation } from '../../../i18n';
 import type { TimerMode } from '../../../types';
@@ -48,10 +47,13 @@ export function DurationPickerSheet({ visible, onClose, mode }: DurationPickerSh
   const currentMinutes = Math.round(currentSeconds / 60);
 
   // Generate all possible minute values
-  const values: number[] = [];
-  for (let v = config.min; v <= config.max; v += config.step) {
-    values.push(v);
-  }
+  const values = useMemo(() => {
+    const arr: number[] = [];
+    for (let v = config.min; v <= config.max; v += config.step) {
+      arr.push(v);
+    }
+    return arr;
+  }, [config.min, config.max, config.step]);
 
   const [containerWidth, setContainerWidth] = useState(0);
   const halfWidth = containerWidth / 2;

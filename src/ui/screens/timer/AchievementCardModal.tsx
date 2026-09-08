@@ -1,12 +1,8 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, Animated } from 'react-native';
-import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../theme';
-import { typography } from '../../theme/typography';
-import { spacing } from '../../theme/spacing';
-import { radius } from '../../theme/radius';
 import { AchievementCard } from './AchievementCard';
 import { useTranslation } from '../../../i18n';
 import { useUserStore, useStatsStore, useTaskStore } from '../../../state';
@@ -22,8 +18,8 @@ export function AchievementCardModal({ visible, onClose, completedDurationSecond
   const { t } = useTranslation();
   const colors = useColors();
   const viewShotRef = useRef<any>(null);
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const [scaleAnim] = useState(() => new Animated.Value(0.8));
+  const [opacityAnim] = useState(() => new Animated.Value(0));
 
   const user = useUserStore((s) => s.user);
   const stats = useStatsStore();
@@ -43,7 +39,7 @@ export function AchievementCardModal({ visible, onClose, completedDurationSecond
   const taskName = activeTask?.title || recentCompletedTask?.title;
 
   // Entrance animation
-  React.useEffect(() => {
+  useEffect(() => {
     if (visible) {
       scaleAnim.setValue(0.8);
       opacityAnim.setValue(0);

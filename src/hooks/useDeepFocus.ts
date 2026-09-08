@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import * as Notifications from 'expo-notifications';
 import { useSettingsStore, useTimerStore } from '../state';
 
@@ -17,7 +17,6 @@ export function useDeepFocus() {
   const isRunning = useTimerStore((s) => s.isRunning);
   const deepFocusEnabled = useSettingsStore((s) => s.deepFocusEnabled);
   const isActive = isRunning && deepFocusEnabled;
-  const previousHandlerRef = useRef<Notifications.NotificationHandler | null>(null);
 
   useEffect(() => {
     if (isActive) {

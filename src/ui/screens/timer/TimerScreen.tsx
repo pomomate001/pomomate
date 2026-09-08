@@ -64,7 +64,7 @@ export function TimerScreen() {
   const [showBuddyInvite, setShowBuddyInvite] = useState(false);
   const [showAchievementCard, setShowAchievementCard] = useState(false);
   const [showDurationPicker, setShowDurationPicker] = useState(false);
-  const completedDurationRef = useRef(0);
+  const [completedDuration, setCompletedDuration] = useState(0);
 
   // Deep focus mode — suppresses in-app notifications while timer runs
   useDeepFocus();
@@ -207,8 +207,10 @@ export function TimerScreen() {
         }
 
         // Show achievement card after a short delay (allow ad to show first)
-        completedDurationRef.current = duration;
-        setTimeout(() => setShowAchievementCard(true), isPremium ? 300 : 1500);
+        setTimeout(() => {
+          setCompletedDuration(duration);
+          setShowAchievementCard(true);
+        }, isPremium ? 300 : 1500);
       } else {
         soundService.playCompletionSound();
         notificationService.scheduleTimerComplete(
@@ -672,7 +674,7 @@ export function TimerScreen() {
           setShowAchievementCard(false);
           handleNext();
         }}
-        completedDurationSeconds={completedDurationRef.current}
+        completedDurationSeconds={completedDuration}
       />
 
       <DurationPickerSheet

@@ -40,8 +40,8 @@ export function BuddyAvatarBar({
   const recentEmojis = useBuddyStore((s) => s.recentEmojis);
 
   // Animations
-  const animValue = useRef(new Animated.Value(guestProfile ? 1 : 0)).current;
-  const rippleAnim = useRef(new Animated.Value(0)).current;
+  const [animValue] = useState(() => new Animated.Value(guestProfile ? 1 : 0));
+  const [rippleAnim] = useState(() => new Animated.Value(0));
   const prevGuest = useRef(guestProfile?.id);
 
   useEffect(() => {
