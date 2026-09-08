@@ -123,7 +123,7 @@ class MainActivity : ReactActivity() {
   fun enterPiPMode() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val builder = PictureInPictureParams.Builder()
-        .setAspectRatio(Rational(16, 5))
+        .setAspectRatio(Rational(239, 100))
 
       val actions = createPiPActions(currentMicOn, currentCamOn, currentScreenShareOn)
       if (actions.isNotEmpty()) {
@@ -143,7 +143,7 @@ class MainActivity : ReactActivity() {
     currentScreenShareOn = screenShareOn
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val builder = PictureInPictureParams.Builder()
-        .setAspectRatio(Rational(16, 5))
+        .setAspectRatio(Rational(239, 100))
       val actions = createPiPActions(micOn, camOn, screenShareOn)
       if (actions.isNotEmpty()) {
         builder.setActions(actions)
@@ -188,7 +188,7 @@ class MainActivity : ReactActivity() {
   fun updateAutoPiP(enabled: Boolean) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
       val builder = PictureInPictureParams.Builder()
-        .setAspectRatio(Rational(16, 5))
+        .setAspectRatio(Rational(239, 100))
         .setAutoEnterEnabled(enabled)
       val actions = createPiPActions(currentMicOn, currentCamOn, currentScreenShareOn)
       if (actions.isNotEmpty()) {
