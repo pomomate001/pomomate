@@ -185,7 +185,7 @@ export function ProfileScreen({
             </View>
             {user?.bio ? (
               <Text style={[typography.body, { color: colors.textPrimary, marginTop: spacing.sm, fontStyle: 'italic' }]} numberOfLines={3}>
-                "{user.bio}"
+                {`"${user.bio}"`}
               </Text>
             ) : (
               <Text style={[typography.body, { color: colors.textDisabled, marginTop: spacing.sm, fontStyle: 'italic' }]}>

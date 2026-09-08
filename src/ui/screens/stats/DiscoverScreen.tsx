@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -59,10 +59,10 @@ export function DiscoverScreen({ navigation }: Props) {
   const userCountryFlag = getCountryFlag(userCountryCode);
   const userCountryName = getCountryName(userCountryCode, language);
 
-  // Animation refs
-  const cardOpacity = useRef(new Animated.Value(1)).current;
-  const cardTranslateX = useRef(new Animated.Value(0)).current;
-  const cardScale = useRef(new Animated.Value(1)).current;
+  // Animations
+  const [cardOpacity] = useState(() => new Animated.Value(1));
+  const [cardTranslateX] = useState(() => new Animated.Value(0));
+  const [cardScale] = useState(() => new Animated.Value(1));
 
   // Debounce search
   useEffect(() => {
@@ -180,7 +180,7 @@ export function DiscoverScreen({ navigation }: Props) {
         // Don't increment currentIndex since we're removing the item
       });
     }
-  }, [user?.id, sendingRequest, suggestedUsers, animateCardOut]);
+  }, [user, sendingRequest, suggestedUsers, animateCardOut]);
 
   const currentUser: SuggestedUser | undefined = suggestedUsers[currentIndex];
   const allSeen = !isLoading && (suggestedUsers.length === 0 || currentIndex >= suggestedUsers.length);
@@ -310,7 +310,7 @@ export function DiscoverScreen({ navigation }: Props) {
       <View style={[styles.bioBox, { backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}15` }]}>
         {suggestedUser.bio ? (
           <Text style={[typography.body, { color: colors.textPrimary, fontStyle: 'italic', textAlign: 'center', lineHeight: 22 }]}>
-            "{suggestedUser.bio}"
+            {`"${suggestedUser.bio}"`}
           </Text>
         ) : (
           <Text style={[typography.body, { color: colors.textDisabled, fontStyle: 'italic', textAlign: 'center' }]}>

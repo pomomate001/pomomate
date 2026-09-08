@@ -186,7 +186,7 @@ export function DiscoverUsersTab() {
                 style={[typography.caption, { color: colors.textSecondary, fontStyle: 'italic', marginTop: spacing.xs, paddingHorizontal: spacing.xs }]}
                 numberOfLines={2}
               >
-                "{su.bio}"
+                {`"${su.bio}"`}
               </Text>
             )}
 
