@@ -96,7 +96,7 @@ export const en: TranslationSchema = {
     pomodoroCompletedBody: 'Break time. Enjoy your rest!',
     breakCompletedTitle: 'Break Finished! ⏰',
     breakCompletedBody: 'Back to work.',
-    achievementTitle: 'Congratulations! 🎉',
+    achievementTitle: 'Congratulations!',
     achievementSubtitle: 'Pomodoro Completed',
     achievementTodayPomodoros: "Today's Pomodoros",
     achievementTodayDuration: 'Total Focus',

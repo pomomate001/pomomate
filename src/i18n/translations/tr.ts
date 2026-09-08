@@ -96,7 +96,7 @@ export const tr: TranslationSchema = {
     pomodoroCompletedBody: 'Mola zamanı. İyi dinlenmeler!',
     breakCompletedTitle: 'Mola Bitti! ⏰',
     breakCompletedBody: 'Çalışmaya geri dön.',
-    achievementTitle: 'Tebrikler! 🎉',
+    achievementTitle: 'Tebrikler!',
     achievementSubtitle: 'Pomodoro Tamamlandı',
     achievementTodayPomodoros: 'Bugünkü Pomodoro',
     achievementTodayDuration: 'Toplam Odak',

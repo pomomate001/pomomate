@@ -128,7 +128,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/android-icon-foreground.png",
+          "icon": "./assets/notification-icon.png",
           "color": "#ef4435",
           "sounds": [],
           "androidMode": "default",

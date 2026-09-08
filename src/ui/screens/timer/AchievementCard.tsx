@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import { Avatar } from '../../components/Avatar';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,17 +14,19 @@ interface AchievementCardProps {
   todayDurationMinutes: number;
   streak: number;
   completedDurationMinutes: number;
+  buddyName?: string;
+  buddyAvatarUrl?: string;
 }
 
 export const AchievementCard = forwardRef<any, AchievementCardProps>(
-  function AchievementCard({ userName, avatarUrl, taskName, todayPomodoros, todayDurationMinutes, streak, completedDurationMinutes }, ref) {
+  function AchievementCard({ userName, avatarUrl, taskName, todayPomodoros, todayDurationMinutes, streak, completedDurationMinutes, buddyName, buddyAvatarUrl }, ref) {
     const { t } = useTranslation();
     
     const formatDuration = (minutes: number) => {
       const h = Math.floor(minutes / 60);
       const m = minutes % 60;
-      if (h > 0) return `${h}h ${m}m`;
-      return `${m}m`;
+      if (h > 0) return `${h}s ${m}d`;
+      return `${m} dk`;
     };
 
     return (
@@ -41,7 +43,9 @@ export const AchievementCard = forwardRef<any, AchievementCardProps>(
           
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.achievementEmoji}>🎯</Text>
+            <View style={styles.iconContainer}>
+              <Ionicons name="trophy" size={32} color="#FFD700" />
+            </View>
             <Text style={[styles.title, { color: '#FFFFFF' }]}>
               {t('timer.achievementTitle')}
             </Text>
@@ -52,8 +56,27 @@ export const AchievementCard = forwardRef<any, AchievementCardProps>(
 
           {/* Profile */}
           <View style={styles.profileSection}>
-            <Avatar uri={avatarUrl} name={userName} size={56} />
-            <Text style={[styles.userName, { color: '#FFFFFF' }]}>{userName}</Text>
+            {buddyName ? (
+              <View style={styles.buddyContainer}>
+                <View style={styles.avatarWrapper}>
+                  <Avatar uri={avatarUrl} name={userName} size={50} />
+                  <Text style={[styles.userName, { color: '#FFFFFF', fontSize: 12 }]} numberOfLines={1}>{userName.split(' ')[0]}</Text>
+                </View>
+                <View style={styles.buddyLinkIcon}>
+                  <Ionicons name="link" size={16} color="rgba(255,255,255,0.6)" />
+                </View>
+                <View style={styles.avatarWrapper}>
+                  <Avatar uri={buddyAvatarUrl} name={buddyName} size={50} />
+                  <Text style={[styles.userName, { color: '#FFFFFF', fontSize: 12 }]} numberOfLines={1}>{buddyName.split(' ')[0]}</Text>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.avatarWrapper}>
+                <Avatar uri={avatarUrl} name={userName} size={56} />
+                <Text style={[styles.userName, { color: '#FFFFFF' }]}>{userName}</Text>
+              </View>
+            )}
+            
             {taskName && (
               <View style={styles.taskBadge}>
                 <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
@@ -90,7 +113,8 @@ export const AchievementCard = forwardRef<any, AchievementCardProps>(
 
           {/* Branding */}
           <View style={styles.branding}>
-            <Text style={styles.brandText}>🍅 PomoMate</Text>
+            <Image source={require('../../../../assets/brand-logo.png')} style={styles.brandLogo} />
+            <Text style={styles.brandText}>PomoMate</Text>
           </View>
         </LinearGradient>
       </ViewShot>
@@ -125,9 +149,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  achievementEmoji: {
-    fontSize: 40,
-    marginBottom: 8,
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   title: {
     fontSize: 24,
@@ -141,38 +172,58 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
+  },
+  buddyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  avatarWrapper: {
+    alignItems: 'center',
+    width: 70,
+  },
+  buddyLinkIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 8,
+    marginBottom: 16,
   },
   userName: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 10,
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
   },
   taskBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 12,
+    marginTop: 12,
   },
   taskName: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
+    marginLeft: 6,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
     justifyContent: 'center',
+    marginBottom: 24,
   },
   statItem: {
     width: '47%',
     alignItems: 'center',
     paddingVertical: 14,
-    paddingHorizontal: 8,
     borderRadius: 16,
     borderWidth: 1,
     gap: 4,
@@ -186,16 +237,25 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     color: 'rgba(255,255,255,0.6)',
-    textAlign: 'center',
   },
   branding: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+    justifyContent: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    paddingTop: 16,
+  },
+  brandLogo: {
+    width: 20,
+    height: 20,
+    marginRight: 8,
+    borderRadius: 4,
   },
   brandText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.4)',
-    letterSpacing: 1,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.5)',
+    letterSpacing: 0.5,
   },
 });

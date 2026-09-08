@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../theme';
 import { AchievementCard } from './AchievementCard';
 import { useTranslation } from '../../../i18n';
-import { useUserStore, useStatsStore, useTaskStore } from '../../../state';
+import { useUserStore, useStatsStore, useTaskStore, useBuddyStore } from '../../../state';
 import { toLocalDateStr } from '../../../utils/datetime';
 
 interface AchievementCardModalProps {
@@ -24,6 +24,8 @@ export function AchievementCardModal({ visible, onClose, completedDurationSecond
   const user = useUserStore((s) => s.user);
   const stats = useStatsStore();
   const tasks = useTaskStore((s) => s.tasks);
+  const buddyProfile = useBuddyStore((s) => s.buddyProfile);
+  const activeSession = useBuddyStore((s) => s.activeSession);
 
   // Calculate today's stats
   const todayStr = toLocalDateStr();
@@ -98,6 +100,8 @@ export function AchievementCardModal({ visible, onClose, completedDurationSecond
             todayDurationMinutes={todayDurationMinutes}
             streak={stats.streak}
             completedDurationMinutes={completedDurationMinutes}
+            buddyName={activeSession && buddyProfile ? buddyProfile.displayName : undefined}
+            buddyAvatarUrl={activeSession && buddyProfile ? buddyProfile.avatarUrl : undefined}
           />
 
           {/* Action Buttons */}
