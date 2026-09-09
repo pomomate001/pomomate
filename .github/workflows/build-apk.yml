@@ -84,7 +84,7 @@ jobs:
           if ! grep -q "floating-bubble-view" android/app/build.gradle; then
             echo "" >> android/app/build.gradle
             echo "dependencies {" >> android/app/build.gradle
-            echo "    implementation 'io.github.torrydo:floating-bubble-view:0.6.6'" >> android/app/build.gradle
+            echo "    implementation 'io.github.torrydo:floating-bubble-view:0.6.5'" >> android/app/build.gradle
             echo "}" >> android/app/build.gradle
           fi
           

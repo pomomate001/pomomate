@@ -181,7 +181,7 @@ dependencies {
     }
 
     // Add floating bubble view library for the widget
-    implementation 'io.github.torrydo:floating-bubble-view:0.6.6'
+    implementation 'io.github.torrydo:floating-bubble-view:0.6.5'
 }
 
 apply plugin: 'com.google.gms.google-services'
