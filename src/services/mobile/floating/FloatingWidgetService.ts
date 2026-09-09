@@ -1,4 +1,4 @@
-import { NativeModules, DeviceEventEmitter, Platform, Alert } from 'react-native';
+import { NativeModules, DeviceEventEmitter, Platform } from 'react-native';
 
 const { FloatingWidget } = NativeModules;
 

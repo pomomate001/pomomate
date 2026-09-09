@@ -302,17 +302,6 @@ export function TimerScreen() {
     });
   }, [reset, start, syncTimerToBuddy]);
 
-  const handleReset = useCallback(() => {
-    reset();
-    const s = useTimerStore.getState();
-    syncTimerToBuddy({
-      isRunning: false,
-      targetEndTime: null,
-      remainingSeconds: s.remainingSeconds,
-      duration: s.duration,
-    });
-  }, [reset, syncTimerToBuddy]);
-
   const handleNext = useCallback(() => {
     next();
     const s = useTimerStore.getState();

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Pressable, Animated, StyleSheet, Text } from 'react-native';
 import { useColors } from '../theme';
 import { typography } from '../theme/typography';
@@ -15,8 +15,7 @@ interface HoldButtonProps {
 
 export function HoldButton({ onComplete, icon, label, holdDurationMs = 2000, style, variant = 'primary' }: HoldButtonProps) {
   const colors = useColors();
-  const [isHolding, setIsHolding] = useState(false);
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  const [progressAnim] = useState(() => new Animated.Value(0));
 
   const bgColors = {
     primary: colors.primary,
@@ -25,7 +24,6 @@ export function HoldButton({ onComplete, icon, label, holdDurationMs = 2000, sty
   };
 
   const handlePressIn = () => {
-    setIsHolding(true);
     Animated.timing(progressAnim, {
       toValue: 1,
       duration: holdDurationMs,
@@ -35,13 +33,11 @@ export function HoldButton({ onComplete, icon, label, holdDurationMs = 2000, sty
         onComplete();
         // Reset immediately after completion
         progressAnim.setValue(0);
-        setIsHolding(false);
       }
     });
   };
 
   const handlePressOut = () => {
-    setIsHolding(false);
     progressAnim.stopAnimation();
     Animated.timing(progressAnim, {
       toValue: 0,

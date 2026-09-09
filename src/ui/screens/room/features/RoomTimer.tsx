@@ -29,7 +29,7 @@ interface RoomTimerProps {
 
 export function RoomTimer({ roomId, isHost = true, onOpenAddTask }: RoomTimerProps) {
   const colors = useColors();
-  const { isRunning, start, finish, remainingSeconds, duration, mode, currentCycle, reset, next } = useTimerStore();
+  const { isRunning, start, finish, remainingSeconds, mode, currentCycle, reset, next } = useTimerStore();
 
   const allTasks = useTaskStore((s) => s.tasks);
   const toggleCompleted = useTaskStore((s) => s.toggleCompleted);
