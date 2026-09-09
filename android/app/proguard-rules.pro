@@ -17,6 +17,7 @@
 
 # PiP Module & Custom Native Code
 -keep class com.pomomate.app.** { *; }
+-keep class com.torrydo.floatingbubbleview.** { *; }
 
 # WebRTC & RevenueCat Purchases
 -keep class com.oney.WebRTCModule.** { *; }

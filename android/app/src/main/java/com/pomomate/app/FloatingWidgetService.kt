@@ -1,0 +1,136 @@
+package com.pomomate.app
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
+import android.view.LayoutInflater
+import android.widget.ImageButton
+import androidx.core.app.NotificationCompat
+import com.facebook.react.ReactApplication
+import com.facebook.react.modules.core.DeviceEventManagerModule
+import com.torrydo.floatingbubbleview.*
+
+import android.content.pm.ServiceInfo
+import android.os.Handler
+import android.os.Looper
+import androidx.core.app.ServiceCompat
+
+class FloatingWidgetService : ExpandableBubbleService() {
+
+    companion object {
+        const val CHANNEL_ID = "floating_widget_channel"
+        const val NOTIFICATION_ID = 101
+        
+        var instance: FloatingWidgetService? = null
+        var currentMicOn: Boolean = true
+        var currentCamOn: Boolean = false
+        var currentScreenShareOn: Boolean = false
+    }
+
+    private var micButton: ImageButton? = null
+    private var camButton: ImageButton? = null
+    private var screenButton: ImageButton? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        instance = this
+        startForegroundServiceWithNotification()
+        minimize()
+    }
+
+    override fun onDestroy() {
+        if (instance == this) {
+            instance = null
+        }
+        super.onDestroy()
+    }
+
+    private fun startForegroundServiceWithNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "PomoMate Widget",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+
+        val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("PomoMate")
+            .setContentText("Mini Mod aktif")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
+    }
+
+    override fun configBubble(): BubbleBuilder? {
+        val bubbleView = LayoutInflater.from(this).inflate(R.layout.floating_bubble, null)
+        bubbleView.setOnClickListener { expand() }
+
+        return BubbleBuilder(this)
+            .bubbleView(bubbleView)
+            .startLocation(0, 100)
+            .enableAnimateToEdge(true)
+            .distanceToClose(100)
+    }
+
+    override fun configExpandedBubble(): ExpandedBubbleBuilder? {
+        val menuView = LayoutInflater.from(this).inflate(R.layout.floating_menu, null)
+
+        micButton = menuView.findViewById(R.id.btn_mic)
+        camButton = menuView.findViewById(R.id.btn_cam)
+        screenButton = menuView.findViewById(R.id.btn_screen)
+        val closeButton = menuView.findViewById<ImageButton>(R.id.btn_close_menu)
+
+        updateButtonStates()
+
+        micButton?.setOnClickListener {
+            sendEventToJS("toggleMic")
+            // We expect JS to update states and call updateWidgetActions, 
+            // but we can optimistic UI here if wanted.
+        }
+        camButton?.setOnClickListener {
+            sendEventToJS("toggleCam")
+        }
+        screenButton?.setOnClickListener {
+            sendEventToJS("toggleScreen")
+        }
+        closeButton?.setOnClickListener {
+            minimize()
+        }
+
+        return ExpandedBubbleBuilder(this)
+            .expandedView(menuView)
+            .dimAmount(0.0f) // No dimming to keep it unintrusive
+            .fillMaxWidth(false)
+    }
+
+    fun updateButtonStates() {
+        Handler(Looper.getMainLooper()).post {
+            micButton?.setImageResource(if (currentMicOn) R.drawable.ic_pip_mic_on else R.drawable.ic_pip_mic_off)
+            camButton?.setImageResource(if (currentCamOn) R.drawable.ic_pip_cam_on else R.drawable.ic_pip_cam_off)
+            screenButton?.setImageResource(if (currentScreenShareOn) R.drawable.ic_pip_screen_on else R.drawable.ic_pip_screen_off)
+        }
+    }
+
+    private fun sendEventToJS(action: String) {
+        val reactContext = FloatingWidgetModule.contextRef
+            ?: (application as? ReactApplication)?.reactHost?.currentReactContext
+
+        reactContext?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+            ?.emit("onOverlayAction", action)
+    }
+}

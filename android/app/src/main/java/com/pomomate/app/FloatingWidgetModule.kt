@@ -1,0 +1,77 @@
+package com.pomomate.app
+
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import com.facebook.react.bridge.*
+
+class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
+    ReactContextBaseJavaModule(reactContext) {
+
+    companion object {
+        var contextRef: ReactApplicationContext? = null
+    }
+
+    init {
+        contextRef = reactContext
+    }
+
+    override fun getName(): String = "FloatingWidget"
+
+    @ReactMethod
+    fun checkPermission(promise: Promise) {
+        promise.resolve(Settings.canDrawOverlays(reactContext))
+    }
+
+    @ReactMethod
+    fun requestPermission(promise: Promise) {
+        if (!Settings.canDrawOverlays(reactContext)) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:" + reactContext.packageName)
+            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+            reactContext.startActivity(intent)
+        }
+        promise.resolve(true)
+    }
+
+    @ReactMethod
+    fun showWidget(promise: Promise) {
+        if (!Settings.canDrawOverlays(reactContext)) {
+            promise.reject("PERMISSION_DENIED", "Overlay permission not granted")
+            return
+        }
+        val intent = Intent(reactContext, FloatingWidgetService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            reactContext.startForegroundService(intent)
+        } else {
+            reactContext.startService(intent)
+        }
+        
+        // Go to Home screen
+        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        reactContext.startActivity(homeIntent)
+        
+        promise.resolve(true)
+    }
+
+    @ReactMethod
+    fun hideWidget(promise: Promise) {
+        val intent = Intent(reactContext, FloatingWidgetService::class.java)
+        reactContext.stopService(intent)
+        promise.resolve(true)
+    }
+
+    @ReactMethod
+    fun updateWidgetActions(micOn: Boolean, camOn: Boolean, screenShareOn: Boolean, promise: Promise) {
+        FloatingWidgetService.currentMicOn = micOn
+        FloatingWidgetService.currentCamOn = camOn
+        FloatingWidgetService.currentScreenShareOn = screenShareOn
+        FloatingWidgetService.instance?.updateButtonStates()
+        promise.resolve(true)
+    }
+}
