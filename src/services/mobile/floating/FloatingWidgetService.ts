@@ -1,7 +1,6 @@
-import { NativeModules, NativeEventEmitter, Platform, Alert } from 'react-native';
+import { NativeModules, DeviceEventEmitter, Platform, Alert } from 'react-native';
 
 const { FloatingWidget } = NativeModules;
-const eventEmitter = new NativeEventEmitter(FloatingWidget);
 
 class FloatingWidgetService {
   private listener: any;
@@ -54,7 +53,7 @@ class FloatingWidgetService {
       this.listener.remove();
     }
     
-    this.listener = eventEmitter.addListener('onOverlayAction', callback);
+    this.listener = DeviceEventEmitter.addListener('onOverlayAction', callback);
     
     return () => {
       if (this.listener) {

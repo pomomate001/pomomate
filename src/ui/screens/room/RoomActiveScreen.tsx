@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Share, Alert, AppState, Platform, Pressable, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Share, Alert, AppState, Platform, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +15,7 @@ import { RoomViewToggles } from './features/RoomViewToggles';
 import { RoomBottomBar } from './RoomBottomBar';
 import { RoomInviteSheet } from './RoomInviteSheet';
 import { AddTaskSheet } from '../tasks/AddTaskSheet';
-import { useRoomStore, useUserStore, useTaskStore, usePiPStore } from '../../../state';
+import { useRoomStore, useUserStore, useTaskStore } from '../../../state';
 import { mediaService } from '../../../services/mobile/media/MediaService';
 import { permissionManager } from '../../../services/mobile/permissions/PermissionManager';
 import { floatingWidgetService } from '../../../services/mobile/floating/FloatingWidgetService';
@@ -914,44 +914,6 @@ const styles = StyleSheet.create({
     left: spacing.sm,
     right: spacing.sm,
     zIndex: 50,
-  },
-  /* ─── PiP Dynamic Island styles (compact status pill) ─── */
-  pipContainer: {
-    flex: 1,
-    backgroundColor: '#0A0C14',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-  },
-  pipModernWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(20, 22, 35, 0.4)',
-    gap: 8,
-  },
-  pipDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#22C55E',
-  },
-  pipDotRed: {
-    backgroundColor: '#EF4444',
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  pipRoomName: {
-    color: '#E2E8F0',
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.5,
   },
   /* ─── Mini Mod floating button ─── */
   miniModButton: {

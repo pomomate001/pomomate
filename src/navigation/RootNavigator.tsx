@@ -14,10 +14,9 @@ import { TimerStack, StatsStack, RoomStack, ProfileStack } from './stacks';
 import { AuthNavigator } from './AuthNavigator';
 import { UpdatePasswordModal } from '../ui/screens/auth';
 import type { RootTabParamList } from './types';
-import { useUserStore, useFriendsStore, usePiPStore, useRoomStore, useSettingsStore } from '../state';
+import { useUserStore, useFriendsStore, useRoomStore, useSettingsStore } from '../state';
 import { authService, supabase } from '../services/auth';
 import { countryService } from '../services/location/CountryService';
-import { PiPFloatingBar } from '../ui/screens/pip/PiPFloatingBar';
 import { useTranslation } from '../i18n';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -42,7 +41,6 @@ function MainTabs() {
 
   const user = useUserStore((s) => s.user);
   const incomingRequests = useFriendsStore((s) => s.incomingRequests);
-  const isInPiP = usePiPStore((s) => s.isInPiP);
   const currentRoom = useRoomStore((s) => s.currentRoom);
   const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
   const isVisualWallpaper = backgroundEffectId.startsWith('video_') || backgroundEffectId.startsWith('image_');
@@ -62,8 +60,7 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => {
         const routeName = getFocusedRouteNameFromRoute(route) ?? '';
-        const isRoomActive = !!currentRoom || (route.name === 'RoomTab' && routeName === 'RoomActive');
-        const hideTabBar = isInPiP || isRoomActive;
+        const hideTabBar = !!currentRoom || (route.name === 'RoomTab' && routeName === 'RoomActive');
 
         return {
           headerShown: false,
@@ -157,9 +154,6 @@ export function RootNavigator() {
     };
   }, [setUser]);
 
-  const isInPiP = usePiPStore((state) => state.isInPiP);
-  const currentRoom = useRoomStore((state) => state.currentRoom);
-
   if (!user) {
     return <AuthNavigator />;
   }
@@ -168,11 +162,6 @@ export function RootNavigator() {
     <View style={{ flex: 1 }}>
       <MainTabs />
       <UpdatePasswordModal />
-      {isInPiP && !currentRoom && (
-        <View style={StyleSheet.absoluteFill}>
-          <PiPFloatingBar />
-        </View>
-      )}
     </View>
   );
 }

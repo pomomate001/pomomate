@@ -14,8 +14,7 @@ import { adMobService, revenueCatService, referralService } from './src/services
 import { authService } from './src/services/auth';
 import { friendService } from './src/services/friends/FriendService';
 import { roomService, roomInviteService } from './src/services/room';
-import { pipService } from './src/services/mobile/pip/PiPService';
-import { useTimerStore, useUserStore, useSettingsStore, useTaskStore, useRoomStore, usePiPStore } from './src/state';
+import { useTimerStore, useUserStore, useSettingsStore, useTaskStore, useRoomStore } from './src/state';
 import { JoinLandingScreen } from './src/ui/screens/JoinLandingScreen';
 import * as WebBrowser from 'expo-web-browser';
 import * as SplashScreen from 'expo-splash-screen';
@@ -369,14 +368,6 @@ export default function App() {
       deactivateKeepAwake();
     }
   }, [isTimerRunning]);
-
-  // Sync native PiP state to global store
-  useEffect(() => {
-    const unsub = pipService.addPiPListener((inPiP) => {
-      usePiPStore.getState().setIsInPiP(inPiP);
-    });
-    return () => unsub();
-  }, []);
 
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location.pathname.startsWith('/join')) {
     return <JoinLandingScreen />;
