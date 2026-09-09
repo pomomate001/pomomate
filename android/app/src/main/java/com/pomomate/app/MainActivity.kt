@@ -1,23 +1,13 @@
 package com.pomomate.app
 import expo.modules.splashscreen.SplashScreenManager
 
-import android.app.PictureInPictureParams
-import android.app.PendingIntent
-import android.app.RemoteAction
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.content.res.Configuration
-import android.graphics.drawable.Icon
-import android.os.Build
 import android.os.Bundle
-import android.util.Rational
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
+import android.os.Build
 
 import com.oney.WebRTCModule.WebRTCModuleOptions
 
@@ -27,20 +17,6 @@ class MainActivity : ReactActivity() {
 
   companion object {
     var instance: MainActivity? = null
-    var isInPiPMode: Boolean = false
-    var autoPiPEnabled: Boolean = false
-  }
-
-  private var pipReceiver: BroadcastReceiver? = null
-  private var currentMicOn: Boolean = true
-  private var currentCamOn: Boolean = false
-  private var currentScreenShareOn: Boolean = false
-
-  override fun onUserLeaveHint() {
-    super.onUserLeaveHint()
-    if (autoPiPEnabled) {
-      enterPiPMode()
-    }
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,39 +33,9 @@ class MainActivity : ReactActivity() {
 
     super.onCreate(null)
     instance = this
-
-    // Register receiver for PiP RemoteActions
-    val filter = IntentFilter().apply {
-      addAction("com.pomomate.app.ACTION_TOGGLE_MIC")
-      addAction("com.pomomate.app.ACTION_TOGGLE_CAM")
-      addAction("com.pomomate.app.ACTION_TOGGLE_SCREEN")
-    }
-    pipReceiver = object : BroadcastReceiver() {
-      override fun onReceive(context: Context?, intent: Intent?) {
-        when (intent?.action) {
-          "com.pomomate.app.ACTION_TOGGLE_MIC" -> PiPModule.notifyPiPAction("toggleMic")
-          "com.pomomate.app.ACTION_TOGGLE_CAM" -> PiPModule.notifyPiPAction("toggleCam")
-          "com.pomomate.app.ACTION_TOGGLE_SCREEN" -> PiPModule.notifyPiPAction("toggleScreen")
-        }
-      }
-    }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-      registerReceiver(pipReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-    } else {
-      registerReceiver(pipReceiver, filter)
-    }
   }
 
   override fun onDestroy() {
-    autoPiPEnabled = false
-    isInPiPMode = false
-    pipReceiver?.let {
-      try {
-        unregisterReceiver(it)
-      } catch (e: Exception) {
-      }
-      pipReceiver = null
-    }
     if (instance == this) {
       instance = null
     }
@@ -118,96 +64,6 @@ class MainActivity : ReactActivity() {
   }
 
   /**
-   * Enter Picture-in-Picture mode with slim aspect ratio and native actions
-   */
-  fun enterPiPMode() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      val builder = PictureInPictureParams.Builder()
-        .setAspectRatio(Rational(239, 100))
-
-      val actions = createPiPActions(currentMicOn, currentCamOn, currentScreenShareOn)
-      if (actions.isNotEmpty()) {
-        builder.setActions(actions)
-      }
-
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        builder.setAutoEnterEnabled(autoPiPEnabled)
-      }
-      enterPictureInPictureMode(builder.build())
-    }
-  }
-
-  fun updatePiPActions(micOn: Boolean, camOn: Boolean, screenShareOn: Boolean) {
-    currentMicOn = micOn
-    currentCamOn = camOn
-    currentScreenShareOn = screenShareOn
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      val builder = PictureInPictureParams.Builder()
-        .setAspectRatio(Rational(239, 100))
-      val actions = createPiPActions(micOn, camOn, screenShareOn)
-      if (actions.isNotEmpty()) {
-        builder.setActions(actions)
-      }
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        builder.setAutoEnterEnabled(autoPiPEnabled)
-      }
-      setPictureInPictureParams(builder.build())
-    }
-  }
-
-  private fun createPiPActions(micOn: Boolean, camOn: Boolean, screenShareOn: Boolean): List<RemoteAction> {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return emptyList()
-    val actions = mutableListOf<RemoteAction>()
-
-    try {
-      val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-      } else {
-        PendingIntent.FLAG_UPDATE_CURRENT
-      }
-
-      val micIntent = Intent("com.pomomate.app.ACTION_TOGGLE_MIC").setPackage(packageName)
-      val micPendingIntent = PendingIntent.getBroadcast(this, 101, micIntent, flags)
-      val micIcon = Icon.createWithResource(this, if (micOn) R.drawable.ic_pip_mic_on else R.drawable.ic_pip_mic_off)
-      actions.add(RemoteAction(micIcon, if (micOn) "Mute" else "Unmute", if (micOn) "Mute Mic" else "Unmute Mic", micPendingIntent))
-
-      val camIntent = Intent("com.pomomate.app.ACTION_TOGGLE_CAM").setPackage(packageName)
-      val camPendingIntent = PendingIntent.getBroadcast(this, 102, camIntent, flags)
-      val camIcon = Icon.createWithResource(this, if (camOn) R.drawable.ic_pip_cam_on else R.drawable.ic_pip_cam_off)
-      actions.add(RemoteAction(camIcon, if (camOn) "Cam Off" else "Cam On", if (camOn) "Turn Off Cam" else "Turn On Cam", camPendingIntent))
-
-      val screenIntent = Intent("com.pomomate.app.ACTION_TOGGLE_SCREEN").setPackage(packageName)
-      val screenPendingIntent = PendingIntent.getBroadcast(this, 103, screenIntent, flags)
-      val screenIcon = Icon.createWithResource(this, if (screenShareOn) R.drawable.ic_pip_screen_on else R.drawable.ic_pip_screen_off)
-      actions.add(RemoteAction(screenIcon, if (screenShareOn) "Stop Share" else "Share Screen", if (screenShareOn) "Stop Screen Share" else "Start Screen Share", screenPendingIntent))
-    } catch (e: Exception) {
-    }
-    return actions
-  }
-
-  fun updateAutoPiP(enabled: Boolean) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-      val builder = PictureInPictureParams.Builder()
-        .setAspectRatio(Rational(239, 100))
-        .setAutoEnterEnabled(enabled)
-      val actions = createPiPActions(currentMicOn, currentCamOn, currentScreenShareOn)
-      if (actions.isNotEmpty()) {
-        builder.setActions(actions)
-      }
-      setPictureInPictureParams(builder.build())
-    }
-  }
-
-  override fun onPictureInPictureModeChanged(
-    isInPictureInPictureMode: Boolean,
-    newConfig: Configuration
-  ) {
-    super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-    isInPiPMode = isInPictureInPictureMode
-    PiPModule.notifyPiPChanged(isInPictureInPictureMode)
-  }
-
-  /**
     * Align the back button behavior with Android S
     * where moving root activities to background instead of finishing activities.
     * @see <a href="https://developer.android.com/reference/android/app/Activity#onBackPressed()">onBackPressed</a>
@@ -226,4 +82,3 @@ class MainActivity : ReactActivity() {
       super.invokeDefaultOnBackPressed()
   }
 }
-

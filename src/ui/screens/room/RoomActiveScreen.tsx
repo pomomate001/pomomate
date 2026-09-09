@@ -18,7 +18,7 @@ import { AddTaskSheet } from '../tasks/AddTaskSheet';
 import { useRoomStore, useUserStore, useTaskStore, usePiPStore } from '../../../state';
 import { mediaService } from '../../../services/mobile/media/MediaService';
 import { permissionManager } from '../../../services/mobile/permissions/PermissionManager';
-import { pipService } from '../../../services/mobile/pip/PiPService';
+import { floatingWidgetService } from '../../../services/mobile/floating/FloatingWidgetService';
 import { generateId } from '../../../utils/id';
 import { nowIso } from '../../../utils/datetime';
 import { useTranslation } from '../../../i18n';
@@ -42,18 +42,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [showAddTask, setShowAddTask] = useState(false);
   const [isScreenShrunk, setIsScreenShrunk] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
-  const [isInPiP, setIsInPiP] = useState(false);
-
-  // Detect PiP mode changes via native listener & AppState
+  // Detect Floating Widget action events
   useEffect(() => {
     if (Platform.OS !== 'android') return;
 
-    const removePiPListener = pipService.addPiPListener((inPiP) => {
-      setIsInPiP(inPiP);
-      usePiPStore.getState().setIsInPiP(inPiP);
-    });
-
-    const removeActionListener = pipService.addPiPActionListener((action) => {
+    const removeActionListener = floatingWidgetService.addActionListener((action) => {
       if (action === 'toggleMic') {
         handleToggleMicRef.current?.();
       } else if (action === 'toggleCam') {
@@ -63,37 +56,30 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       }
     });
 
-    const appStateSub = AppState.addEventListener('change', async () => {
-      const inPiP = await pipService.isInPiPMode();
-      setIsInPiP(inPiP);
-      usePiPStore.getState().setIsInPiP(inPiP);
-    });
-
-    pipService.setAutoPiPEnabled(true);
-
     return () => {
-      removePiPListener();
       removeActionListener();
-      appStateSub.remove();
-      pipService.setAutoPiPEnabled(false);
-      usePiPStore.getState().setIsInPiP(false);
     };
   }, []);
 
 
 
-  const handleEnterPiP = useCallback(async () => {
-    const supported = await pipService.isPiPSupported();
-    if (!supported) {
-      Alert.alert('Mini Mod Desteklenmiyor', 'Cihazınız Picture-in-Picture (Mini Mod) özelliğini desteklemiyor.');
+  const handleEnterMiniMode = useCallback(async () => {
+    if (Platform.OS !== 'android') return;
+    const hasPermission = await floatingWidgetService.checkPermission();
+    if (!hasPermission) {
+      Alert.alert(
+        'İzin Gerekli',
+        'Mini Modu kullanabilmek için PomoMate\'in "Diğer uygulamaların üzerinde göster" iznine ihtiyacı var.',
+        [
+          { text: 'İptal', style: 'cancel' },
+          { text: 'Ayarlara Git', onPress: () => floatingWidgetService.requestPermission() },
+        ]
+      );
       return;
     }
-    const success = await pipService.enterPiP();
+    const success = await floatingWidgetService.showWidget();
     if (!success) {
-      Alert.alert(
-        'Mini Mod Başlatılamadı',
-        'Lütfen telefonunuzun Ayarlar > Uygulamalar > PomoMate > Resim İçinde Resim (PiP) izninin açık olduğundan emin olun.'
-      );
+      Alert.alert('Hata', 'Mini Mod başlatılamadı.');
     }
   }, []);
 
@@ -169,6 +155,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       if (user?.id) {
         void roomService.leaveRoom(roomId, user.id, isHost);
       }
+      void floatingWidgetService.hideWidget();
     };
   }, [roomId, user, room?.hostId, isHost]);
 
@@ -573,12 +560,10 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     handleToggleScreenRef.current = handleToggleScreen;
   });
 
-  // Sync mic/cam/screen state to native Android PiP actions
+  // Sync mic/cam/screen state to native Android Floating Widget
   useEffect(() => {
-    if (isInPiP) {
-      void pipService.updatePiPActions(micOn, camOn, screenShareOn);
-    }
-  }, [micOn, camOn, screenShareOn, isInPiP]);
+    void floatingWidgetService.updateWidgetActions(micOn, camOn, screenShareOn);
+  }, [micOn, camOn, screenShareOn]);
 
   /* ─── Share Handler ─── */
 
@@ -747,22 +732,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const activeSharedFile = sharedFiles.find(f => f.id === activeSharedFileId) || null;
 
-  /* ─── PiP Compact View (Dynamic Island — Status Only, Controls via Native Actions) ─── */
-  const { height: windowHeight } = useWindowDimensions();
-  const isActuallyPiP = isInPiP || windowHeight < 400; // Robust fallback check
-
-  if (isActuallyPiP) {
-    return (
-      <View style={styles.pipContainer}>
-        <View style={styles.pipModernWrapper}>
-          <View style={[styles.pipDot, screenShareOn && styles.pipDotRed]} />
-          <Text style={styles.pipRoomName} numberOfLines={1}>
-            {room?.name || 'Canlı'}
-          </Text>
-        </View>
-      </View>
-    );
-  }
+  // Render the normal UI
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -845,7 +815,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
               onRemoveFile={() => {
                 if (activeSharedFile) handleRemoveFile(activeSharedFile.id);
               }}
-              onEnterPiP={handleEnterPiP}
+              onEnterPiP={handleEnterMiniMode}
               onStopScreenShare={screenShareOn ? handleToggleScreen : undefined}
             />
           </View>
@@ -875,14 +845,14 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         showShrinkToggle={showShrinkToggle}
         isShrunk={isScreenShrunk}
         onToggleShrink={() => setIsScreenShrunk(!isScreenShrunk)}
-        onEnterPiP={handleEnterPiP}
+        onEnterPiP={handleEnterMiniMode}
       />
 
       {/* ─── Mini Mod (PiP) Floating Button — only when screen sharing ─── */}
       {screenShareOn && (
         <Pressable
           style={styles.miniModButton}
-          onPress={handleEnterPiP}
+          onPress={handleEnterMiniMode}
         >
           <Ionicons name="contract-outline" size={18} color="#FFF" />
           <Text style={styles.miniModText}>Mini Mod</Text>

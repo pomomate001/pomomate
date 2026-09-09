@@ -100,52 +100,108 @@ export class StatsService {
 
   /**
    * Syncs user stats from Supabase to restore totals and daily progress on reinstall / update.
+   * Merges remote pomodoro data and completed task data with existing local state.
    */
   async syncUserStats(userId: string): Promise<void> {
     if (!userId) return;
 
     try {
-      const { data, error } = await supabase
+      // Fetch pomodoro sessions from Supabase
+      const { data: sessionData, error: sessionError } = await supabase
         .from('pomodoro_sessions')
         .select('duration_seconds, mode, completed_at')
         .eq('user_id', userId)
         .eq('mode', 'work')
         .order('completed_at', { ascending: true });
 
-      if (error || !data || data.length === 0) return;
+      // Fetch completed tasks from Supabase
+      const { data: taskData, error: taskError } = await supabase
+        .from('completed_tasks')
+        .select('completed_at')
+        .eq('user_id', userId)
+        .order('completed_at', { ascending: true });
 
-      const dailyMap = new Map<string, { totalSeconds: number; pomodorosCompleted: number }>();
-      let totalSeconds = 0;
-      let totalPomodoros = 0;
-
-      for (const row of data) {
-        const sec = Number(row.duration_seconds || 0);
-        totalSeconds += sec;
-        totalPomodoros += 1;
-
-        const dateStr = toLocalDateStr(new Date(row.completed_at));
-        const current = dailyMap.get(dateStr) || { totalSeconds: 0, pomodorosCompleted: 0 };
-        current.totalSeconds += sec;
-        current.pomodorosCompleted += 1;
-        dailyMap.set(dateStr, current);
+      if (sessionError) {
+        logger.warn('[StatsService] syncUserStats session fetch error:', sessionError.message);
+      }
+      if (taskError) {
+        logger.warn('[StatsService] syncUserStats task fetch error:', taskError.message);
       }
 
-      const dailyStats: DailyStat[] = Array.from(dailyMap.entries()).map(([date, val]) => ({
-        date,
-        totalSeconds: val.totalSeconds,
-        pomodorosCompleted: val.pomodorosCompleted,
-        tasksCompleted: 0,
-      }));
+      // Build remote daily map from pomodoro sessions
+      const remoteDailyMap = new Map<string, { totalSeconds: number; pomodorosCompleted: number; tasksCompleted: number }>();
+      let remoteTotalSeconds = 0;
+      let remoteTotalPomodoros = 0;
 
-      // Merge with local store
+      if (sessionData && sessionData.length > 0) {
+        for (const row of sessionData) {
+          const sec = Number(row.duration_seconds || 0);
+          remoteTotalSeconds += sec;
+          remoteTotalPomodoros += 1;
+
+          const dateStr = toLocalDateStr(new Date(row.completed_at));
+          const current = remoteDailyMap.get(dateStr) || { totalSeconds: 0, pomodorosCompleted: 0, tasksCompleted: 0 };
+          current.totalSeconds += sec;
+          current.pomodorosCompleted += 1;
+          remoteDailyMap.set(dateStr, current);
+        }
+      }
+
+      // Add completed task counts to daily map
+      let remoteTotalTasks = 0;
+      if (taskData && taskData.length > 0) {
+        for (const row of taskData) {
+          remoteTotalTasks += 1;
+          const dateStr = toLocalDateStr(new Date(row.completed_at));
+          const current = remoteDailyMap.get(dateStr) || { totalSeconds: 0, pomodorosCompleted: 0, tasksCompleted: 0 };
+          current.tasksCompleted += 1;
+          remoteDailyMap.set(dateStr, current);
+        }
+      }
+
+      // If no remote data at all, skip sync
+      if (remoteTotalPomodoros === 0 && remoteTotalTasks === 0) return;
+
+      // Merge with local store — take the maximum of each metric per day
       const localStore = useStatsStore.getState();
-      if (totalPomodoros > localStore.totalPomodoros) {
-        useStatsStore.setState({
-          totalPomodoros,
-          totalWorkSeconds: totalSeconds,
-          daily: dailyStats,
-        });
+      const localDailyMap = new Map<string, DailyStat>();
+      for (const d of localStore.daily) {
+        localDailyMap.set(d.date, { ...d });
       }
+
+      // Merge: for each date, take the max of remote and local values
+      for (const [date, remote] of remoteDailyMap.entries()) {
+        const local = localDailyMap.get(date);
+        if (local) {
+          localDailyMap.set(date, {
+            date,
+            totalSeconds: Math.max(local.totalSeconds, remote.totalSeconds),
+            pomodorosCompleted: Math.max(local.pomodorosCompleted, remote.pomodorosCompleted),
+            tasksCompleted: Math.max(local.tasksCompleted, remote.tasksCompleted),
+          });
+        } else {
+          localDailyMap.set(date, {
+            date,
+            totalSeconds: remote.totalSeconds,
+            pomodorosCompleted: remote.pomodorosCompleted,
+            tasksCompleted: remote.tasksCompleted,
+          });
+        }
+      }
+
+      const mergedDaily: DailyStat[] = Array.from(localDailyMap.values());
+
+      // Use max of remote vs local totals
+      const mergedTotalPomodoros = Math.max(remoteTotalPomodoros, localStore.totalPomodoros);
+      const mergedTotalWorkSeconds = Math.max(remoteTotalSeconds, localStore.totalWorkSeconds);
+      const mergedTotalTasks = Math.max(remoteTotalTasks, localStore.totalTasksCompleted);
+
+      useStatsStore.setState({
+        totalPomodoros: mergedTotalPomodoros,
+        totalWorkSeconds: mergedTotalWorkSeconds,
+        totalTasksCompleted: mergedTotalTasks,
+        daily: mergedDaily,
+      });
     } catch (err: any) {
       logger.warn('[StatsService] syncUserStats error:', err);
     }
@@ -153,3 +209,4 @@ export class StatsService {
 }
 
 export const statsService = new StatsService();
+
