@@ -11,6 +11,7 @@ import { TimerFaceCircle } from './TimerFaceCircle';
 import { TimerFaceDigital } from './TimerFaceDigital';
 import { TimerFaceArc } from './TimerFaceArc';
 import { TimerFaceNeon } from './TimerFaceNeon';
+import { TimerFaceForest } from './TimerFaceForest';
 import type { TimerMode } from '../../../types';
 
 interface TimerFaceProps {
@@ -25,6 +26,8 @@ interface TimerFaceProps {
 export function TimerFace({ designId, onPress, ...rest }: TimerFaceProps) {
   const face = (() => {
     switch (designId) {
+      case 'forest':
+        return <TimerFaceForest {...rest} />;
       case 'circle':
         return <TimerFaceCircle {...rest} />;
       case 'digital':

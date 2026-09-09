@@ -4,6 +4,7 @@ import { useTimerStore } from '../../state/timerStore';
 import { useTaskStore } from '../../state/taskStore';
 import { useStatsStore } from '../../state/statsStore';
 import { useBuddyStore } from '../../state/buddyStore';
+import { timerDesigns } from '../../ui/screens/timer/timerDesigns';
 import type { Task } from '../../types';
 
 import { toLocalDateStr } from '../../utils/datetime';
@@ -46,6 +47,43 @@ describe('Timer and Settings Synchronization', () => {
     useTimerStore.getState().setMode('longBreak');
     expect(useTimerStore.getState().duration).toBe(1200);
     expect(useTimerStore.getState().remainingSeconds).toBe(1200);
+  });
+
+  it('finishes a running timer by resetting remainingSeconds to full duration and stopping', () => {
+    useTimerStore.getState().start();
+    expect(useTimerStore.getState().isRunning).toBe(true);
+    expect(useTimerStore.getState().targetEndTime).not.toBeNull();
+
+    // Timer ticks down
+    useTimerStore.getState().tick();
+
+    // User long-presses Bitir (finish)
+    useTimerStore.getState().finish();
+
+    expect(useTimerStore.getState().isRunning).toBe(false);
+    expect(useTimerStore.getState().targetEndTime).toBeNull();
+    expect(useTimerStore.getState().remainingSeconds).toBe(useTimerStore.getState().duration);
+  });
+
+  it('restarts a timer by resetting to full duration and starting immediately', () => {
+    useTimerStore.getState().start();
+    useTimerStore.getState().tick();
+
+    // Restart: reset then start
+    useTimerStore.getState().reset();
+    useTimerStore.getState().start();
+
+    const state = useTimerStore.getState();
+    expect(state.isRunning).toBe(true);
+    expect(state.remainingSeconds).toBe(state.duration);
+    expect(state.targetEndTime).toBeGreaterThan(Date.now());
+  });
+
+  it('includes the new Forest timer design in timerDesigns registry', () => {
+    const forest = timerDesigns.find((d) => d.id === 'forest');
+    expect(forest).toBeDefined();
+    expect(forest?.label).toBe('Forest');
+    expect(forest?.free).toBe(true);
   });
 });
 
@@ -307,6 +345,30 @@ describe('Stats Tracking and Daily Stats', () => {
       expect(useTimerStore.getState().duration).toBe(1500);
       expect(useTimerStore.getState().remainingSeconds).toBe(1500);
       expect(useTimerStore.getState().isRunning).toBe(true);
+    });
+
+    it('synchronizes buddy finish action by stopping the timer and restoring full duration', () => {
+      // Both peers are running a 1500s session
+      useTimerStore.getState().setTimerState({
+        duration: 1500,
+        remainingSeconds: 1200,
+        isRunning: true,
+        mode: 'work',
+        targetEndTime: Date.now() + 1200000,
+      });
+
+      // Peer finishes (stops) the session early
+      useTimerStore.getState().setTimerState({
+        isRunning: false,
+        targetEndTime: null,
+        remainingSeconds: 1500,
+        duration: 1500,
+      });
+
+      const s = useTimerStore.getState();
+      expect(s.isRunning).toBe(false);
+      expect(s.targetEndTime).toBeNull();
+      expect(s.remainingSeconds).toBe(1500);
     });
 
     it('records sent emojis into buddy store recentEmojis immediately', () => {

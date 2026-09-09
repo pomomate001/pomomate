@@ -15,6 +15,7 @@ export interface TimerDesignDef {
 
 export const timerDesigns: TimerDesignDef[] = [
   { id: 'minimal', label: 'Minimalist', free: true, description: 'Yalnızca süreye odaklanan sade görünüm' },
+  { id: 'forest', label: 'Forest', free: true, description: 'Kalın fontlu, sade odaklanma görünümü' },
   { id: 'circle', label: 'Klasik Daire', free: true, description: 'Tam dairesel dolum çemberi' },
   { id: 'digital', label: 'Modern Dijital', free: true, description: 'LED dijital saat göstergesi' },
   { id: 'arc', label: 'Kavisli Yay', free: false, description: 'Modern kavisli sayaç yayı' },

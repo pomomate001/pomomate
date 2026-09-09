@@ -2,6 +2,29 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
+## [1.3.23] - 2026-09-09
+
+### Added
+- **Forest-Style Timer Design (`TimerFaceForest`)**:
+  - Added new clean, bold typography timer face inspired by the Forest app.
+  - Registered in `timerDesigns` as "Forest", freely accessible to all users.
+- **"Odaklanmaya Başla" (Start Focusing) Initial Button**:
+  - When the timer is idle, redundant control panel buttons are hidden and replaced with a single prominent "Odaklanmaya Başla" button.
+  - Automatically transitions to the active control panel once the pomodoro begins.
+- **Hold-to-Activate Controls (`HoldButton`)**:
+  - Implemented 2-second press-and-hold interaction with an animated line-shaped progress bar and background fill.
+  - Added to "Yeniden Başlat" (Restart) and "Bitir" (Finish) buttons to prevent accidental interruptions.
+- **Pro-Only Skip Action**:
+  - "Molaya Geç" (Skip) button is now restricted to Pro/Premium subscribers.
+
+### Changed
+- **Permanent Removal of Pause (Durdur)**:
+  - Removed pause capability globally from `useTimerStore`, UI screens, and room timers.
+  - Once started, pomodoros can only be completed, restarted, or finished/cancelled.
+  - Durdur has been replaced by "Bitir" (Finish).
+- **Realtime Supabase & Buddy Sync**:
+  - Full synchronization of start, restart, and finish actions across multiplayer buddy sessions and Supabase database.
+
 ## [1.3.22] - 2026-09-09
 
 ### Added

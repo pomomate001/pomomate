@@ -56,7 +56,7 @@ export function RoomTimerBar({ roomId, isHost = true, onOpenAddTask }: RoomTimer
     mode,
     currentCycle,
     start,
-    pause,
+    finish,
     reset,
     next,
   } = useTimerStore();
@@ -80,15 +80,14 @@ export function RoomTimerBar({ roomId, isHost = true, onOpenAddTask }: RoomTimer
 
   /* ─── Handlers ─── */
 
-  const handleBarTap = useCallback(() => {
-    if (isHost) {
-      if (isRunning) {
-        pause();
-      } else {
-        start();
-      }
+  const handleBarTap = React.useCallback(() => {
+    if (!isHost) return;
+    if (isRunning) {
+      finish();
+    } else {
+      start();
     }
-  }, [isHost, isRunning, pause, start]);
+  }, [isHost, isRunning, finish, start]);
 
   const handleToggleExpand = useCallback(() => {
     expanded.value = withSpring(expanded.value > 0.5 ? 0 : 1, {
@@ -208,15 +207,15 @@ export function RoomTimerBar({ roomId, isHost = true, onOpenAddTask }: RoomTimer
 
               <Pressable
                 style={[styles.controlBtn, { backgroundColor: `${accentColor}30` }]}
-                onPress={isRunning ? pause : start}
+                onPress={isRunning ? finish : start}
               >
                 <Ionicons
-                  name={isRunning ? 'pause' : 'play'}
+                  name={isRunning ? 'stop' : 'play'}
                   size={20}
                   color={accentColor}
                 />
                 <Text style={[styles.controlLabel, { color: accentColor }]}>
-                  {isRunning ? 'Durdur' : 'Başlat'}
+                  {isRunning ? 'Bitir' : 'Başlat'}
                 </Text>
               </Pressable>
 

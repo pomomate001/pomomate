@@ -13,3 +13,4 @@ export { ProgressBar } from './ProgressBar';
 export { BottomSheet } from './BottomSheet';
 export * from './logo';
 
+export { HoldButton } from './HoldButton';

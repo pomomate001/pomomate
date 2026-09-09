@@ -16,6 +16,7 @@ import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { IconButton } from '../../components/IconButton';
 import { Button } from '../../components/Button';
+import { HoldButton } from '../../components/HoldButton';
 import { TimerFace } from './TimerFace';
 import { BackgroundEffect, FocusAnimation } from '../../animations';
 import { notificationService } from '../../../services/mobile';
@@ -50,7 +51,7 @@ export function TimerScreen() {
     mode,
     currentCycle,
     start,
-    pause,
+    finish,
     reset,
     tick,
     next,
@@ -79,6 +80,7 @@ export function TimerScreen() {
   const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
   const workAnimationId = useSettingsStore((s) => s.workAnimationId);
   const breakAnimationId = useSettingsStore((s) => s.breakAnimationId);
+  const isPremium = useSettingsStore((s) => s.isPremium);
   const isVisualWallpaperActive =
     backgroundEffectId.startsWith('video_') ||
     backgroundEffectId.startsWith('image_');
@@ -277,8 +279,8 @@ export function TimerScreen() {
     });
   }, [start, syncTimerToBuddy]);
 
-  const handlePause = useCallback(() => {
-    pause();
+  const handleFinish = useCallback(() => {
+    finish();
     const s = useTimerStore.getState();
     syncTimerToBuddy({
       isRunning: false,
@@ -286,7 +288,19 @@ export function TimerScreen() {
       duration: s.duration,
       remainingSeconds: s.remainingSeconds,
     });
-  }, [pause, syncTimerToBuddy]);
+  }, [finish, syncTimerToBuddy]);
+
+  const handleRestart = useCallback(() => {
+    reset();
+    start();
+    const s = useTimerStore.getState();
+    syncTimerToBuddy({
+      isRunning: true,
+      targetEndTime: Date.now() + s.remainingSeconds * 1000,
+      remainingSeconds: s.remainingSeconds,
+      duration: s.duration,
+    });
+  }, [reset, start, syncTimerToBuddy]);
 
   const handleReset = useCallback(() => {
     reset();
@@ -575,30 +589,41 @@ export function TimerScreen() {
         <View style={styles.bottomSection}>
           {/* Controls */}
           <View style={styles.controls}>
-            <IconButton
-              icon={<Ionicons name="refresh" size={15} color="#FFFFFF" />}
-              onPress={handleReset}
-              size={32}
-              style={{ backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)', borderWidth: 1 }}
-            />
-            <IconButton
-              icon={
-                <Ionicons
-                  name={isRunning ? 'pause' : 'play'}
-                  size={21}
-                  color={colors.textInverse}
+            {!isRunning ? (
+              <Button
+                title="Odaklanmaya Başla"
+                onPress={handleStart}
+                size="lg"
+                style={{ width: '100%', maxWidth: 280, borderRadius: 24, height: 54, shadowColor: colors.primary, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 6 }}
+              />
+            ) : (
+              <>
+                <HoldButton
+                  icon={<Ionicons name="refresh" size={18} color="#FFFFFF" />}
+                  label="Yeniden Başlat"
+                  onComplete={handleRestart}
+                  variant="ghost"
+                  style={{ flex: 1, maxWidth: 145 }}
                 />
-              }
-              onPress={isRunning ? handlePause : handleStart}
-              size={42}
-              style={{ backgroundColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 6 }}
-            />
-            <IconButton
-              icon={<Ionicons name="play-skip-forward" size={15} color="#FFFFFF" />}
-              onPress={handleNext}
-              size={32}
-              style={{ backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)', borderWidth: 1 }}
-            />
+
+                <HoldButton
+                  icon={<Ionicons name="stop" size={18} color="#FFFFFF" />}
+                  label="Bitir"
+                  onComplete={handleFinish}
+                  variant="danger"
+                  style={{ flex: 1, maxWidth: 145 }}
+                />
+                
+                {isPremium && (
+                  <IconButton
+                    icon={<Ionicons name="play-skip-forward" size={18} color="#FFFFFF" />}
+                    onPress={handleNext}
+                    size={48}
+                    style={{ backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)', borderWidth: 1 }}
+                  />
+                )}
+              </>
+            )}
           </View>
 
           {/* Tasks Section */}
@@ -763,7 +788,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xl,
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
     marginBottom: spacing.sm, // Boşluk daraltıldı
     width: '100%',
   },

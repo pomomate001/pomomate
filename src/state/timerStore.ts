@@ -16,7 +16,7 @@ interface TimerStore extends TimerState {
   targetEndTime: number | null;
 
   start: () => void;
-  pause: () => void;
+  finish: () => void;
   reset: () => void;
   tick: () => void;
   syncWithCurrentTime: () => void;
@@ -61,7 +61,16 @@ export const useTimerStore = create<TimerStore & { isRemoteUpdate?: boolean }>((
       targetEndTime: Date.now() + state.remainingSeconds * 1000,
     })),
 
-  pause: () => set({ isRunning: false, targetEndTime: null }),
+  finish: () =>
+    set((state) => {
+      const dur = getDurationForMode(state.mode);
+      return {
+        isRunning: false,
+        targetEndTime: null,
+        remainingSeconds: dur,
+        duration: dur,
+      };
+    }),
 
   reset: () =>
     set((state) => {

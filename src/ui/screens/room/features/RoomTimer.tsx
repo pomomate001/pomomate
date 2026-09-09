@@ -29,16 +29,7 @@ interface RoomTimerProps {
 
 export function RoomTimer({ roomId, isHost = true, onOpenAddTask }: RoomTimerProps) {
   const colors = useColors();
-  const {
-    remainingSeconds,
-    isRunning,
-    mode,
-    currentCycle,
-    start,
-    pause,
-    reset,
-    next,
-  } = useTimerStore();
+  const { isRunning, start, finish, remainingSeconds, duration, mode, currentCycle, reset, next } = useTimerStore();
 
   const allTasks = useTaskStore((s) => s.tasks);
   const toggleCompleted = useTaskStore((s) => s.toggleCompleted);
@@ -88,12 +79,12 @@ export function RoomTimer({ roomId, isHost = true, onOpenAddTask }: RoomTimerPro
           <IconButton
             icon={
               <Ionicons
-                name={isRunning ? 'pause' : 'play'}
+                name={isRunning ? 'stop' : 'play'}
                 size={26}
                 color={colors.textInverse}
               />
             }
-            onPress={isRunning ? pause : start}
+            onPress={isRunning ? finish : start}
             size={56}
             style={{
               backgroundColor: colors.primary,
