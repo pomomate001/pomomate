@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Image, ImageSourcePropType, Platform } from 'react-native';
+import { StyleSheet, View, Image, ImageSourcePropType } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface ImageBackgroundViewProps {
@@ -13,19 +13,10 @@ export function ImageBackgroundView({
 }: ImageBackgroundViewProps) {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {/* 1. Ambient blurred base layer to seamlessly fill any screen aspect ratio (20:9, 19.5:9, etc.) without black bars */}
       <Image
         source={source}
         style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-        blurRadius={Platform.OS === 'android' ? 14 : 20}
-      />
-
-      {/* 2. Crisp main artwork layer - contain ensures 100% of the 9:16 visual is fully visible without side-cropping */}
-      <Image
-        source={source}
-        style={StyleSheet.absoluteFill}
-        resizeMode="contain"
+        resizeMode="stretch"
       />
 
       {/* 3. Atmospheric gradient overlay for readability of status bar, clock, and controls */}

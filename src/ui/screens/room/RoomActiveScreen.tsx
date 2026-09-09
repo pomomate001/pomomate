@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Share, Alert, AppState, Platform, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Share, Alert, AppState, Platform, Pressable, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -748,30 +748,17 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const activeSharedFile = sharedFiles.find(f => f.id === activeSharedFileId) || null;
 
   /* ─── PiP Compact View (Dynamic Island — Status Only, Controls via Native Actions) ─── */
-  if (isInPiP) {
+  const { height: windowHeight } = useWindowDimensions();
+  const isActuallyPiP = isInPiP || windowHeight < 400; // Robust fallback check
+
+  if (isActuallyPiP) {
     return (
       <View style={styles.pipContainer}>
-        <View style={styles.pipIsland}>
-          {/* Left: Live indicator dot */}
+        <View style={styles.pipModernWrapper}>
           <View style={[styles.pipDot, screenShareOn && styles.pipDotRed]} />
-
-          {/* Center: Room name */}
           <Text style={styles.pipRoomName} numberOfLines={1}>
             {room?.name || 'Canlı'}
           </Text>
-
-          {/* Right: Status indicator icons (non-interactive) */}
-          <View style={styles.pipStatusIcons}>
-            <View style={[styles.pipStatusIcon, micOn ? styles.pipIconActive : styles.pipIconInactive]}>
-              <Ionicons name={micOn ? 'mic' : 'mic-off'} size={13} color="#FFF" />
-            </View>
-            <View style={[styles.pipStatusIcon, camOn ? styles.pipIconActive : styles.pipIconInactive]}>
-              <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={13} color="#FFF" />
-            </View>
-            <View style={[styles.pipStatusIcon, screenShareOn ? styles.pipIconScreen : styles.pipIconInactive]}>
-              <Ionicons name={screenShareOn ? 'desktop' : 'desktop-outline'} size={13} color="#FFF" />
-            </View>
-          </View>
         </View>
       </View>
     );
@@ -966,21 +953,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 6,
   },
-  pipIsland: {
-    width: '100%',
-    height: 40,
-    backgroundColor: 'rgba(20, 22, 35, 0.97)',
-    borderRadius: 999,
+  pipModernWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(168, 85, 247, 0.35)',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: 'rgba(20, 22, 35, 0.4)',
     gap: 8,
   },
   pipDot: {
-    width: 7,
-    height: 7,
+    width: 8,
+    height: 8,
     borderRadius: 4,
     backgroundColor: '#22C55E',
   },
@@ -993,32 +978,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   pipRoomName: {
-    flex: 1,
     color: '#E2E8F0',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
-    letterSpacing: 0.2,
-  },
-  pipStatusIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  pipStatusIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pipIconActive: {
-    backgroundColor: 'rgba(34, 197, 94, 0.35)',
-  },
-  pipIconInactive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  pipIconScreen: {
-    backgroundColor: 'rgba(239, 68, 68, 0.4)',
+    letterSpacing: 0.5,
   },
   /* ─── Mini Mod floating button ─── */
   miniModButton: {

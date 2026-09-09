@@ -168,17 +168,17 @@ class MainActivity : ReactActivity() {
 
       val micIntent = Intent("com.pomomate.app.ACTION_TOGGLE_MIC").setPackage(packageName)
       val micPendingIntent = PendingIntent.getBroadcast(this, 101, micIntent, flags)
-      val micIcon = Icon.createWithResource(this, if (micOn) android.R.drawable.ic_btn_speak_now else android.R.drawable.ic_lock_silent_mode)
+      val micIcon = Icon.createWithResource(this, if (micOn) R.drawable.ic_pip_mic_on else R.drawable.ic_pip_mic_off)
       actions.add(RemoteAction(micIcon, if (micOn) "Mute" else "Unmute", if (micOn) "Mute Mic" else "Unmute Mic", micPendingIntent))
 
       val camIntent = Intent("com.pomomate.app.ACTION_TOGGLE_CAM").setPackage(packageName)
       val camPendingIntent = PendingIntent.getBroadcast(this, 102, camIntent, flags)
-      val camIcon = Icon.createWithResource(this, if (camOn) android.R.drawable.ic_menu_camera else android.R.drawable.ic_menu_close_clear_cancel)
+      val camIcon = Icon.createWithResource(this, if (camOn) R.drawable.ic_pip_cam_on else R.drawable.ic_pip_cam_off)
       actions.add(RemoteAction(camIcon, if (camOn) "Cam Off" else "Cam On", if (camOn) "Turn Off Cam" else "Turn On Cam", camPendingIntent))
 
       val screenIntent = Intent("com.pomomate.app.ACTION_TOGGLE_SCREEN").setPackage(packageName)
       val screenPendingIntent = PendingIntent.getBroadcast(this, 103, screenIntent, flags)
-      val screenIcon = Icon.createWithResource(this, if (screenShareOn) android.R.drawable.ic_menu_view else android.R.drawable.ic_menu_gallery)
+      val screenIcon = Icon.createWithResource(this, if (screenShareOn) R.drawable.ic_pip_screen_on else R.drawable.ic_pip_screen_off)
       actions.add(RemoteAction(screenIcon, if (screenShareOn) "Stop Share" else "Share Screen", if (screenShareOn) "Stop Screen Share" else "Start Screen Share", screenPendingIntent))
     } catch (e: Exception) {
     }
