@@ -55,7 +55,7 @@ export function BuddyInviteNotification({ onAccept, onDecline }: BuddyInviteNoti
         styles.container,
         {
           top: insets.top + 8,
-          backgroundColor: 'rgba(15, 18, 28, 0.95)',
+          backgroundColor: colors.surface,
           borderColor: colors.primary,
           transform: [{ translateY: slideAnim }],
         },

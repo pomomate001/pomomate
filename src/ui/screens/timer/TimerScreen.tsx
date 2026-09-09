@@ -10,7 +10,7 @@ import {
   useBuddyStore,
   useUserStore,
 } from '../../../state';
-import { useColors } from '../../theme';
+import { useColors, useTheme } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
@@ -88,6 +88,19 @@ export function TimerScreen() {
   const activeAnimationId = isVisualWallpaperActive ? 'none' : rawAnimationId;
   const recordPomodoro = useStatsStore((s) => s.recordPomodoro);
   const colors = useColors();
+  const { theme } = useTheme();
+
+  const surfaceBg = isVisualWallpaperActive
+    ? 'rgba(15, 18, 28, 0.72)'
+    : colors.surface;
+
+  const surfaceBorder = isVisualWallpaperActive
+    ? 'rgba(255, 255, 255, 0.12)'
+    : colors.border;
+
+  const surfaceBorderLight = isVisualWallpaperActive
+    ? 'rgba(255, 255, 255, 0.14)'
+    : colors.border;
   
   // Task state
   const tasks = useTaskStore((s) => s.tasks);
@@ -499,13 +512,14 @@ export function TimerScreen() {
         {/* 1. ÜST BÖLÜM: Mod Seçici, Sayaç ve Döngü */}
         <View style={styles.topSection}>
           {/* Mode selector */}
-          <View style={styles.modeRow}>
+          <View style={[styles.modeRow, { backgroundColor: surfaceBg, borderColor: surfaceBorder }]}>
             {modeButtons.map((m) => (
               <Button
                 key={m}
                 title={modeLabels[m]}
                 variant={mode === m ? 'primary' : 'ghost'}
                 size="sm"
+                textColor={mode === m ? colors.textInverse : colors.textSecondary}
                 onPress={() => handleSetMode(m)}
                 style={styles.modeBtn}
               />
@@ -515,7 +529,7 @@ export function TimerScreen() {
           {/* Buddy invite icon */}
           <Pressable
             onPress={() => setShowBuddyInvite(true)}
-            style={[styles.buddyInviteBtn, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)', borderWidth: 1 }]}
+            style={[styles.buddyInviteBtn, { backgroundColor: surfaceBg, borderColor: surfaceBorderLight, borderWidth: 1 }]}
           >
             <Ionicons name="people-outline" size={16} color={colors.primary} />
           </Pressable>
@@ -533,8 +547,8 @@ export function TimerScreen() {
           </View>
 
           {/* Cycle indicator */}
-          <View style={[styles.cycleIndicator, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1 }]}>
-            <Text style={[typography.captionBold, { color: colors.textPrimary, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 3 }]}>
+          <View style={[styles.cycleIndicator, { backgroundColor: surfaceBg, borderColor: surfaceBorder, borderWidth: 1 }]}>
+            <Text style={[typography.captionBold, { color: colors.textPrimary, textShadowColor: (isVisualWallpaperActive || theme.dark) ? 'rgba(0,0,0,0.6)' : 'transparent', textShadowRadius: (isVisualWallpaperActive || theme.dark) ? 3 : 0 }]}>
               {t('timer.cycle')} {currentCycle}
             </Text>
           </View>
@@ -588,7 +602,7 @@ export function TimerScreen() {
             ) : (
               <>
                 <HoldButton
-                  icon={<Ionicons name="refresh" size={18} color="#FFFFFF" />}
+                  icon={<Ionicons name="refresh" size={18} color={theme.dark || isVisualWallpaperActive ? '#FFFFFF' : colors.textPrimary} />}
                   label="Yeniden Başlat"
                   onComplete={handleRestart}
                   variant="ghost"
@@ -605,10 +619,10 @@ export function TimerScreen() {
                 
                 {isPremium && (
                   <IconButton
-                    icon={<Ionicons name="play-skip-forward" size={18} color="#FFFFFF" />}
+                    icon={<Ionicons name="play-skip-forward" size={18} color={theme.dark || isVisualWallpaperActive ? '#FFFFFF' : colors.textPrimary} />}
                     onPress={handleNext}
                     size={48}
-                    style={{ backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)', borderWidth: 1 }}
+                    style={{ backgroundColor: surfaceBg, borderColor: surfaceBorderLight, borderWidth: 1 }}
                   />
                 )}
               </>
@@ -619,7 +633,7 @@ export function TimerScreen() {
           <View style={styles.tasksSection}>
             {/* Header */}
             <View style={styles.tasksHeader}>
-              <Text style={[typography.h4, { color: colors.textPrimary, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }]}>{t('timer.myTasks')}</Text>
+              <Text style={[typography.h4, { color: colors.textPrimary, textShadowColor: (isVisualWallpaperActive || theme.dark) ? 'rgba(0,0,0,0.8)' : 'transparent', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: (isVisualWallpaperActive || theme.dark) ? 4 : 0 }]}>{t('timer.myTasks')}</Text>
               <View style={[styles.taskCountBadge, { backgroundColor: colors.primaryLight }]}>
                 <Text style={[typography.captionBold, { color: colors.textInverse, fontSize: 10 }]}>
                   {uncompletedTasks.length}
@@ -632,13 +646,13 @@ export function TimerScreen() {
                 variant="outline" 
                 icon={<Ionicons name="add" size={14} color={colors.primary} />}
                 onPress={() => { setEditingTask(undefined); setShowAddTask(true); }}
-                style={{ minHeight: 32, paddingHorizontal: 12, backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.14)' }}
+                style={{ minHeight: 32, paddingHorizontal: 12, backgroundColor: surfaceBg, borderColor: surfaceBorderLight }}
               />
             </View>
             
             {/* Active / Primary Task Card */}
             {sortedTodayTasks.length === 0 ? (
-              <View style={[styles.emptyCard, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
+              <View style={[styles.emptyCard, { backgroundColor: surfaceBg, borderColor: surfaceBorderLight }]}>
                 <Ionicons name="clipboard-outline" size={24} color={colors.textSecondary} />
                 <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
                   {t('timer.noTasksYet')}
@@ -661,7 +675,7 @@ export function TimerScreen() {
                 {sortedTodayTasks.length > 1 && (
                   <Pressable 
                     onPress={toggleTaskList} 
-                    style={[styles.expandBtn, { backgroundColor: 'rgba(15, 18, 28, 0.72)', borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1 }]}
+                    style={[styles.expandBtn, { backgroundColor: surfaceBg, borderColor: surfaceBorder, borderWidth: 1 }]}
                   >
                     <Text style={[typography.captionBold, { color: colors.textPrimary, fontSize: 11 }]}>
                       {isTaskListExpanded ? t('timer.hideTasks') : t('timer.moreTasks', { count: sortedTodayTasks.length - 1 })}
@@ -735,9 +749,7 @@ const styles = StyleSheet.create({
     marginTop: 10, // Biraz aşağı indirildi
     marginBottom: spacing.xs,
     gap: spacing.xs,
-    backgroundColor: 'rgba(15, 18, 28, 0.72)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
     padding: 4,
     borderRadius: 20,
   },

@@ -40,11 +40,11 @@ export function EmojiReactionPanel({ visible, onSelectEmoji, onClose }: EmojiRea
 
   return (
     <Pressable style={styles.overlay} onPress={onClose}>
-      <View style={[styles.container, { backgroundColor: 'rgba(15, 18, 28, 0.92)', borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
+      <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {EMOJI_OPTIONS.map((option) => (
           <Pressable
             key={option.code}
-            style={[styles.emojiBtn, { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]}
+            style={[styles.emojiBtn, { backgroundColor: colors.surfaceVariant }]}
             onPress={() => {
               onSelectEmoji(option.code);
               onClose();

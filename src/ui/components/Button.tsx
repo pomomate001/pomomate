@@ -28,6 +28,7 @@ interface ButtonProps {
   loading?: boolean;
   icon?: React.ReactNode;
   style?: ViewStyle;
+  textColor?: string;
 }
 
 const sizeStyles: Record<ButtonSize, { container: ViewStyle; text: TextStyle }> = {
@@ -45,6 +46,7 @@ export function Button({
   loading = false,
   icon,
   style,
+  textColor: customTextColor,
 }: ButtonProps) {
   const colors = useColors();
   const [scale] = React.useState(() => new Animated.Value(1));
@@ -79,10 +81,11 @@ export function Button({
   };
 
   const textColor =
-    variant === 'gradient' ? colors.textPrimary :
+    customTextColor ??
+    (variant === 'gradient' ? colors.textPrimary :
     variant === 'primary' ? colors.textInverse :
     variant === 'outline' || variant === 'ghost' ? colors.primary :
-    colors.textPrimary;
+    colors.textPrimary);
 
   const content = (
     <>

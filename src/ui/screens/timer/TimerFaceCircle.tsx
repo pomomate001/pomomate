@@ -3,8 +3,9 @@ import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDuration } from '../../../core/pomodoro';
-import { useColors } from '../../theme';
+import { useColors, useTheme } from '../../theme';
 import { typography } from '../../theme/typography';
+import { useSettingsStore } from '../../../state';
 import type { TimerMode } from '../../../types';
 
 interface TimerFaceProps {
@@ -39,7 +40,13 @@ const modeIcon: Record<TimerMode, keyof typeof Ionicons.glyphMap> = {
 
 export function TimerFaceCircle({ remainingSeconds, duration, mode }: TimerFaceProps) {
   const colors = useColors();
+  const { theme } = useTheme();
+  const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
+  const isVisualWallpaperActive =
+    backgroundEffectId.startsWith('video_') ||
+    backgroundEffectId.startsWith('image_');
   const color = modeColor(mode, colors);
+  const isDarkLook = isVisualWallpaperActive || theme.dark;
   const progress = duration > 0 ? remainingSeconds / duration : 0;
   const offset = CIRCUMFERENCE * (1 - progress);
 
@@ -77,8 +84,32 @@ export function TimerFaceCircle({ remainingSeconds, duration, mode }: TimerFaceP
       </Svg>
       <View style={styles.center}>
         <Ionicons name={modeIcon[mode]} size={32} color={color} style={{ marginBottom: 8 }} />
-        <Text style={[typography.timerSmall, { color, fontSize: 60, fontWeight: '200', textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 }]}>{formatDuration(remainingSeconds)}</Text>
-        <Text style={[typography.subtitle, { color: '#FFFFFF', marginTop: 4, textShadowColor: 'rgba(0,0,0,0.7)', textShadowRadius: 4 }]}>
+        <Text
+          style={[
+            typography.timerSmall,
+            {
+              color,
+              fontSize: 60,
+              fontWeight: '200',
+              textShadowColor: isDarkLook ? 'rgba(0,0,0,0.7)' : 'transparent',
+              textShadowOffset: { width: 0, height: 2 },
+              textShadowRadius: isDarkLook ? 8 : 0,
+            },
+          ]}
+        >
+          {formatDuration(remainingSeconds)}
+        </Text>
+        <Text
+          style={[
+            typography.subtitle,
+            {
+              color: colors.textPrimary,
+              marginTop: 4,
+              textShadowColor: isDarkLook ? 'rgba(0,0,0,0.7)' : 'transparent',
+              textShadowRadius: isDarkLook ? 4 : 0,
+            },
+          ]}
+        >
           {modeLabel[mode]}
         </Text>
       </View>

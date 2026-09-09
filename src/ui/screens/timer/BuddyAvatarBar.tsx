@@ -179,7 +179,7 @@ export function BuddyAvatarBar({
                 size={42}
               />
               {/* Crown icon for host */}
-              <View style={[styles.roleBadge, { backgroundColor: colors.primary }]}>
+              <View style={[styles.roleBadge, { backgroundColor: colors.primary, borderColor: colors.background }]}>
                 <Ionicons name="star" size={8} color="#FFF" />
               </View>
               {/* Emoji animation above host avatar */}
@@ -236,7 +236,7 @@ export function BuddyAvatarBar({
             </Pressable>
           ) : (
             <View style={styles.avatarWrap}>
-              <View style={[styles.emptyAvatar, { borderColor: 'rgba(255,255,255,0.2)' }]}>
+              <View style={[styles.emptyAvatar, { borderColor: colors.border }]}>
                 <Ionicons name="hourglass-outline" size={16} color={colors.textDisabled} />
               </View>
               <Text style={[typography.overline, { color: colors.textDisabled, marginTop: 4, fontSize: 10 }]}>
@@ -303,7 +303,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(15, 18, 28, 0.9)',
   },
   connectionLine: {
     flexDirection: 'row',

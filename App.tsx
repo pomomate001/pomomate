@@ -7,7 +7,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Linking from 'expo-linking';
 import { supabase } from './src/services/auth/supabaseClient';
 import { AppNavigator, navigationRef } from './src/navigation';
-import { ThemeProvider } from './src/ui/theme';
+import { ThemeProvider, useTheme } from './src/ui/theme';
 import { validateConfig } from './src/config';
 import { notificationService } from './src/services/mobile';
 import { adMobService, revenueCatService, referralService } from './src/services/monetization';
@@ -32,6 +32,11 @@ WebBrowser.maybeCompleteAuthSession();
 
 // Warn (dev only) about any missing env configuration at startup.
 validateConfig();
+
+function ThemedStatusBar() {
+  const { theme } = useTheme();
+  return <StatusBar style={theme.dark ? 'light' : 'dark'} />;
+}
 
 export default function App() {
   const isTimerRunning = useTimerStore((s) => s.isRunning);
@@ -377,8 +382,8 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <SafeAreaProvider>
+          <ThemedStatusBar />
           <AppNavigator />
-          <StatusBar style="auto" />
         </SafeAreaProvider>
       </ThemeProvider>
     </GestureHandlerRootView>

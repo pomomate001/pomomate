@@ -16,6 +16,7 @@ import { spacing } from '../../theme/spacing';
 import { TaskItem } from './TaskItem';
 import type { Task } from '../../../types';
 import { useTranslation } from '../../../i18n';
+import { useSettingsStore } from '../../../state';
 
 interface DraggableTaskListProps {
   tasks: Task[];
@@ -42,6 +43,10 @@ export function DraggableTaskList({
 }: DraggableTaskListProps) {
   const colors = useColors();
   const { t } = useTranslation();
+  const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
+  const isVisualWallpaperActive =
+    backgroundEffectId.startsWith('video_') ||
+    backgroundEffectId.startsWith('image_');
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
@@ -137,14 +142,18 @@ export function DraggableTaskList({
             style={[
               styles.taskCard,
               {
-                backgroundColor: 'rgba(15, 18, 28, 0.78)',
+                backgroundColor: isVisualWallpaperActive
+                  ? 'rgba(15, 18, 28, 0.78)'
+                  : colors.card,
                 borderColor: isThisItemDragging
                   ? colors.primary
                   : isTargetSlot
                   ? `${colors.primary}80`
                   : isTopActive
                   ? colors.primary
-                  : 'rgba(255, 255, 255, 0.15)',
+                  : isVisualWallpaperActive
+                  ? 'rgba(255, 255, 255, 0.15)'
+                  : colors.border,
                 borderWidth: isThisItemDragging || isTargetSlot || isTopActive ? 1.5 : 1,
                 zIndex: isThisItemDragging ? 999 : 1,
                 elevation: isThisItemDragging ? 12 : 0,

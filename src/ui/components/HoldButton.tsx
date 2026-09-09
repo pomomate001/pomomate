@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Pressable, Animated, StyleSheet, Text } from 'react-native';
-import { useColors } from '../theme';
+import { useColors, useTheme } from '../theme';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
+import { useSettingsStore } from '../../state';
 
 interface HoldButtonProps {
   onComplete: () => void;
@@ -15,13 +16,39 @@ interface HoldButtonProps {
 
 export function HoldButton({ onComplete, icon, label, holdDurationMs = 2000, style, variant = 'primary' }: HoldButtonProps) {
   const colors = useColors();
+  const { theme } = useTheme();
+  const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);
+  const isVisualWallpaperActive =
+    backgroundEffectId.startsWith('video_') ||
+    backgroundEffectId.startsWith('image_');
+
   const [progressAnim] = useState(() => new Animated.Value(0));
 
   const bgColors = {
     primary: colors.primary,
     danger: colors.error,
-    ghost: 'rgba(15, 18, 28, 0.72)',
+    ghost: isVisualWallpaperActive
+      ? 'rgba(15, 18, 28, 0.72)'
+      : colors.surface,
   };
+
+  const borderColors = {
+    primary: 'rgba(255,255,255,0.12)',
+    danger: 'rgba(255,255,255,0.12)',
+    ghost: isVisualWallpaperActive
+      ? 'rgba(255,255,255,0.18)'
+      : colors.border,
+  };
+
+  const textColor =
+    variant === 'ghost' && !isVisualWallpaperActive && !theme.dark
+      ? colors.textPrimary
+      : '#FFFFFF';
+
+  const progressLineColor =
+    variant === 'ghost' && !isVisualWallpaperActive && !theme.dark
+      ? colors.primary
+      : '#FFFFFF';
 
   const handlePressIn = () => {
     Animated.timing(progressAnim, {
@@ -59,17 +86,17 @@ export function HoldButton({ onComplete, icon, label, holdDurationMs = 2000, sty
         styles.container,
         {
           backgroundColor: bgColors[variant],
-          borderColor: variant === 'ghost' ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.12)',
+          borderColor: borderColors[variant],
           borderWidth: 1,
         },
         style,
       ]}
     >
       <Animated.View style={[styles.bgProgress, { width: widthInterpolation }]} />
-      <Animated.View style={[styles.lineProgress, { width: widthInterpolation }]} />
+      <Animated.View style={[styles.lineProgress, { width: widthInterpolation, backgroundColor: progressLineColor }]} />
       <View style={styles.content}>
         {icon}
-        <Text style={[typography.captionBold, { color: '#FFFFFF', marginLeft: spacing.xs, fontSize: 13 }]}>
+        <Text style={[typography.captionBold, { color: textColor, marginLeft: spacing.xs, fontSize: 13 }]}>
           {label}
         </Text>
       </View>

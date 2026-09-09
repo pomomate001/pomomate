@@ -2,6 +2,19 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
+## [1.3.24] - 2026-09-09
+
+### Fixed
+- **Timer Screen Theme Adaptability**:
+  - Mode selector pill bar, buddy invite button, cycle badge, new task button, empty task card, more tasks button, and controls now fully adapt to active light themes ("Açık", "Gül Bahçesi", "Okyanus", "Gün Batımı") with dynamic surfaces and borders instead of remaining hardcoded dark.
+  - Ghost controls and unselected mode tabs now use readable text colors matching the active theme palette.
+  - Task card background in `DraggableTaskList` now dynamically uses `colors.card` and `colors.border` when visual wallpapers are inactive.
+  - Removed heavy black text shadows on timer digits and headers in light themes.
+- **Profile Settings Header Theme Sync**:
+  - `ProfileStack` screen options now dynamically bind `headerStyle`, `headerTintColor`, and `headerTitleStyle` to the active theme's background and primary text colors.
+  - Top header region in "Tema ve Görünüm", "Çalışma / Mola Süreleri", and "Sesler ve Bildirimler" screens no longer stays white in dark mode.
+  - Linked active theme to `NavigationContainer` and made `StatusBar` icon styling dynamically sync with `theme.dark`.
+
 ## [1.3.23] - 2026-09-09
 
 ### Added
