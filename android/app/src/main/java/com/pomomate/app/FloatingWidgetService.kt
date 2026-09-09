@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import com.facebook.react.ReactApplication
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.torrydo.floatingbubbleview.*
+import com.torrydo.floatingbubbleview.service.expandable.*
 
 import android.content.pm.ServiceInfo
 import android.os.Handler

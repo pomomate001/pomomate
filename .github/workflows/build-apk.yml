@@ -74,11 +74,12 @@ jobs:
         run: |
           npx expo prebuild --platform android --clean
           
-          # Restore custom native code, layouts, drawables and manifest
+          # Restore custom native code, layouts, drawables, manifest and build.gradle
           git checkout android/app/src/main/AndroidManifest.xml
           git checkout android/app/src/main/java/com/pomomate/app/
           git checkout android/app/src/main/res/layout/
           git checkout android/app/src/main/res/drawable/
+          git checkout android/app/build.gradle
           
           # Add floating bubble view library dependency to build.gradle if not present
           if ! grep -q "floating-bubble-view" android/app/build.gradle; then
