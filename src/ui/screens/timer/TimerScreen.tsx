@@ -93,6 +93,7 @@ export function TimerScreen() {
   const toggleCompleted = useTaskStore((s) => s.toggleCompleted);
   const removeTask = useTaskStore((s) => s.removeTask);
   const recordTaskCompleted = useStatsStore((s) => s.recordTaskCompleted);
+  const undoTaskCompleted = useStatsStore((s) => s.undoTaskCompleted);
   const [isScrollEnabled, setIsScrollEnabled] = useState(true);
 
   // Expandable task list
@@ -428,8 +429,15 @@ export function TimerScreen() {
   const handleToggleTask = useCallback(
     (id: string) => {
       const task = tasks.find((t) => t.id === id);
-      if (task && !task.completed) {
-        recordTaskCompleted();
+      if (task) {
+        if (!task.completed) {
+          recordTaskCompleted();
+          if (user?.id) {
+            statsService.recordCompletedTask(user.id, task.title);
+          }
+        } else {
+          undoTaskCompleted();
+        }
       }
       toggleCompleted(id);
       
@@ -437,7 +445,7 @@ export function TimerScreen() {
         buddyService.broadcastTask(activeSession.id, 'update', { id, updates: { completed: !task.completed } });
       }
     },
-    [tasks, toggleCompleted, recordTaskCompleted, activeSession]
+    [tasks, toggleCompleted, recordTaskCompleted, undoTaskCompleted, user, activeSession]
   );
   
   const handleRemoveTask = useCallback(

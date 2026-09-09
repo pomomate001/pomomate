@@ -7,7 +7,7 @@ import { storage } from '../platform/storage';
 import { toLocalDateStr } from '../utils/datetime';
 
 /** Maximum number of daily entries to keep in the persisted store. */
-const MAX_DAILY_ENTRIES = 90;
+const MAX_DAILY_ENTRIES = 185;
 
 export interface DailyStat {
   date: string; // YYYY-MM-DD

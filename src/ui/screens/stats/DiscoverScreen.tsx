@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   ScrollView,
   Animated,
   Dimensions,
+  PanResponder,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,7 +22,6 @@ import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { shadows } from '../../theme/shadows';
-import { Avatar } from '../../components/Avatar';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { useUserStore, useFriendsStore, useTagStore } from '../../../state';
@@ -36,6 +37,18 @@ type Props = NativeStackScreenProps<StatsStackParamList, 'Discover'>;
 const PAGE_SIZE = 10;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - spacing.lg * 2;
+const SWIPE_THRESHOLD = 120;
+const SWIPE_OUT_DURATION = 250;
+
+function getInitials(name?: string): string {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 export function DiscoverScreen({ navigation }: Props) {
   const colors = useColors();
@@ -49,7 +62,6 @@ export function DiscoverScreen({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [sendingRequest, setSendingRequest] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -60,9 +72,7 @@ export function DiscoverScreen({ navigation }: Props) {
   const userCountryName = getCountryName(userCountryCode, language);
 
   // Animations
-  const [cardOpacity] = useState(() => new Animated.Value(1));
-  const [cardTranslateX] = useState(() => new Animated.Value(0));
-  const [cardScale] = useState(() => new Animated.Value(1));
+  const [pan] = useState(() => new Animated.ValueXY());
 
   // Debounce search
   useEffect(() => {
@@ -117,72 +127,71 @@ export function DiscoverScreen({ navigation }: Props) {
     }
   };
 
-  // Animate card out and move to next
-  const animateCardOut = useCallback((direction: 'left' | 'right', onComplete: () => void) => {
-    const toX = direction === 'left' ? -SCREEN_WIDTH : SCREEN_WIDTH;
-    Animated.parallel([
-      Animated.timing(cardTranslateX, {
-        toValue: toX,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardScale, {
-        toValue: 0.9,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onComplete();
-      // Reset and animate in the new card
-      cardTranslateX.setValue(0);
-      cardScale.setValue(0.95);
-      cardOpacity.setValue(0);
-      Animated.parallel([
-        Animated.spring(cardScale, {
-          toValue: 1,
-          friction: 8,
-          tension: 80,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardOpacity, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    });
-  }, [cardTranslateX, cardOpacity, cardScale]);
-
-  const handleSkip = useCallback(() => {
-    animateCardOut('left', () => {
+  const onSwipeComplete = useCallback(
+    (direction: 'left' | 'right') => {
+      if (direction === 'right') {
+        const targetUserId = suggestedUsers[currentIndex]?.userId;
+        if (targetUserId && user?.id) {
+          friendService.sendFriendRequest(user.id, targetUserId).catch(console.error);
+        }
+      }
+      
       setCurrentIndex((prev) => prev + 1);
-    });
-  }, [animateCardOut]);
+      pan.setValue({ x: 0, y: 0 });
+    },
+    [currentIndex, suggestedUsers, user, pan]
+  );
 
-  const handleSendRequest = useCallback(async (targetUserId: string) => {
-    if (!user?.id || sendingRequest) return;
+  const forceSwipe = useCallback(
+    (direction: 'left' | 'right') => {
+      const toX = direction === 'right' ? SCREEN_WIDTH * 1.5 : -SCREEN_WIDTH * 1.5;
+      
+      const currentY = (pan.y as any)._value || 0;
 
-    setSendingRequest(true);
-    const result = await friendService.sendFriendRequest(user.id, targetUserId);
-    setSendingRequest(false);
+      Animated.timing(pan, {
+        toValue: { x: toX, y: currentY },
+        duration: SWIPE_OUT_DURATION,
+        useNativeDriver: false,
+      }).start(() => onSwipeComplete(direction));
+    },
+    [pan, onSwipeComplete]
+  );
 
-    if (result.success) {
-      animateCardOut('right', () => {
-        // Remove the user from suggestions
-        useFriendsStore.getState().setSuggestedUsers(
-          suggestedUsers.filter((u) => u.userId !== targetUserId)
-        );
-        // Don't increment currentIndex since we're removing the item
-      });
-    }
-  }, [user, sendingRequest, suggestedUsers, animateCardOut]);
+  const resetPosition = useCallback(() => {
+    Animated.spring(pan, {
+      toValue: { x: 0, y: 0 },
+      friction: 5,
+      useNativeDriver: false,
+    }).start();
+  }, [pan]);
 
-  const currentUser: SuggestedUser | undefined = suggestedUsers[currentIndex];
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (evt, gestureState) => {
+          return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
+        },
+        onPanResponderGrant: () => {
+          pan.extractOffset();
+        },
+        onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
+          useNativeDriver: false,
+        }),
+        onPanResponderRelease: (evt, gestureState) => {
+          pan.flattenOffset();
+          if (gestureState.dx > SWIPE_THRESHOLD) {
+            forceSwipe('right');
+          } else if (gestureState.dx < -SWIPE_THRESHOLD) {
+            forceSwipe('left');
+          } else {
+            resetPosition();
+          }
+        },
+      }),
+    [pan, forceSwipe, resetPosition]
+  );
+
   const allSeen = !isLoading && (suggestedUsers.length === 0 || currentIndex >= suggestedUsers.length);
 
   // ─── HEADER ───
@@ -271,141 +280,192 @@ export function DiscoverScreen({ navigation }: Props) {
   );
 
   // ─── PROFILE CARD ───
-  const renderProfileCard = (suggestedUser: SuggestedUser) => (
-    <Animated.View
-      style={[
-        styles.profileCard,
-        shadows.lg,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-          transform: [
-            { translateX: cardTranslateX },
-            { scale: cardScale },
-          ],
-          opacity: cardOpacity,
-        },
-      ]}
-    >
-      {/* Avatar & Identity */}
-      <View style={styles.cardIdentity}>
-        <Avatar uri={suggestedUser.avatarUrl} name={suggestedUser.displayName} size={100} showGradientBorder />
+  const renderProfileCard = (suggestedUser: SuggestedUser, isTopCard: boolean) => {
+    // Top card animations
+    const rotate = pan.x.interpolate({
+      inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+      outputRange: ['-10deg', '0deg', '10deg'],
+      extrapolate: 'clamp',
+    });
 
-        <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center' }]}>
-          {suggestedUser.displayName}
-        </Text>
+    const likeOpacity = pan.x.interpolate({
+      inputRange: [0, SCREEN_WIDTH / 4],
+      outputRange: [0, 1],
+      extrapolate: 'clamp',
+    });
 
-        {/* Country Tag */}
-        {!!suggestedUser.countryCode && (
-          <View style={[styles.countryTag, { backgroundColor: `${colors.info}12`, borderColor: `${colors.info}25` }]}>
-            <Text style={{ fontSize: 12, marginRight: 4 }}>{getCountryFlag(suggestedUser.countryCode)}</Text>
-            <Text style={[typography.caption, { color: colors.info }]}>
-              {getCountryName(suggestedUser.countryCode, language)}
-            </Text>
-          </View>
-        )}
-      </View>
+    const nopeOpacity = pan.x.interpolate({
+      inputRange: [-SCREEN_WIDTH / 4, 0],
+      outputRange: [1, 0],
+      extrapolate: 'clamp',
+    });
 
-      {/* Bio (Benim Köşem) */}
-      <View style={[styles.bioBox, { backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}15` }]}>
-        {suggestedUser.bio ? (
-          <Text style={[typography.body, { color: colors.textPrimary, fontStyle: 'italic', textAlign: 'center', lineHeight: 22 }]}>
-            {`"${suggestedUser.bio}"`}
-          </Text>
-        ) : (
-          <Text style={[typography.body, { color: colors.textDisabled, fontStyle: 'italic', textAlign: 'center' }]}>
-            {t('discover.noBio')}
-          </Text>
-        )}
-      </View>
+    // Next card animations
+    const nextCardScale = pan.x.interpolate({
+      inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+      outputRange: [1, 0.95, 1],
+      extrapolate: 'clamp',
+    });
 
-      {/* Match Score */}
-      <View style={styles.matchRow}>
-        <View style={[styles.matchBadge, { backgroundColor: 'rgba(255, 193, 7, 0.12)' }]}>
-          <Ionicons name="flash" size={14} color={colors.warning} />
-          <Text style={[typography.captionBold, { color: colors.warning, marginLeft: 4 }]}>
-            {suggestedUser.matchScore > 0
-              ? t('discover.matchScore').replace('%{score}', String(suggestedUser.matchScore))
-              : t('discover.matchingTagsCount', { count: suggestedUser.matchingTagCount })}
-          </Text>
+    const animatedCardStyle = isTopCard
+      ? {
+          transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate }],
+        }
+      : {
+          transform: [{ scale: nextCardScale }],
+        };
+
+    const panHandlers = isTopCard ? panResponder.panHandlers : {};
+
+    return (
+      <Animated.View
+        key={suggestedUser.userId}
+        style={[
+          styles.profileCard,
+          shadows.md,
+          animatedCardStyle,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+        {...panHandlers}
+      >
+        {/* Top Half: Square Profile Picture */}
+        <View style={styles.imageContainer}>
+          {suggestedUser.avatarUrl ? (
+            <Image source={{ uri: suggestedUser.avatarUrl }} style={styles.profileImage} />
+          ) : (
+            <LinearGradient colors={[colors.primaryLight, colors.primary]} style={styles.fallbackImage}>
+              <Text style={styles.fallbackInitial}>{getInitials(suggestedUser.displayName)}</Text>
+            </LinearGradient>
+          )}
+
+          {/* Gradient Overlay for subtle premium effect */}
+          <LinearGradient
+             colors={['transparent', 'rgba(0,0,0,0.4)']}
+             style={styles.imageOverlay}
+          />
+
+          {/* Stamps */}
+          {isTopCard && (
+            <>
+              <Animated.View style={[styles.stampLike, { opacity: likeOpacity }]}>
+                <Text style={styles.stampLikeText}>{t('discover.sendRequestAction')}</Text>
+              </Animated.View>
+              <Animated.View style={[styles.stampNope, { opacity: nopeOpacity }]}>
+                <Text style={styles.stampNopeText}>{t('discover.skip')}</Text>
+              </Animated.View>
+            </>
+          )}
         </View>
-      </View>
 
-      {/* Tags */}
-      {suggestedUser.tags.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.tagScroll}
-          contentContainerStyle={styles.tagContainer}
-        >
-          {suggestedUser.tags.map((tag) => {
-            const isMatch = userTags.some((myTag) => myTag.id === tag.id);
-            return (
-              <View
-                key={tag.id}
-                style={[
-                  styles.tagChip,
-                  {
-                    backgroundColor: isMatch ? `${colors.primary}18` : colors.surfaceVariant,
-                    borderColor: isMatch ? `${colors.primary}40` : colors.border,
-                  },
-                ]}
-              >
-                {tag.icon && <Text style={{ fontSize: 13, marginRight: 4 }}>{tag.icon}</Text>}
-                <Text style={[typography.caption, { color: isMatch ? colors.primary : colors.textSecondary }]}>
-                  {getTagName(tag, language)}
+        {/* Bottom Half: Info & Buttons */}
+        <View style={styles.infoContainer}>
+          <View style={styles.nameRow}>
+            <Text style={[typography.h2, { color: colors.textPrimary, flex: 1 }]} numberOfLines={1}>
+              {suggestedUser.displayName}
+            </Text>
+            {!!suggestedUser.countryCode && (
+              <View style={[styles.countryTag, { backgroundColor: `${colors.info}15` }]}>
+                <Text style={{ fontSize: 14, marginRight: 4 }}>{getCountryFlag(suggestedUser.countryCode)}</Text>
+                <Text style={[typography.captionBold, { color: colors.info }]}>
+                  {getCountryName(suggestedUser.countryCode, language)}
                 </Text>
               </View>
-            );
-          })}
-        </ScrollView>
-      )}
-    </Animated.View>
-  );
+            )}
+          </View>
 
-  // ─── ACTION BUTTONS ───
-  const renderActionButtons = (suggestedUser: SuggestedUser) => (
-    <View style={styles.actionRow}>
-      {/* Skip Button (Red) */}
-      <Pressable
-        onPress={handleSkip}
-        style={({ pressed }) => [
-          styles.actionBtn,
-          styles.skipBtn,
-          {
-            backgroundColor: pressed ? '#FF3B3020' : `${colors.error}12`,
-            borderColor: colors.error,
-            transform: [{ scale: pressed ? 0.92 : 1 }],
-          },
-        ]}
-      >
-        <Ionicons name="close" size={32} color={colors.error} />
-      </Pressable>
+          {suggestedUser.bio ? (
+            <View style={[styles.bioBox, { backgroundColor: `${colors.primary}08`, borderColor: `${colors.primary}15` }]}>
+               <Text style={[typography.body, { color: colors.textPrimary, fontStyle: 'italic', lineHeight: 22 }]} numberOfLines={2}>
+                 {`"${suggestedUser.bio}"`}
+               </Text>
+            </View>
+          ) : (
+            <View style={[styles.bioBox, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+               <Text style={[typography.body, { color: colors.textDisabled, fontStyle: 'italic' }]}>
+                 {t('discover.noBio')}
+               </Text>
+            </View>
+          )}
 
-      {/* Send Request Button (Green) */}
-      <Pressable
-        onPress={() => handleSendRequest(suggestedUser.userId)}
-        disabled={sendingRequest}
-        style={({ pressed }) => [
-          styles.actionBtn,
-          styles.requestBtn,
-          {
-            backgroundColor: pressed ? '#4CAF5020' : `${colors.success}12`,
-            borderColor: colors.success,
-            transform: [{ scale: pressed ? 0.92 : 1 }],
-            opacity: sendingRequest ? 0.6 : 1,
-          },
-        ]}
-      >
-        {sendingRequest ? (
-          <ActivityIndicator size="small" color={colors.success} />
-        ) : (
-          <Ionicons name="checkmark" size={32} color={colors.success} />
-        )}
-      </Pressable>
-    </View>
-  );
+          <View style={styles.matchRow}>
+            <View style={[styles.matchBadge, { backgroundColor: 'rgba(255, 193, 7, 0.15)' }]}>
+              <Ionicons name="flash" size={14} color={colors.warning} />
+              <Text style={[typography.captionBold, { color: colors.warning, marginLeft: 4 }]}>
+                {suggestedUser.matchScore > 0
+                  ? t('discover.matchScore').replace('%{score}', String(suggestedUser.matchScore))
+                  : t('discover.matchingTagsCount', { count: suggestedUser.matchingTagCount })}
+              </Text>
+            </View>
+          </View>
+
+          {suggestedUser.tags.length > 0 && (
+            <View style={styles.tagScrollWrapper}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.tagScroll}
+                contentContainerStyle={styles.tagContainer}
+              >
+                {suggestedUser.tags.map((tag) => {
+                  const isMatch = userTags.some((myTag) => myTag.id === tag.id);
+                  return (
+                    <View
+                      key={tag.id}
+                      style={[
+                        styles.tagChip,
+                        {
+                          backgroundColor: isMatch ? `${colors.primary}15` : colors.surfaceVariant,
+                          borderColor: isMatch ? `${colors.primary}30` : colors.border,
+                        },
+                      ]}
+                    >
+                      {tag.icon && <Text style={{ fontSize: 13, marginRight: 4 }}>{tag.icon}</Text>}
+                      <Text style={[typography.caption, { color: isMatch ? colors.primary : colors.textSecondary }]}>
+                        {getTagName(tag, language)}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Integrated Action Buttons */}
+          <View style={styles.actionRow}>
+            <Pressable
+              onPress={() => isTopCard && forceSwipe('left')}
+              style={({ pressed }) => [
+                styles.actionBtn,
+                styles.skipBtn,
+                {
+                  backgroundColor: pressed ? '#FF3B3015' : colors.surface,
+                  borderColor: `${colors.error}40`,
+                  transform: [{ scale: pressed ? 0.95 : 1 }],
+                },
+              ]}
+            >
+              <Ionicons name="close" size={32} color={colors.error} />
+            </Pressable>
+
+            <Pressable
+              onPress={() => isTopCard && forceSwipe('right')}
+              style={({ pressed }) => [
+                styles.actionBtn,
+                styles.requestBtn,
+                {
+                  backgroundColor: pressed ? '#4CAF5015' : colors.surface,
+                  borderColor: `${colors.success}40`,
+                  transform: [{ scale: pressed ? 0.95 : 1 }],
+                },
+              ]}
+            >
+              <Ionicons name="checkmark" size={32} color={colors.success} />
+            </Pressable>
+          </View>
+        </View>
+      </Animated.View>
+    );
+  };
 
   // ─── ALL SEEN / EMPTY STATE ───
   const renderAllSeen = () => {
@@ -450,6 +510,20 @@ export function DiscoverScreen({ navigation }: Props) {
     );
   };
 
+  const renderCards = () => {
+    if (currentIndex >= suggestedUsers.length) {
+      return renderAllSeen();
+    }
+
+    return suggestedUsers
+      .slice(currentIndex, currentIndex + 2)
+      .reverse()
+      .map((suggestedUser, i, arr) => {
+        const isTopCard = suggestedUser.userId === suggestedUsers[currentIndex].userId;
+        return renderProfileCard(suggestedUser, isTopCard);
+      });
+  };
+
   // ─── MAIN RENDER ───
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -461,12 +535,11 @@ export function DiscoverScreen({ navigation }: Props) {
         </View>
       ) : allSeen ? (
         renderAllSeen()
-      ) : currentUser ? (
+      ) : (
         <View style={styles.cardArea}>
-          {renderProfileCard(currentUser)}
-          {renderActionButtons(currentUser)}
+           {renderCards()}
         </View>
-      ) : null}
+      )}
     </View>
   );
 }
@@ -533,42 +606,116 @@ const styles = StyleSheet.create({
   // ─── Card Area ───
   cardArea: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
   },
   profileCard: {
     width: CARD_WIDTH,
+    height: '95%',
+    position: 'absolute',
     borderRadius: 24,
     borderWidth: 1,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
+    overflow: 'hidden',
+    flexDirection: 'column',
   },
-  cardIdentity: {
+  
+  // ─── Top Half: Image ───
+  imageContainer: {
+    width: '100%',
+    aspectRatio: 1,
+    position: 'relative',
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  fallbackImage: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fallbackInitial: {
+    fontSize: 80,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+  },
+  stampLike: {
+    position: 'absolute',
+    top: 40,
+    left: 30,
+    transform: [{ rotate: '-20deg' }],
+    borderWidth: 4,
+    borderColor: '#4CAF50',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+  },
+  stampLikeText: {
+    color: '#4CAF50',
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  stampNope: {
+    position: 'absolute',
+    top: 40,
+    right: 30,
+    transform: [{ rotate: '20deg' }],
+    borderWidth: 4,
+    borderColor: '#FF3B30',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+  },
+  stampNopeText: {
+    color: '#FF3B30',
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+
+  // ─── Bottom Half: Info ───
+  infoContainer: {
+    flex: 1,
+    padding: spacing.lg,
+    justifyContent: 'space-between',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
   },
   countryTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radius.full,
-    borderWidth: 1,
-    marginTop: spacing.sm,
+    marginLeft: spacing.sm,
   },
   bioBox: {
-    width: '100%',
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginVertical: spacing.xs,
   },
   matchRow: {
-    marginTop: spacing.md,
-    alignItems: 'center',
+    marginVertical: spacing.xs,
+    alignItems: 'flex-start',
   },
   matchBadge: {
     flexDirection: 'row',
@@ -577,13 +724,16 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
+  tagScrollWrapper: {
+    height: 40,
+    marginVertical: spacing.sm,
+  },
   tagScroll: {
-    marginTop: spacing.md,
-    maxHeight: 40,
+    flex: 1,
   },
   tagContainer: {
-    paddingHorizontal: spacing.xs,
     gap: spacing.xs,
+    paddingRight: spacing.lg,
   },
   tagChip: {
     flexDirection: 'row',
@@ -599,8 +749,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.xl,
+    marginTop: 'auto',
     gap: spacing.xxxl,
+    paddingTop: spacing.sm,
   },
   actionBtn: {
     width: 64,
@@ -609,6 +760,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   skipBtn: {},
   requestBtn: {},

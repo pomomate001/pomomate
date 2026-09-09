@@ -9,7 +9,7 @@
 import React, { useCallback } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTaskStore, useStatsStore } from '../../../state';
+import { useTaskStore, useStatsStore, useUserStore } from '../../../state';
 import { useColors } from '../../theme';
 import { spacing } from '../../theme/spacing';
 import { EmptyState } from '../../components/EmptyState';
@@ -19,6 +19,7 @@ import { generateId } from '../../../utils/id';
 import { nowIso, toLocalDateStr } from '../../../utils/datetime';
 import type { Task } from '../../../types';
 import { useTranslation } from '../../../i18n';
+import { statsService } from '../../../services/stats';
 
 export function TaskListScreen() {
   const tasks = useTaskStore((s) => s.tasks);
@@ -26,6 +27,8 @@ export function TaskListScreen() {
   const toggleCompleted = useTaskStore((s) => s.toggleCompleted);
   const removeTask = useTaskStore((s) => s.removeTask);
   const recordTaskCompleted = useStatsStore((s) => s.recordTaskCompleted);
+  const undoTaskCompleted = useStatsStore((s) => s.undoTaskCompleted);
+  const user = useUserStore((s) => s.user);
   const colors = useColors();
   const { t } = useTranslation();
 
@@ -49,12 +52,19 @@ export function TaskListScreen() {
   const handleToggle = useCallback(
     (id: string) => {
       const task = tasks.find((t) => t.id === id);
-      if (task && !task.completed) {
-        recordTaskCompleted();
+      if (task) {
+        if (!task.completed) {
+          recordTaskCompleted();
+          if (user?.id) {
+            statsService.recordCompletedTask(user.id, task.title);
+          }
+        } else {
+          undoTaskCompleted();
+        }
       }
       toggleCompleted(id);
     },
-    [tasks, toggleCompleted, recordTaskCompleted],
+    [tasks, toggleCompleted, recordTaskCompleted, undoTaskCompleted, user],
   );
 
   const renderItem = useCallback(

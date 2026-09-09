@@ -6,6 +6,8 @@ import { useStatsStore } from '../../state/statsStore';
 import { useBuddyStore } from '../../state/buddyStore';
 import type { Task } from '../../types';
 
+import { toLocalDateStr } from '../../utils/datetime';
+
 describe('Timer and Settings Synchronization', () => {
   beforeEach(() => {
     useSettingsStore.getState().reset();
@@ -208,7 +210,7 @@ describe('Stats Tracking and Daily Stats', () => {
   });
 
   it('records pomodoro session duration into totalWorkSeconds and today daily stats', () => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = toLocalDateStr();
 
     // Record 5 minute pomodoro (300 seconds)
     useStatsStore.getState().recordPomodoro(300);
@@ -216,6 +218,7 @@ describe('Stats Tracking and Daily Stats', () => {
     const stats = useStatsStore.getState();
     expect(stats.totalPomodoros).toBe(1);
     expect(stats.totalWorkSeconds).toBe(300);
+    expect(stats.streak).toBe(1);
 
     const dailyToday = stats.daily.find((d) => d.date === todayStr);
     expect(dailyToday).toBeDefined();
@@ -224,7 +227,7 @@ describe('Stats Tracking and Daily Stats', () => {
   });
 
   it('records task completion into totalTasksCompleted and today daily stats', () => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = toLocalDateStr();
 
     useStatsStore.getState().recordTaskCompleted();
 
@@ -234,6 +237,49 @@ describe('Stats Tracking and Daily Stats', () => {
     const dailyToday = stats.daily.find((d) => d.date === todayStr);
     expect(dailyToday).toBeDefined();
     expect(dailyToday?.tasksCompleted).toBe(1);
+  });
+
+  it('undoTaskCompleted decreases totalTasksCompleted and today daily stats', () => {
+    const todayStr = toLocalDateStr();
+
+    useStatsStore.getState().recordTaskCompleted();
+    useStatsStore.getState().recordTaskCompleted();
+    expect(useStatsStore.getState().totalTasksCompleted).toBe(2);
+
+    useStatsStore.getState().undoTaskCompleted();
+
+    const stats = useStatsStore.getState();
+    expect(stats.totalTasksCompleted).toBe(1);
+
+    const dailyToday = stats.daily.find((d) => d.date === todayStr);
+    expect(dailyToday).toBeDefined();
+    expect(dailyToday?.tasksCompleted).toBe(1);
+  });
+
+  it('calculates streak correctly for consecutive days', () => {
+    const store = useStatsStore.getState();
+    const today = new Date();
+    
+    // Create an array of mock daily stats with consecutive days
+    const mockDaily = [];
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      mockDaily.push({
+        date: toLocalDateStr(d),
+        totalSeconds: 1500,
+        pomodorosCompleted: 1,
+        tasksCompleted: 0
+      });
+    }
+    
+    store.setDaily(mockDaily);
+    
+    // Simulate recording a pomodoro today to trigger streak calc
+    store.recordPomodoro(1500);
+    
+    // We already had 5 days (including today), adding one more today shouldn't change the days count, just values
+    expect(useStatsStore.getState().streak).toBe(5);
   });
 
   describe('Buddy Timer Synchronization with Duration Adaptation', () => {

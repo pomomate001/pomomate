@@ -8,8 +8,9 @@ import { useColors } from '../../../theme';
 import { typography } from '../../../theme/typography';
 import { spacing } from '../../../theme/spacing';
 import { radius } from '../../../theme/radius';
-import { useTaskStore, useStatsStore } from '../../../../state';
+import { useTaskStore, useStatsStore, useUserStore } from '../../../../state';
 import type { Task } from '../../../../types';
+import { statsService } from '../../../../services/stats';
 
 interface RoomTasksProps {
   tasks: Task[];
@@ -21,10 +22,17 @@ export function RoomTasks({ tasks, onAddTask }: RoomTasksProps) {
   const toggleCompleted = useTaskStore((s) => s.toggleCompleted);
   const removeTask = useTaskStore((s) => s.removeTask);
   const recordTaskCompleted = useStatsStore((s) => s.recordTaskCompleted);
+  const undoTaskCompleted = useStatsStore((s) => s.undoTaskCompleted);
+  const user = useUserStore((s) => s.user);
 
   const handleToggle = (task: Task) => {
     if (!task.completed) {
       recordTaskCompleted();
+      if (user?.id) {
+        statsService.recordCompletedTask(user.id, task.title);
+      }
+    } else {
+      undoTaskCompleted();
     }
     toggleCompleted(task.id);
   };

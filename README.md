@@ -48,7 +48,7 @@ PomoMate is a productivity app that combines the Pomodoro Technique with real-ti
 - **Friend comparisons**: Friendly leaderboard with opt-in privacy controls
 
 ### 👫 Social & Tag-Based Friend Discovery
-- **Tinder-Style Discover Cards**: Engaging single-card-at-a-time presentation with animated transitions. Users can quickly Skip (red circular button) or Send Request (green circular button), with completion screen and smart refresh trigger.
+- **Tinder-Style Discover Cards**: Engaging edge-to-edge square photo presentation with physical left/right swipe gestures. Users can swipe left to Skip (with a red "GEÇ" stamp) or swipe right to Send Request (with a green "İSTEK AT" stamp), revealing the next card underneath in a layered stack.
 - **"Benim Köşem" (My Corner) Personal Bio**: Short custom bio/status (up to 120 chars) editable directly from user profile and prominently showcased on discovery cards.
 - **Smart Discovery Algorithm**: Server-side PostgreSQL RPC (`discover_users`) recommending study partners by hobby/interest overlap, country matching, and common tags.
 - **Bilingual Tag System**: Shared tag UUIDs with dynamic UI localization (`getTagName`) — "Matematik" and "Mathematics" seamlessly match

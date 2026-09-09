@@ -5,20 +5,25 @@ import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { Avatar } from '../../components/Avatar';
 import type { FriendSummary } from '../../../state/friendsStore';
+import { useTranslation, Language } from '../../../i18n';
 
 interface FriendRowProps {
   friend: FriendSummary;
   onPress: (userId: string) => void;
 }
 
-function formatHours(seconds: number): string {
+function formatHours(seconds: number, lang: Language): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
+  if (lang === 'en') {
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
   return h > 0 ? `${h}s ${m}dk` : `${m}dk`;
 }
 
 export function FriendRow({ friend, onPress }: FriendRowProps) {
   const colors = useColors();
+  const { language } = useTranslation();
 
   return (
     <Pressable
@@ -31,7 +36,7 @@ export function FriendRow({ friend, onPress }: FriendRowProps) {
           {friend.displayName}
         </Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>
-          {formatHours(friend.totalWorkSeconds)} · 🎯 {friend.totalPomodoros} · 🔥 {friend.streak}
+          {formatHours(friend.totalWorkSeconds, language)} · 🎯 {friend.totalPomodoros} · 🔥 {friend.streak}
         </Text>
       </View>
     </Pressable>

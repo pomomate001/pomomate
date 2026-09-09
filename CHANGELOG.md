@@ -5,11 +5,13 @@ All notable changes to the PomoMate project will be documented in this file.
 ## [1.3.22] - 2026-09-09
 
 ### Added
-- **Tinder-Style Keşfet (Discover) Redesign**:
-  - Replaced the previous FlatList with an interactive, single-card profile view.
-  - Added smooth animated card exits and spring entrances for sequential discovery.
-  - Added circular action buttons: **Skip** (red `close` icon) and **Send Request** (green `checkmark` icon).
-  - Added completion state ("Herkesi gördün!" / "You've seen everyone!") showing the existing refresh button only after all recommendations are viewed.
+- **Tinder-Style Keşfet (Discover) Redesign & Swipe Gestures**:
+  - Replaced the previous FlatList with an interactive, single-card profile view featuring **physical left/right swipe gestures** (`PanResponder`).
+  - Added layered card deck animations: the next card smoothly scales up while the top card is swiped away.
+  - Upgraded card UI to an award-winning edge-to-edge 1x1 square profile picture with glassmorphism gradients.
+  - Added dynamic "İSTEK AT" (Send Request) and "GEÇ" (Skip) stamp animations based on swipe direction.
+  - Action buttons are now elegantly integrated into the card's bottom layout.
+  - Added completion state ("Herkesi gördün!") showing the existing refresh button only after all recommendations are viewed.
 - **"Benim Köşem" (My Corner) User Bio**:
   - Added personal bio/status message support (up to 120 characters).
   - Added `EditBioSheet` component on Profile screen for editing bio with live remaining character counter.
