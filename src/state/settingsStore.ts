@@ -64,7 +64,7 @@ interface SettingsActions {
 const initialSettings: SettingsState = {
   language: resolveDeviceLanguage(),
   themeId: 'darkRose',
-  timerDesignId: 'minimal',
+  timerDesignId: 'bold',
   backgroundEffectId: 'video_sky',
   workAnimationId: 'none',
   breakAnimationId: 'none',
@@ -108,7 +108,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
             updates.themeId = 'darkRose';
           }
           if (state.timerDesignId === 'arc' || state.timerDesignId === 'neon') {
-            updates.timerDesignId = 'minimal';
+            updates.timerDesignId = 'bold';
           }
           if (['rain', 'snow', 'bubbles'].includes(state.backgroundEffectId)) {
             updates.backgroundEffectId = 'none';

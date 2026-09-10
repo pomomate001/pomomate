@@ -26,9 +26,8 @@ interface TimerFaceProps {
 export function TimerFace({ designId, onPress, ...rest }: TimerFaceProps) {
   const face = (() => {
     switch (designId) {
-      case 'bold':
-      case 'forest':
-        return <TimerFaceBold {...rest} />;
+      case 'minimal':
+        return <TimerFaceMinimal {...rest} />;
       case 'circle':
         return <TimerFaceCircle {...rest} />;
       case 'digital':
@@ -37,9 +36,10 @@ export function TimerFace({ designId, onPress, ...rest }: TimerFaceProps) {
         return <TimerFaceArc {...rest} />;
       case 'neon':
         return <TimerFaceNeon {...rest} />;
-      case 'minimal':
+      case 'bold':
+      case 'forest':
       default:
-        return <TimerFaceMinimal {...rest} />;
+        return <TimerFaceBold {...rest} />;
     }
   })();
 

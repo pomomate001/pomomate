@@ -20,7 +20,6 @@ export function AchievementCardModal({ visible, onClose, completedDurationSecond
   const viewShotRef = useRef<any>(null);
   const [scaleAnim] = useState(() => new Animated.Value(0.8));
   const [opacityAnim] = useState(() => new Animated.Value(0));
-  const [duoTitleIndex, setDuoTitleIndex] = useState(() => Math.floor(Math.random() * 10));
 
   const user = useUserStore((s) => s.user);
   const stats = useStatsStore();
@@ -34,6 +33,7 @@ export function AchievementCardModal({ visible, onClose, completedDurationSecond
   const todayPomodoros = todayStat?.pomodorosCompleted ?? 0;
   const todayDurationMinutes = Math.round((todayStat?.totalSeconds ?? 0) / 60);
   const completedDurationMinutes = Math.round(completedDurationSeconds / 60);
+  const duoTitleIndex = (todayPomodoros + completedDurationMinutes) % 10;
 
   // Find active task
   const activeTask = tasks.find((t) => t.targetDate === todayStr && !t.completed);
@@ -41,10 +41,9 @@ export function AchievementCardModal({ visible, onClose, completedDurationSecond
   const recentCompletedTask = tasks.find((t) => t.targetDate === todayStr && t.completed);
   const taskName = activeTask?.title || recentCompletedTask?.title;
 
-  // Entrance animation & random duo title re-roll
+  // Entrance animation
   useEffect(() => {
     if (visible) {
-      setDuoTitleIndex(Math.floor(Math.random() * 10));
       scaleAnim.setValue(0.8);
       opacityAnim.setValue(0);
       Animated.parallel([

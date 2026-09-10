@@ -430,8 +430,16 @@ export function TimerDesignPreview({ designId }: { designId: string }) {
         </View>
       );
 
+    case 'minimal':
+      return (
+        <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
+          <Text style={[styles.minimalText, { color: colors.textPrimary }]}>25:00</Text>
+        </View>
+      );
+
     case 'bold':
     case 'forest':
+    default:
       return (
         <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
           <Text style={[styles.boldPreviewText, { color: colors.textPrimary }]}>25:00</Text>
@@ -439,14 +447,6 @@ export function TimerDesignPreview({ designId }: { designId: string }) {
             <Ionicons name="leaf-outline" size={8} color={primaryColor} style={{ marginRight: 3 }} />
             <Text style={[styles.boldPreviewBadgeText, { color: primaryColor }]}>ODAK</Text>
           </View>
-        </View>
-      );
-
-    case 'minimal':
-    default:
-      return (
-        <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
-          <Text style={[styles.minimalText, { color: colors.textPrimary }]}>25:00</Text>
         </View>
       );
   }

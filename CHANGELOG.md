@@ -2,6 +2,14 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
+## [1.3.28] - 2026-09-10
+
+### Changed
+- **Default Timer Design Changed to 'Net Odak' (Bold Focus)**:
+  - Updated the application's default timer design from 'Minimalist' (`minimal`) to 'Net Odak' (`bold`).
+  - Positioned 'Net Odak' as the top item in the timer design catalog and appearance settings.
+  - Reverted fallback behavior and free-tier downgrades to target 'Net Odak' instead of 'Minimalist'.
+
 ## [1.3.27] - 2026-09-10
 
 ### Fixed

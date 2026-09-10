@@ -16,7 +16,7 @@ PomoMate is a productivity app that combines the Pomodoro Technique with real-ti
 - **Quick Timer Picker**: Interactive horizontal scroll ruler to quickly adjust timer duration directly from the timer face
 - **Deep Focus Mode**: Built-in toggle to temporarily suppress all in-app notifications and distractions while working
 - **Achievement Share Cards**: Beautiful, Forest-inspired visual summary cards generated after every work session, ready to share to social media
-- **5 Unique Timer Designs**: Minimalist, Classic Circle, Modern Digital, Curved Arc (Pro), and Neon Glow (Pro)
+- **6 Unique Timer Designs**: Net Odak (Default), Minimalist, Classic Circle, Modern Digital, Curved Arc (Pro), and Neon Glow (Pro)
 - **Live Video & Atmosphere Backgrounds**:
   - Full-screen looping videos: Deep Space & Stars, Windmill Meadow, Rain Window
   - High-res static wallpapers: Pixel Art, Winter Village

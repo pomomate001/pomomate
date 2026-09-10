@@ -79,11 +79,24 @@ describe('Timer and Settings Synchronization', () => {
     expect(state.targetEndTime).toBeGreaterThan(Date.now());
   });
 
-  it('includes the new Net Odak (bold) timer design in timerDesigns registry', () => {
+  it('includes the new Net Odak (bold) timer design in timerDesigns registry as first item', () => {
+    expect(timerDesigns[0].id).toBe('bold');
     const boldDesign = timerDesigns.find((d) => d.id === 'bold');
     expect(boldDesign).toBeDefined();
     expect(boldDesign?.label).toBe('Net Odak');
     expect(boldDesign?.free).toBe(true);
+  });
+
+  it('sets Net Odak (bold) as the default timer design in settingsStore', () => {
+    expect(useSettingsStore.getState().timerDesignId).toBe('bold');
+  });
+
+  it('reverts premium timer designs to Net Odak (bold) in revertToFreeDefaults', () => {
+    useSettingsStore.getState().setTimerDesignId('neon');
+    expect(useSettingsStore.getState().timerDesignId).toBe('neon');
+
+    useSettingsStore.getState().revertToFreeDefaults();
+    expect(useSettingsStore.getState().timerDesignId).toBe('bold');
   });
 });
 
