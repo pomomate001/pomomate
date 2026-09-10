@@ -48,10 +48,14 @@ export class BuddyService {
     }
   }
 
-  /** Invite a friend to the buddy session. Sends a realtime broadcast. */
-  async inviteFriend(sessionId: string, friendId: string, hostProfile: { userId: string; displayName: string; avatarUrl?: string }): Promise<boolean> {
+  /** Invite a friend to the buddy session. Sends a reliable realtime broadcast. */
+  async inviteFriend(
+    sessionId: string,
+    friendId: string,
+    hostProfile: { userId: string; displayName: string; avatarUrl?: string },
+  ): Promise<boolean> {
     try {
-      // Update session with guest
+      // 1. Update session with guest
       const { error } = await supabase
         .from('buddy_sessions')
         .update({ guest_id: friendId })
@@ -62,16 +66,42 @@ export class BuddyService {
         return false;
       }
 
-      // Broadcast invite to the friend's personal channel
-      const friendChannel = supabase.channel(`buddy-invite:${friendId}`);
-      await friendChannel.subscribe();
+      // Update local store so Host has guestId ready
+      const current = useBuddyStore.getState().activeSession;
+      if (current && current.id === sessionId) {
+        useBuddyStore.getState().setActiveSession({
+          ...current,
+          guestId: friendId,
+        });
+      }
+
+      // 2. Broadcast invite to the friend's personal channel waiting for connection handshake
+      const friendChannel = supabase.channel(`buddy-invite:${friendId}`, {
+        config: { broadcast: { ack: false } },
+      });
+
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => resolve(), 2500);
+        friendChannel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            clearTimeout(timeout);
+            resolve();
+          }
+        });
+      });
+
       await friendChannel.send({
         type: 'broadcast',
         event: 'buddy_invite',
         payload: { sessionId, hostProfile },
       });
-      supabase.removeChannel(friendChannel);
 
+      // Keep channel open briefly to ensure message is flushed over the WebSocket
+      setTimeout(() => {
+        supabase.removeChannel(friendChannel);
+      }, 1000);
+
+      logger.info(`[BuddyService] Buddy invite broadcasted to friend ${friendId} for session ${sessionId}`);
       return true;
     } catch (err: any) {
       logger.warn('[BuddyService] inviteFriend error:', err);
@@ -95,14 +125,29 @@ export class BuddyService {
       }
 
       // Broadcast guest_joined so the host is notified
-      const channel = supabase.channel(`buddy:${sessionId}`);
-      await channel.subscribe();
+      const channel = supabase.channel(`buddy:${sessionId}`, {
+        config: { broadcast: { ack: false } },
+      });
+
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => resolve(), 2500);
+        channel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            clearTimeout(timeout);
+            resolve();
+          }
+        });
+      });
+
       await channel.send({
         type: 'broadcast',
         event: 'guest_joined',
         payload: { guestId },
       });
-      supabase.removeChannel(channel);
+
+      setTimeout(() => {
+        supabase.removeChannel(channel);
+      }, 1000);
 
       const session = this.mapSession(data);
       useBuddyStore.getState().setActiveSession(session);
@@ -133,15 +178,38 @@ export class BuddyService {
   /** Decline an incoming buddy invite. */
   async declineInvite(sessionId: string): Promise<void> {
     useBuddyStore.getState().setPendingInvite(null);
-    // Broadcast decline
-    const channel = supabase.channel(`buddy:${sessionId}`);
-    await channel.subscribe();
-    await channel.send({
-      type: 'broadcast',
-      event: 'invite_declined',
-      payload: {},
-    });
-    supabase.removeChannel(channel);
+    try {
+      await supabase
+        .from('buddy_sessions')
+        .update({ status: 'ended' })
+        .eq('id', sessionId);
+
+      const channel = supabase.channel(`buddy:${sessionId}`, {
+        config: { broadcast: { ack: false } },
+      });
+
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => resolve(), 2000);
+        channel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            clearTimeout(timeout);
+            resolve();
+          }
+        });
+      });
+
+      await channel.send({
+        type: 'broadcast',
+        event: 'invite_declined',
+        payload: {},
+      });
+
+      setTimeout(() => {
+        supabase.removeChannel(channel);
+      }, 800);
+    } catch (err) {
+      logger.warn('[BuddyService] declineInvite error:', err);
+    }
   }
 
   /** End the buddy session. */
@@ -368,17 +436,58 @@ export class BuddyService {
       .subscribe();
   }
 
-  /** Listen for incoming buddy invites on user's personal channel. */
+  /** Listen for incoming buddy invites on user's personal channel. Returns unsubscribe fn. */
   listenForInvites(
     userId: string,
     onInvite: (data: { sessionId: string; hostProfile: { userId: string; displayName: string; avatarUrl?: string } }) => void,
-  ): void {
-    const channel = supabase.channel(`buddy-invite:${userId}`);
+  ): () => void {
+    const channel = supabase.channel(`buddy-invite:${userId}`, {
+      config: { broadcast: { ack: false } },
+    });
     channel
       .on('broadcast', { event: 'buddy_invite' }, (payload) => {
         onInvite(payload.payload as any);
       })
       .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }
+
+  /** Check if there is an existing pending invite for this user in DB. */
+  async checkPendingInvite(userId: string): Promise<void> {
+    try {
+      const { data: session, error: sErr } = await supabase
+        .from('buddy_sessions')
+        .select('id, host_id')
+        .eq('guest_id', userId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (sErr || !session) return;
+
+      const { data: host, error: hErr } = await supabase
+        .from('users')
+        .select('id, display_name, avatar_url')
+        .eq('id', session.host_id)
+        .maybeSingle();
+
+      if (!hErr && host) {
+        useBuddyStore.getState().setPendingInvite({
+          sessionId: session.id,
+          hostProfile: {
+            userId: host.id,
+            displayName: host.display_name || 'Arkadaşın',
+            avatarUrl: host.avatar_url,
+          },
+        });
+      }
+    } catch (err) {
+      logger.warn('[BuddyService] checkPendingInvite error:', err);
+    }
   }
 
   /** Unsubscribe from current session channel. */

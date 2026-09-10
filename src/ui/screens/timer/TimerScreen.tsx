@@ -245,15 +245,22 @@ export function TimerScreen() {
     }
   }, [user?.id]);
 
-  // Listen for incoming buddy invites
+  // Listen for incoming buddy invites & check DB fallback on mount
   useEffect(() => {
     if (!user?.id) return;
-    buddyService.listenForInvites(user.id, (data) => {
+    const unsubscribe = buddyService.listenForInvites(user.id, (data) => {
       useBuddyStore.getState().setPendingInvite({
         sessionId: data.sessionId,
         hostProfile: data.hostProfile,
       });
     });
+
+    // Check if there is already a pending invite in DB
+    void buddyService.checkPendingInvite(user.id);
+
+    return () => {
+      unsubscribe();
+    };
   }, [user?.id]);
 
   // Explicit timer synchronization helpers for buddy sessions
