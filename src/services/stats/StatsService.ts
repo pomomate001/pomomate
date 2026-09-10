@@ -3,9 +3,12 @@
  */
 import { supabase } from '../auth/supabaseClient';
 import { useStatsStore, DailyStat, calculateStreak } from '../../state/statsStore';
+import { useTaskStore } from '../../state/taskStore';
+import { storage } from '../../platform/storage';
+import { networkMonitor } from '../mobile/network/NetworkMonitor';
 import { logger } from '../../utils/logger';
 import { toLocalDateStr } from '../../utils/datetime';
-import type { TimerMode } from '../../types';
+import type { TimerMode, Task } from '../../types';
 
 export interface FriendStatSummary {
   userId: string;
@@ -14,9 +17,137 @@ export interface FriendStatSummary {
   streak: number;
 }
 
+export type OfflineQueueItem =
+  | {
+      id: string;
+      type: 'session';
+      userId: string;
+      durationSeconds: number;
+      mode: TimerMode;
+      roomId: string | null;
+      completedAt: string;
+    }
+  | {
+      id: string;
+      type: 'completed_task';
+      userId: string;
+      taskTitle: string;
+      completedAt: string;
+    }
+  | {
+      id: string;
+      type: 'undo_task';
+      userId: string;
+      taskTitle: string;
+      timestamp: string;
+    };
+
+const OFFLINE_QUEUE_KEY = 'pomomate-offline-sync-queue';
+
 export class StatsService {
+  private isFlushing = false;
+
+  private async getOfflineQueue(): Promise<OfflineQueueItem[]> {
+    try {
+      const raw = await storage.getItem(OFFLINE_QUEUE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private async saveOfflineQueue(queue: OfflineQueueItem[]): Promise<void> {
+    try {
+      await storage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+    } catch (err) {
+      logger.warn('[StatsService] Failed to save offline queue:', err);
+    }
+  }
+
+  private async enqueue(item: OfflineQueueItem): Promise<void> {
+    const queue = await this.getOfflineQueue();
+    queue.push(item);
+    await this.saveOfflineQueue(queue);
+    logger.info(`[StatsService] Enqueued offline item: ${item.type} (queue size: ${queue.length})`);
+  }
+
   /**
-   * Records a completed pomodoro session to the remote Supabase database.
+   * Flushes pending offline sessions and completed tasks to Supabase.
+   */
+  async flushOfflineQueue(): Promise<void> {
+    if (this.isFlushing) return;
+    if (!networkMonitor.getIsConnected()) return;
+
+    const queue = await this.getOfflineQueue();
+    if (queue.length === 0) return;
+
+    this.isFlushing = true;
+    const remaining: OfflineQueueItem[] = [];
+    let flushedAny = false;
+    let syncUserId: string | null = null;
+
+    try {
+      for (const item of queue) {
+        syncUserId = item.userId;
+        try {
+          if (item.type === 'session') {
+            const { error } = await supabase.from('pomodoro_sessions').insert({
+              user_id: item.userId,
+              duration_seconds: item.durationSeconds,
+              mode: item.mode,
+              room_id: item.roomId,
+              completed_at: item.completedAt,
+            });
+            if (error) {
+              remaining.push(item);
+            } else {
+              flushedAny = true;
+            }
+          } else if (item.type === 'completed_task') {
+            const { error } = await supabase.from('completed_tasks').insert({
+              user_id: item.userId,
+              task_title: item.taskTitle,
+              completed_at: item.completedAt,
+            });
+            if (error) {
+              remaining.push(item);
+            } else {
+              flushedAny = true;
+            }
+          } else if (item.type === 'undo_task') {
+            const { data } = await supabase
+              .from('completed_tasks')
+              .select('id')
+              .eq('user_id', item.userId)
+              .eq('task_title', item.taskTitle)
+              .order('completed_at', { ascending: false })
+              .limit(1);
+
+            if (data && data.length > 0) {
+              await supabase.from('completed_tasks').delete().eq('id', data[0].id);
+              flushedAny = true;
+            } else {
+              flushedAny = true;
+            }
+          }
+        } catch {
+          remaining.push(item);
+        }
+      }
+
+      await this.saveOfflineQueue(remaining);
+
+      if (flushedAny) {
+        logger.info(`[StatsService] Flushed offline sync queue. Remaining items: ${remaining.length}`);
+      }
+    } finally {
+      this.isFlushing = false;
+    }
+  }
+
+  /**
+   * Records a completed pomodoro session to the remote Supabase database,
+   * falling back to the local offline queue if offline.
    */
   async recordSession(
     userId: string,
@@ -26,41 +157,102 @@ export class StatsService {
   ): Promise<void> {
     if (!userId) return;
 
+    const completedAt = new Date().toISOString();
+
+    if (!networkMonitor.getIsConnected()) {
+      await this.enqueue({
+        id: Math.random().toString(36).substring(7),
+        type: 'session',
+        userId,
+        durationSeconds,
+        mode,
+        roomId: roomId || null,
+        completedAt,
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase.from('pomodoro_sessions').insert({
         user_id: userId,
         duration_seconds: durationSeconds,
         mode,
         room_id: roomId || null,
-        completed_at: new Date().toISOString(),
+        completed_at: completedAt,
       });
 
       if (error) {
-        logger.warn('[StatsService] Failed to record session to Supabase:', error.message);
+        logger.warn('[StatsService] Failed to record session to Supabase, enqueuing offline:', error.message);
+        await this.enqueue({
+          id: Math.random().toString(36).substring(7),
+          type: 'session',
+          userId,
+          durationSeconds,
+          mode,
+          roomId: roomId || null,
+          completedAt,
+        });
       }
     } catch (err: any) {
-      logger.warn('[StatsService] recordSession error:', err);
+      logger.warn('[StatsService] recordSession network error, enqueuing offline:', err);
+      await this.enqueue({
+        id: Math.random().toString(36).substring(7),
+        type: 'session',
+        userId,
+        durationSeconds,
+        mode,
+        roomId: roomId || null,
+        completedAt,
+      });
     }
   }
 
   /**
-   * Records a completed task to the historical log in Supabase.
+   * Records a completed task to the historical log in Supabase,
+   * falling back to the local offline queue if offline.
    */
   async recordCompletedTask(userId: string, taskTitle: string): Promise<void> {
     if (!userId || !taskTitle) return;
+
+    const completedAt = new Date().toISOString();
+
+    if (!networkMonitor.getIsConnected()) {
+      await this.enqueue({
+        id: Math.random().toString(36).substring(7),
+        type: 'completed_task',
+        userId,
+        taskTitle,
+        completedAt,
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase.from('completed_tasks').insert({
         user_id: userId,
         task_title: taskTitle,
-        completed_at: new Date().toISOString(),
+        completed_at: completedAt,
       });
 
       if (error) {
-        logger.warn('[StatsService] Failed to record completed task:', error.message);
+        logger.warn('[StatsService] Failed to record completed task, enqueuing offline:', error.message);
+        await this.enqueue({
+          id: Math.random().toString(36).substring(7),
+          type: 'completed_task',
+          userId,
+          taskTitle,
+          completedAt,
+        });
       }
     } catch (err: any) {
-      logger.warn('[StatsService] recordCompletedTask error:', err);
+      logger.warn('[StatsService] recordCompletedTask error, enqueuing offline:', err);
+      await this.enqueue({
+        id: Math.random().toString(36).substring(7),
+        type: 'completed_task',
+        userId,
+        taskTitle,
+        completedAt,
+      });
     }
   }
 
@@ -69,6 +261,29 @@ export class StatsService {
    */
   async undoCompletedTask(userId: string, taskTitle: string): Promise<void> {
     if (!userId || !taskTitle) return;
+
+    // Check if it's pending in offline queue first
+    const queue = await this.getOfflineQueue();
+    const pendingIndex = queue.findIndex(
+      (item) => item.type === 'completed_task' && item.userId === userId && item.taskTitle === taskTitle
+    );
+    if (pendingIndex !== -1) {
+      queue.splice(pendingIndex, 1);
+      await this.saveOfflineQueue(queue);
+      logger.info(`[StatsService] Removed uncompleted task from offline queue: ${taskTitle}`);
+      return;
+    }
+
+    if (!networkMonitor.getIsConnected()) {
+      await this.enqueue({
+        id: Math.random().toString(36).substring(7),
+        type: 'undo_task',
+        userId,
+        taskTitle,
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
 
     try {
       const { data, error: selectError } = await supabase
@@ -80,7 +295,14 @@ export class StatsService {
         .limit(1);
 
       if (selectError) {
-        logger.warn('[StatsService] Failed to find completed task to undo:', selectError.message);
+        logger.warn('[StatsService] Failed to find completed task to undo, enqueuing:', selectError.message);
+        await this.enqueue({
+          id: Math.random().toString(36).substring(7),
+          type: 'undo_task',
+          userId,
+          taskTitle,
+          timestamp: new Date().toISOString(),
+        });
         return;
       }
 
@@ -95,7 +317,14 @@ export class StatsService {
         }
       }
     } catch (err: any) {
-      logger.warn('[StatsService] undoCompletedTask error:', err);
+      logger.warn('[StatsService] undoCompletedTask error, enqueuing:', err);
+      await this.enqueue({
+        id: Math.random().toString(36).substring(7),
+        type: 'undo_task',
+        userId,
+        taskTitle,
+        timestamp: new Date().toISOString(),
+      });
     }
   }
 
@@ -134,13 +363,16 @@ export class StatsService {
   }
 
   /**
-   * Syncs user stats from Supabase to restore totals and daily progress on reinstall / update.
-   * Merges remote pomodoro data and completed task data with existing local state.
+   * Syncs user stats from Supabase to restore totals, daily progress, and past completed tasks
+   * on reinstall / update. Merges remote pomodoro data and completed task data with existing local state.
    */
   async syncUserStats(userId: string): Promise<void> {
     if (!userId) return;
 
     try {
+      // Flush any queued offline events first
+      await this.flushOfflineQueue();
+
       // Fetch pomodoro sessions from Supabase
       const { data: sessionData, error: sessionError } = await supabase
         .from('pomodoro_sessions')
@@ -149,10 +381,10 @@ export class StatsService {
         .eq('mode', 'work')
         .order('completed_at', { ascending: true });
 
-      // Fetch completed tasks from Supabase
+      // Fetch completed tasks from Supabase (include id and task_title for historical calendar restoration)
       const { data: taskData, error: taskError } = await supabase
         .from('completed_tasks')
-        .select('completed_at')
+        .select('id, task_title, completed_at')
         .eq('user_id', userId)
         .order('completed_at', { ascending: true });
 
@@ -182,8 +414,10 @@ export class StatsService {
         }
       }
 
-      // Add completed task counts to daily map
+      // Add completed task counts to daily map AND collect historical tasks to restore in taskStore
       let remoteTotalTasks = 0;
+      const remoteTasksToRestore: Task[] = [];
+
       if (taskData && taskData.length > 0) {
         for (const row of taskData) {
           remoteTotalTasks += 1;
@@ -191,10 +425,46 @@ export class StatsService {
           const current = remoteDailyMap.get(dateStr) || { totalSeconds: 0, pomodorosCompleted: 0, tasksCompleted: 0 };
           current.tasksCompleted += 1;
           remoteDailyMap.set(dateStr, current);
+
+          remoteTasksToRestore.push({
+            id: row.id,
+            userId,
+            title: row.task_title,
+            completed: true,
+            pomodoroCount: 1,
+            targetPomodoroCount: 1,
+            targetDate: dateStr,
+            createdAt: row.completed_at,
+          });
         }
       }
 
-      // If no remote data at all, skip sync
+      // Restore historical completed tasks into useTaskStore for monthly calendar
+      if (remoteTasksToRestore.length > 0) {
+        const taskStore = useTaskStore.getState();
+        const existingTasks = taskStore.tasks || [];
+        const existingIds = new Set(existingTasks.map((t) => t.id));
+        const existingSigs = new Set(
+          existingTasks.map((t) => `${t.title}::${t.targetDate || ''}::${t.completed}`)
+        );
+
+        const newTasksToAppend: Task[] = [];
+        for (const remoteTask of remoteTasksToRestore) {
+          const sig = `${remoteTask.title}::${remoteTask.targetDate}::true`;
+          if (!existingIds.has(remoteTask.id) && !existingSigs.has(sig)) {
+            newTasksToAppend.push(remoteTask);
+            existingIds.add(remoteTask.id);
+            existingSigs.add(sig);
+          }
+        }
+
+        if (newTasksToAppend.length > 0) {
+          taskStore.setTasks([...existingTasks, ...newTasksToAppend]);
+          logger.info(`[StatsService] Restored ${newTasksToAppend.length} historical completed tasks from Supabase into taskStore.`);
+        }
+      }
+
+      // If no remote data at all, skip stats store merge
       if (remoteTotalPomodoros === 0 && remoteTotalTasks === 0) return;
 
       // Merge with local store — take the maximum of each metric per day

@@ -271,4 +271,24 @@ describe('Future Date Task Booking (Rezervasyon) and Home Screen Isolation', () 
     expect(futureTasks.length).toBe(1);
     expect(futureTasks[0].isVirtualRecurring).toBe(true);
   });
+
+  it('correctly displays historical completed tasks restored for past calendar dates', () => {
+    const pastDateStr = '2026-09-08';
+    const completedTask: Task = {
+      id: 'task-hist-1',
+      userId: 'u1',
+      title: 'Endokrin sistem',
+      completed: true,
+      pomodoroCount: 1,
+      targetPomodoroCount: 1,
+      targetDate: pastDateStr,
+      createdAt: '2026-09-08T20:54:51.909Z',
+    };
+    useTaskStore.getState().setTasks([completedTask]);
+
+    const pastTasks = getTasksForDate(useTaskStore.getState().tasks, pastDateStr);
+    expect(pastTasks.length).toBe(1);
+    expect(pastTasks[0].title).toBe('Endokrin sistem');
+    expect(pastTasks[0].completed).toBe(true);
+  });
 });

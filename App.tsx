@@ -9,11 +9,13 @@ import { supabase } from './src/services/auth/supabaseClient';
 import { AppNavigator, navigationRef } from './src/navigation';
 import { ThemeProvider, useTheme } from './src/ui/theme';
 import { validateConfig } from './src/config';
-import { notificationService } from './src/services/mobile';
+import { notificationService, networkMonitor } from './src/services/mobile';
 import { adMobService, revenueCatService, referralService } from './src/services/monetization';
 import { authService } from './src/services/auth';
 import { friendService } from './src/services/friends/FriendService';
 import { roomService, roomInviteService } from './src/services/room';
+import { statsService } from './src/services/stats/StatsService';
+import { tagService } from './src/services/tags';
 import { useTimerStore, useUserStore, useSettingsStore, useTaskStore, useRoomStore } from './src/state';
 import { JoinLandingScreen } from './src/ui/screens/JoinLandingScreen';
 import * as WebBrowser from 'expo-web-browser';
@@ -47,6 +49,17 @@ export default function App() {
     const init = async () => {
       await notificationService.initialize();
       await adMobService.initialize();
+
+      // Monitor network connectivity and auto-flush offline queues upon reconnection
+      networkMonitor.start();
+      networkMonitor.onChange((connected) => {
+        if (connected) {
+          void statsService.flushOfflineQueue();
+        }
+      });
+
+      // Prefetch tags so they are cached locally and immediately available
+      void tagService.fetchAllTags();
 
       const handleDeepLink = async (url: string | null) => {
         if (!url) return;
@@ -287,6 +300,10 @@ export default function App() {
 
         // Generate recurring tasks for today
         useTaskStore.getState().generateRecurringTasks();
+
+        // Restore user stats and historical completed tasks from Supabase
+        void statsService.syncUserStats(currentUser.id);
+        void tagService.fetchUserTags(currentUser.id);
       };
 
       const initialUrl = await Linking.getInitialURL();
@@ -311,6 +328,8 @@ export default function App() {
         if (nextAppState === 'active') {
           const currentU = useUserStore.getState().user;
           if (currentU?.id) {
+            void statsService.flushOfflineQueue();
+            void statsService.syncUserStats(currentU.id);
             revenueCatService.checkSubscription().then((rcTier) => {
               const isPro = revenueCatService.isUserPro(currentU, rcTier);
               if (isPro) {

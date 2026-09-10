@@ -18,12 +18,12 @@ interface TagSelectionSheetProps {
 
 const CATEGORY_CONFIG: { key: TagCategory; icon: string; labelKey: string }[] = [
   { key: 'lifestyle', icon: '🌿', labelKey: 'tags.lifestyle' },
-  { key: 'music', icon: '🎵', labelKey: 'tags.music' },
-  { key: 'language', icon: '🌍', labelKey: 'tags.language' },
   { key: 'subject', icon: '📚', labelKey: 'tags.subject' },
   { key: 'tech', icon: '💻', labelKey: 'tags.tech' },
+  { key: 'language', icon: '🌍', labelKey: 'tags.language' },
   { key: 'creative', icon: '🎨', labelKey: 'tags.creative' },
   { key: 'sport', icon: '⚽', labelKey: 'tags.sport' },
+  { key: 'music', icon: '🎵', labelKey: 'tags.music' },
   { key: 'entertainment', icon: '🎬', labelKey: 'tags.entertainment' },
   { key: 'hobby', icon: '🎲', labelKey: 'tags.hobby' },
   { key: 'game', icon: '🎮', labelKey: 'tags.game' },

@@ -1,4 +1,4 @@
-﻿-- 014_add_expanded_tags.sql
+-- 014_add_expanded_tags.sql
 -- Idempotent migration to add new high-traffic tags across 9 categories (excluding games)
 -- as well as high-impact study, exam, and productivity tags for PomoMate Discover.
 
@@ -131,3 +131,16 @@ ON CONFLICT (slug) DO UPDATE SET
   category = EXCLUDED.category,
   icon = EXCLUDED.icon,
   sort_order = EXCLUDED.sort_order;
+
+-- Prioritize exam and academic preparation tags to the top of the subject category
+UPDATE tags SET sort_order = sort_order + 10 WHERE category = 'subject' AND slug NOT IN ('yks', 'kpss', 'lgs', 'vize-final', 'ales', 'tus', 'dgs', 'ielts-toefl', 'thesis');
+UPDATE tags SET sort_order = 1 WHERE slug = 'yks';
+UPDATE tags SET sort_order = 2 WHERE slug = 'kpss';
+UPDATE tags SET sort_order = 3 WHERE slug = 'lgs';
+UPDATE tags SET sort_order = 4 WHERE slug = 'vize-final';
+UPDATE tags SET sort_order = 5 WHERE slug = 'ales';
+UPDATE tags SET sort_order = 6 WHERE slug = 'tus';
+UPDATE tags SET sort_order = 7 WHERE slug = 'dgs';
+UPDATE tags SET sort_order = 8 WHERE slug = 'ielts-toefl';
+UPDATE tags SET sort_order = 9 WHERE slug = 'thesis';
+

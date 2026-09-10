@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '../../theme';
@@ -15,6 +15,9 @@ import { ReferralSheet } from './ReferralSheet';
 import { AboutSheet } from './AboutSheet';
 import { LanguageSheet } from './LanguageSheet';
 import * as ImagePicker from 'expo-image-picker';
+import { decode } from 'base64-arraybuffer';
+import { supabase } from '../../../services/auth/supabaseClient';
+import { logger } from '../../../utils/logger';
 import { AdPlacement } from '../../ads';
 import { useTranslation } from '../../../i18n';
 import { TagSelectionSheet } from './TagSelectionSheet';
@@ -86,21 +89,78 @@ export function ProfileScreen({
     }
   }, [user?.id]);
 
-  const handlePickAvatar = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+  const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      await updateUser({ avatarUrl: result.assets[0].uri });
+  const handlePickAvatar = async () => {
+    if (!user?.id) return;
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        if (!asset.base64) {
+          Alert.alert(t('common.error'), 'Fotoğraf okunamadı.');
+          return;
+        }
+
+        setIsUploadingAvatar(true);
+        const fileExt = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
+        const mimeType = asset.mimeType || (fileExt === 'png' ? 'image/png' : 'image/jpeg');
+        const filePath = `${user.id}/avatar.${fileExt}`;
+        const arrayBuffer = decode(asset.base64);
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, arrayBuffer, {
+            contentType: mimeType,
+            upsert: true,
+          });
+
+        if (uploadError) {
+          logger.warn('[ProfileScreen] Avatar upload failed:', uploadError.message);
+          Alert.alert(t('common.error'), uploadError.message);
+          return;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+
+        // Append timestamp for cache busting
+        const publicUrlWithTimestamp = `${urlData.publicUrl}?t=${Date.now()}`;
+        await updateUser({ avatarUrl: publicUrlWithTimestamp });
+      }
+    } catch (err: any) {
+      logger.warn('[ProfileScreen] handlePickAvatar error:', err);
+      Alert.alert(t('common.error'), err?.message || 'Avatar yüklenemedi.');
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
   const handleRemoveAvatar = async () => {
-    await updateUser({ avatarUrl: undefined });
+    if (!user?.id) return;
+    try {
+      setIsUploadingAvatar(true);
+      const { data: list } = await supabase.storage.from('avatars').list(user.id);
+      if (list && list.length > 0) {
+        const filesToRemove = list.map((f) => `${user.id}/${f.name}`);
+        await supabase.storage.from('avatars').remove(filesToRemove);
+      }
+      await updateUser({ avatarUrl: undefined });
+    } catch (err) {
+      logger.warn('[ProfileScreen] handleRemoveAvatar error:', err);
+      await updateUser({ avatarUrl: undefined });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   return (
@@ -118,6 +178,7 @@ export function ProfileScreen({
             <AvatarPicker
               uri={user?.avatarUrl}
               name={user?.displayName}
+              isLoading={isUploadingAvatar}
               onPick={handlePickAvatar}
               onRemove={handleRemoveAvatar}
             />

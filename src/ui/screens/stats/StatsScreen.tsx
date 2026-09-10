@@ -6,7 +6,8 @@ import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
-import { useStatsStore, useTaskStore } from '../../../state';
+import { useStatsStore, useTaskStore, useUserStore } from '../../../state';
+import { statsService } from '../../../services/stats/StatsService';
 import { getTasksForDate } from '../../../state/taskStore';
 import { toLocalDateStr, nowIso } from '../../../utils/datetime';
 import { generateId } from '../../../utils/id';
@@ -127,7 +128,14 @@ export function StatsScreen() {
   const { streak, daily } = useStatsStore();
   const tasks = useTaskStore((s) => s.tasks);
   const addTask = useTaskStore((s) => s.addTask);
+  const user = useUserStore((s) => s.user);
   const colors = useColors();
+
+  React.useEffect(() => {
+    if (user?.id) {
+      void statsService.syncUserStats(user.id);
+    }
+  }, [user?.id]);
 
   const periodLabels: Record<Period, string> = {
     daily: t('stats.daily'),

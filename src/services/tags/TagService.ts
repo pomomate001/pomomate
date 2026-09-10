@@ -1,11 +1,30 @@
 import { supabase } from '../auth/supabaseClient';
 import { useTagStore } from '../../state/tagStore';
+import { storage } from '../../platform/storage';
 import { logger } from '../../utils/logger';
 import type { Tag } from '../../types';
 
+const ALL_TAGS_CACHE_KEY = 'pomomate-cached-tags';
+const USER_TAGS_CACHE_PREFIX = 'pomomate-user-tags-';
+
 export class TagService {
-  /** Fetch all predefined tags from the database. */
+  /** Fetch all predefined tags from the database with offline fallback. */
   async fetchAllTags(): Promise<Tag[]> {
+    // Check if we can pre-populate from local cache for instant UI rendering
+    if (useTagStore.getState().allTags.length === 0) {
+      try {
+        const cachedRaw = await storage.getItem(ALL_TAGS_CACHE_KEY);
+        if (cachedRaw) {
+          const cachedTags: Tag[] = JSON.parse(cachedRaw);
+          if (Array.isArray(cachedTags) && cachedTags.length > 0) {
+            useTagStore.getState().setAllTags(cachedTags);
+          }
+        }
+      } catch {
+        // Cache read error ignored
+      }
+    }
+
     useTagStore.getState().setLoading(true);
     try {
       const { data, error } = await supabase
@@ -17,7 +36,7 @@ export class TagService {
       if (error) {
         logger.warn('[TagService] fetchAllTags error:', error.message);
         useTagStore.getState().setError(error.message);
-        return [];
+        return useTagStore.getState().allTags;
       }
 
       const tags: Tag[] = (data ?? []).map((t: any) => ({
@@ -31,14 +50,38 @@ export class TagService {
       }));
 
       useTagStore.getState().setAllTags(tags);
+
+      // Save to local cache asynchronously
+      void storage.setItem(ALL_TAGS_CACHE_KEY, JSON.stringify(tags)).catch(() => {});
+
       return tags;
+    } catch (err: any) {
+      logger.warn('[TagService] fetchAllTags network error, using cached tags:', err);
+      return useTagStore.getState().allTags;
     } finally {
       useTagStore.getState().setLoading(false);
     }
   }
 
-  /** Fetch the tags selected by a specific user. */
+  /** Fetch the tags selected by a specific user with offline fallback. */
   async fetchUserTags(userId: string): Promise<Tag[]> {
+    if (!userId) return [];
+
+    // Pre-populate from local cache if local state is empty
+    if (useTagStore.getState().userTags.length === 0) {
+      try {
+        const cachedRaw = await storage.getItem(`${USER_TAGS_CACHE_PREFIX}${userId}`);
+        if (cachedRaw) {
+          const cachedUserTags: Tag[] = JSON.parse(cachedRaw);
+          if (Array.isArray(cachedUserTags) && cachedUserTags.length > 0) {
+            useTagStore.getState().setUserTags(cachedUserTags);
+          }
+        }
+      } catch {
+        // Cache read error ignored
+      }
+    }
+
     try {
       const { data, error } = await supabase
         .from('user_tags')
@@ -47,7 +90,7 @@ export class TagService {
 
       if (error) {
         logger.warn('[TagService] fetchUserTags error:', error.message);
-        return [];
+        return useTagStore.getState().userTags;
       }
 
       const tags: Tag[] = (data ?? []).map((row: any) => ({
@@ -61,10 +104,14 @@ export class TagService {
       }));
 
       useTagStore.getState().setUserTags(tags);
+
+      // Save to cache
+      void storage.setItem(`${USER_TAGS_CACHE_PREFIX}${userId}`, JSON.stringify(tags)).catch(() => {});
+
       return tags;
     } catch (err: any) {
       logger.warn('[TagService] fetchUserTags error:', err);
-      return [];
+      return useTagStore.getState().userTags;
     }
   }
 

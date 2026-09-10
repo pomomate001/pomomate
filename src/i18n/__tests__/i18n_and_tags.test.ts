@@ -79,6 +79,20 @@ describe('i18n and Tags Localized Handling', () => {
       expect(translate('tasks.recurrenceWeekends', 'tr')).toBe('Hafta Sonu');
       expect(translate('tasks.recurrenceWeekends', 'en')).toBe('Weekends');
     });
+
+    it('translates tag categories including subject, lifestyle and game in both languages', () => {
+      expect(translate('tags.subject', 'tr')).toBe('Sınav & Akademi');
+      expect(translate('tags.subject', 'en')).toBe('Exams & Academics');
+
+      expect(translate('tags.lifestyle', 'tr')).toBe('Yaşam Tarzı');
+      expect(translate('tags.lifestyle', 'en')).toBe('Lifestyle');
+
+      expect(translate('tags.tech', 'tr')).toBe('Yazılım & Teknoloji');
+      expect(translate('tags.tech', 'en')).toBe('Tech & Coding');
+
+      expect(translate('tags.game', 'tr')).toBe('Oyun');
+      expect(translate('tags.game', 'en')).toBe('Gaming');
+    });
   });
 
   describe('Country Badges and Flags', () => {
