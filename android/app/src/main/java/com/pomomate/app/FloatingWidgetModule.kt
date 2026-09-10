@@ -10,9 +10,6 @@ import com.facebook.react.bridge.*
 class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
 
-    private val currentActivity: Activity?
-        get() = reactApplicationContext.currentActivity ?: MainActivity.instance
-
     companion object {
         var contextRef: ReactApplicationContext? = null
     }
@@ -46,6 +43,8 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
             promise.reject("PERMISSION_DENIED", "Overlay permission not granted")
             return
         }
+
+        val currentActivity = reactApplicationContext.currentActivity ?: MainActivity.instance
         
         try {
             val intent = Intent(reactContext, FloatingWidgetService::class.java)
