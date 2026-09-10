@@ -1,5 +1,6 @@
 package com.pomomate.app
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -8,6 +9,9 @@ import com.facebook.react.bridge.*
 
 class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
+
+    private val currentActivity: Activity?
+        get() = reactApplicationContext.currentActivity ?: MainActivity.instance
 
     companion object {
         var contextRef: ReactApplicationContext? = null

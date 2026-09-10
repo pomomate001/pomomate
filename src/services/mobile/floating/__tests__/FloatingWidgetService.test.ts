@@ -13,6 +13,7 @@ const mockFloatingWidget = {
 (NativeModules as any).FloatingWidget = mockFloatingWidget;
 
 // Import service under test
+// eslint-disable-next-line import/first
 import { floatingWidgetService } from '../FloatingWidgetService';
 
 describe('FloatingWidgetService (Mini Mod)', () => {

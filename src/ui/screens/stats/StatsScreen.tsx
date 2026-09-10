@@ -124,7 +124,7 @@ export function StatsScreen() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showAddTaskSheet, setShowAddTaskSheet] = useState(false);
 
-  const { totalPomodoros, totalWorkSeconds, totalTasksCompleted, streak, daily } = useStatsStore();
+  const { streak, daily } = useStatsStore();
   const tasks = useTaskStore((s) => s.tasks);
   const addTask = useTaskStore((s) => s.addTask);
   const colors = useColors();
