@@ -2,7 +2,16 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
-## [1.3.24] - 2026-09-09
+## [1.3.24] - 2026-09-10
+
+### Changed
+- **Timer Screen Task Card Spacing**:
+  - Reduced unnecessary bottom spacing below the task card, lowering it smoothly to sit just a few pixels above the bottom navigation bar.
+- **Timer Design Renamed to 'Net Odak' (Bold Focus)**:
+  - Renamed the new bold timer design from 'Forest' to 'Net Odak' (`bold`) to maintain brand independence and trademark safety.
+  - Added a dedicated bold preview in Appearance Settings with prominent bold numbers (`25:00`) and the focus leaf badge, distinguishing it clearly from the Minimalist design preview.
+- **Sleeping Cat Animation Renamed to 'Odak Arkadaşı'**:
+  - Updated the sleeping desk cat focus animation label from "Huzurlu Kedi" to the more professional and fitting title "Odak Arkadaşı" (Focus Companion).
 
 ### Fixed
 - **Timer Screen Theme Adaptability**:

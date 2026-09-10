@@ -35,8 +35,11 @@ import type { SuggestedUser } from '../../../state/friendsStore';
 type Props = NativeStackScreenProps<StatsStackParamList, 'Discover'>;
 
 const PAGE_SIZE = 10;
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH - spacing.lg * 2;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallScreen = SCREEN_HEIGHT < 750;
+const CARD_WIDTH = Math.min(SCREEN_WIDTH - 36, 324);
+const CARD_HEIGHT = isSmallScreen ? 410 : Math.min(Math.round(SCREEN_HEIGHT * 0.52), 450);
+const IMAGE_HEIGHT = isSmallScreen ? 165 : 195;
 const SWIPE_THRESHOLD = 120;
 const SWIPE_OUT_DURATION = 250;
 
@@ -444,7 +447,7 @@ export function DiscoverScreen({ navigation }: Props) {
                 },
               ]}
             >
-              <Ionicons name="close" size={32} color={colors.error} />
+              <Ionicons name="close" size={26} color={colors.error} />
             </Pressable>
 
             <Pressable
@@ -459,7 +462,7 @@ export function DiscoverScreen({ navigation }: Props) {
                 },
               ]}
             >
-              <Ionicons name="checkmark" size={32} color={colors.success} />
+              <Ionicons name="checkmark" size={26} color={colors.success} />
             </Pressable>
           </View>
         </View>
@@ -471,7 +474,7 @@ export function DiscoverScreen({ navigation }: Props) {
   const renderAllSeen = () => {
     if (userTags.length === 0) {
       return (
-        <View style={styles.allSeenContainer}>
+        <View style={[styles.allSeenContainer, { paddingBottom: 70 + insets.bottom }]}>
           <EmptyState
             icon={<Ionicons name="pricetags-outline" size={64} color={colors.primary} />}
             title={t('discover.addTagsFirst')}
@@ -488,7 +491,7 @@ export function DiscoverScreen({ navigation }: Props) {
     }
 
     return (
-      <View style={styles.allSeenContainer}>
+      <View style={[styles.allSeenContainer, { paddingBottom: 70 + insets.bottom }]}>
         <View style={[styles.allSeenIcon, { backgroundColor: `${colors.primary}12` }]}>
           <Ionicons name="checkmark-done-circle-outline" size={72} color={colors.primary} />
         </View>
@@ -530,13 +533,13 @@ export function DiscoverScreen({ navigation }: Props) {
       {renderHeader()}
 
       {isLoading && !isRefreshing ? (
-        <View style={styles.loadingCenter}>
+        <View style={[styles.loadingCenter, { paddingBottom: 70 + insets.bottom }]}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : allSeen ? (
         renderAllSeen()
       ) : (
-        <View style={styles.cardArea}>
+        <View style={[styles.cardArea, { paddingBottom: 70 + insets.bottom }]}>
            {renderCards()}
         </View>
       )}
@@ -553,7 +556,7 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   headerTop: {
     flexDirection: 'row',
@@ -567,19 +570,19 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
+    height: 38,
     borderRadius: radius.full,
     borderWidth: 1,
     paddingHorizontal: spacing.md,
-    marginTop: spacing.md,
+    marginTop: spacing.xs,
   },
   searchInput: {
     flex: 1,
     marginLeft: spacing.sm,
-    fontSize: 15,
+    fontSize: 14,
   },
   filterBar: {
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -587,14 +590,14 @@ const styles = StyleSheet.create({
   countryFilterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: radius.full,
     borderWidth: 1,
   },
   counterBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: radius.full,
   },
   loadingCenter: {
@@ -608,13 +611,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.lg,
+    paddingTop: spacing.xs,
   },
   profileCard: {
     width: CARD_WIDTH,
-    height: '95%',
+    height: CARD_HEIGHT,
     position: 'absolute',
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     overflow: 'hidden',
     flexDirection: 'column',
@@ -623,7 +626,7 @@ const styles = StyleSheet.create({
   // ─── Top Half: Image ───
   imageContainer: {
     width: '100%',
-    aspectRatio: 1,
+    height: IMAGE_HEIGHT,
     position: 'relative',
   },
   profileImage: {
@@ -638,7 +641,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fallbackInitial: {
-    fontSize: 80,
+    fontSize: 56,
     fontWeight: 'bold',
     color: '#FFF',
   },
@@ -647,41 +650,41 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 80,
+    height: 50,
   },
   stampLike: {
     position: 'absolute',
-    top: 40,
-    left: 30,
+    top: 16,
+    left: 16,
     transform: [{ rotate: '-20deg' }],
-    borderWidth: 4,
+    borderWidth: 3,
     borderColor: '#4CAF50',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
   },
   stampLikeText: {
     color: '#4CAF50',
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '900',
     letterSpacing: 2,
   },
   stampNope: {
     position: 'absolute',
-    top: 40,
-    right: 30,
+    top: 16,
+    right: 16,
     transform: [{ rotate: '20deg' }],
-    borderWidth: 4,
+    borderWidth: 3,
     borderColor: '#FF3B30',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255, 59, 48, 0.15)',
   },
   stampNopeText: {
     color: '#FF3B30',
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '900',
     letterSpacing: 2,
   },
@@ -689,57 +692,58 @@ const styles = StyleSheet.create({
   // ─── Bottom Half: Info ───
   infoContainer: {
     flex: 1,
-    padding: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     justifyContent: 'space-between',
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   countryTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
     borderRadius: radius.full,
-    marginLeft: spacing.sm,
+    marginLeft: spacing.xs,
   },
   bioBox: {
     borderRadius: radius.md,
     borderWidth: 1,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginVertical: spacing.xs,
+    paddingVertical: 5,
+    paddingHorizontal: spacing.sm,
+    marginVertical: 2,
   },
   matchRow: {
-    marginVertical: spacing.xs,
+    marginVertical: 2,
     alignItems: 'flex-start',
   },
   matchBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   tagScrollWrapper: {
-    height: 40,
-    marginVertical: spacing.sm,
+    height: 32,
+    marginVertical: 2,
   },
   tagScroll: {
     flex: 1,
   },
   tagContainer: {
     gap: spacing.xs,
-    paddingRight: spacing.lg,
+    paddingRight: spacing.md,
   },
   tagChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: radius.full,
     borderWidth: 1,
   },
@@ -750,21 +754,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 'auto',
-    gap: spacing.xxxl,
-    paddingTop: spacing.sm,
+    gap: spacing.xl,
+    paddingTop: 4,
+    paddingBottom: 2,
   },
   actionBtn: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   skipBtn: {},
   requestBtn: {},
@@ -777,9 +782,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
   },
   allSeenIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
   },

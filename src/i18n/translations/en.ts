@@ -511,7 +511,7 @@ export const en: TranslationSchema = {
 
     none_anim: { title: 'No Animation', desc: 'Just timer and background' },
     cat_tail: { title: 'Playful Cat', desc: 'Cute cat wagging its tail' },
-    cat_table_right: { title: 'Peaceful Cat', desc: 'Cat sleeping at the desk' },
+    cat_table_right: { title: 'Focus Companion', desc: 'Cat quietly keeping you company at the desk' },
     campfire_svg: { title: 'Flame Dance', desc: 'Gracefully dancing campfire' },
     campfire_lottie: { title: 'Night Camp', desc: 'Cozy campfire burning in nature' },
     camping_marshmallow: { title: 'Camp & Marshmallow', desc: 'Tent and toasted marshmallow' },
@@ -525,6 +525,7 @@ export const en: TranslationSchema = {
     theme_neon: { title: 'Cyber Neon', desc: 'Deep black and electric neon glow' },
 
     design_minimal: { title: 'Minimalist', desc: 'Clean design focused purely on time' },
+    design_bold: { title: 'Bold Focus', desc: 'Clean design with prominent bold typography' },
     design_circle: { title: 'Classic Circle', desc: 'Full circular progress ring' },
     design_digital: { title: 'Modern Digital', desc: 'LED digital clock display' },
     design_arc: { title: 'Curved Arc', desc: 'Modern curved progress arc' },

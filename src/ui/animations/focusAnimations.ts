@@ -26,11 +26,11 @@ export const focusAnimations: FocusAnimationMeta[] = [
   },
   {
     id: 'cat_table_right',
-    label: 'Huzurlu Kedi',
+    label: 'Odak Arkadaşı',
     icon: 'cafe',
     free: true,
     type: 'svg',
-    description: 'Masa başında uyuyan kedi',
+    description: 'Masa başında sessizce eşlik eden kedi',
   },
   {
     id: 'campfire_svg',

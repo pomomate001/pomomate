@@ -430,6 +430,18 @@ export function TimerDesignPreview({ designId }: { designId: string }) {
         </View>
       );
 
+    case 'bold':
+    case 'forest':
+      return (
+        <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
+          <Text style={[styles.boldPreviewText, { color: colors.textPrimary }]}>25:00</Text>
+          <View style={[styles.boldPreviewBadge, { borderColor: `${primaryColor}40` }]}>
+            <Ionicons name="leaf-outline" size={8} color={primaryColor} style={{ marginRight: 3 }} />
+            <Text style={[styles.boldPreviewBadgeText, { color: primaryColor }]}>ODAK</Text>
+          </View>
+        </View>
+      );
+
     case 'minimal':
     default:
       return (
@@ -584,6 +596,26 @@ const styles = StyleSheet.create({
   minimalText: {
     fontSize: 16,
     fontWeight: '300',
+    letterSpacing: 1,
+  },
+  boldPreviewText: {
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  boldPreviewBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 8,
+    borderWidth: 1,
+    backgroundColor: 'rgba(15, 18, 28, 0.6)',
+    marginTop: 3,
+  },
+  boldPreviewBadgeText: {
+    fontSize: 6.5,
+    fontWeight: '800',
     letterSpacing: 1,
   },
 });

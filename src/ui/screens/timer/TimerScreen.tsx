@@ -504,7 +504,7 @@ export function TimerScreen() {
           styles.container,
           { 
             paddingTop: Math.max(insets.top, 16) + 12,
-            paddingBottom: (isVisualWallpaperActive ? 84 : 16) + insets.bottom,
+            paddingBottom: (isVisualWallpaperActive ? 52 : 8) + insets.bottom,
           }
         ]}
         showsVerticalScrollIndicator={false}

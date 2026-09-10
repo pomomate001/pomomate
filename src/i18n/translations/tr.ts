@@ -511,7 +511,7 @@ export const tr: TranslationSchema = {
 
     none_anim: { title: 'Animasyonsuz', desc: 'Sadece sayaç ve arka plan' },
     cat_tail: { title: 'Neşeli Kedi', desc: 'Kuyruk sallayan sevimli kedi' },
-    cat_table_right: { title: 'Huzurlu Kedi', desc: 'Masa başında uyuyan kedi' },
+    cat_table_right: { title: 'Odak Arkadaşı', desc: 'Masa başında sessizce eşlik eden kedi' },
     campfire_svg: { title: 'Alev Dansı', desc: 'Zarif dans eden kamp ateşi' },
     campfire_lottie: { title: 'Gece Kampı', desc: 'Doğada yanan kamp ateşi' },
     camping_marshmallow: { title: 'Kamp & Keyif', desc: 'Çadır ve közde marshmallow' },
@@ -525,6 +525,7 @@ export const tr: TranslationSchema = {
     theme_neon: { title: 'Neon Cyber', desc: 'Derin siyah ve elektrik neon ışıkları' },
 
     design_minimal: { title: 'Minimalist', desc: 'Yalnızca süreye odaklanan sade görünüm' },
+    design_bold: { title: 'Net Odak', desc: 'Kalın fontlu, sade odaklanma görünümü' },
     design_circle: { title: 'Klasik Daire', desc: 'Tam dairesel dolum çemberi' },
     design_digital: { title: 'Modern Dijital', desc: 'LED dijital saat göstergesi' },
     design_arc: { title: 'Kavisli Yay', desc: 'Modern kavisli sayaç yayı' },

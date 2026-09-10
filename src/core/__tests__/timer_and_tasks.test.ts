@@ -79,11 +79,11 @@ describe('Timer and Settings Synchronization', () => {
     expect(state.targetEndTime).toBeGreaterThan(Date.now());
   });
 
-  it('includes the new Forest timer design in timerDesigns registry', () => {
-    const forest = timerDesigns.find((d) => d.id === 'forest');
-    expect(forest).toBeDefined();
-    expect(forest?.label).toBe('Forest');
-    expect(forest?.free).toBe(true);
+  it('includes the new Net Odak (bold) timer design in timerDesigns registry', () => {
+    const boldDesign = timerDesigns.find((d) => d.id === 'bold');
+    expect(boldDesign).toBeDefined();
+    expect(boldDesign?.label).toBe('Net Odak');
+    expect(boldDesign?.free).toBe(true);
   });
 });
 

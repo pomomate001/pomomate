@@ -27,7 +27,7 @@ const modeLabel: Record<TimerMode, string> = {
   longBreak: 'UZUN MOLA',
 };
 
-export function TimerFaceForest({ remainingSeconds, mode }: TimerFaceProps) {
+export function TimerFaceBold({ remainingSeconds, mode }: TimerFaceProps) {
   const colors = useColors();
   const { theme } = useTheme();
   const backgroundEffectId = useSettingsStore((s) => s.backgroundEffectId);

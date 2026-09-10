@@ -525,6 +525,7 @@ export interface TranslationSchema {
     theme_neon: { title: string; desc: string };
 
     design_minimal: { title: string; desc: string };
+    design_bold: { title: string; desc: string };
     design_circle: { title: string; desc: string };
     design_digital: { title: string; desc: string };
     design_arc: { title: string; desc: string };
