@@ -149,6 +149,10 @@ export interface TranslationSchema {
     deleteScheduledTask: string;
     pomodoroCountLabel?: string;
     pomoUnit?: string;
+    dailyDuration?: string;
+    weeklyDuration?: string;
+    monthlyDuration?: string;
+    filterByTag?: string;
   };
   friends: {
     title: string;

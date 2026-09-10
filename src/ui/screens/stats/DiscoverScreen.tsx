@@ -43,6 +43,20 @@ const IMAGE_HEIGHT = isSmallScreen ? 165 : 195;
 const SWIPE_THRESHOLD = 120;
 const SWIPE_OUT_DURATION = 250;
 
+const DISCOVER_CATEGORIES: { key: string | null; icon: string; labelKey: string }[] = [
+  { key: null, icon: '✨', labelKey: 'discover.allCategories' },
+  { key: 'lifestyle', icon: '🌿', labelKey: 'tags.lifestyle' },
+  { key: 'subject', icon: '📚', labelKey: 'tags.subject' },
+  { key: 'tech', icon: '💻', labelKey: 'tags.tech' },
+  { key: 'language', icon: '🌍', labelKey: 'tags.language' },
+  { key: 'creative', icon: '🎨', labelKey: 'tags.creative' },
+  { key: 'sport', icon: '⚽', labelKey: 'tags.sport' },
+  { key: 'music', icon: '🎵', labelKey: 'tags.music' },
+  { key: 'entertainment', icon: '🎬', labelKey: 'tags.entertainment' },
+  { key: 'hobby', icon: '🎲', labelKey: 'tags.hobby' },
+  { key: 'game', icon: '🎮', labelKey: 'tags.game' },
+];
+
 function getInitials(name?: string): string {
   if (!name) return '?';
   return name
@@ -69,6 +83,7 @@ export function DiscoverScreen({ navigation }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sameCountryOnly, setSameCountryOnly] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const userCountryCode = user?.countryCode || countryService.detectCountryCode() || 'TR';
   const userCountryFlag = getCountryFlag(userCountryCode);
@@ -99,7 +114,7 @@ export function DiscoverScreen({ navigation }: Props) {
     const search = debouncedSearch.trim() || null;
 
     friendService
-      .discoverUsers(user.id, PAGE_SIZE, 0, null, search, sameCountryOnly, userCountryCode)
+      .discoverUsers(user.id, PAGE_SIZE, 0, selectedCategory, search, sameCountryOnly, userCountryCode)
       .then(() => {
         if (isMounted) {
           setIsLoading(false);
@@ -116,14 +131,14 @@ export function DiscoverScreen({ navigation }: Props) {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [user?.id, userTags.length, debouncedSearch, sameCountryOnly, userCountryCode]);
+  }, [user?.id, userTags.length, debouncedSearch, sameCountryOnly, userCountryCode, selectedCategory]);
 
   const handleRefresh = async () => {
     if (!user?.id || userTags.length === 0) return;
     setIsRefreshing(true);
     const search = debouncedSearch.trim() || null;
     try {
-      await friendService.discoverUsers(user.id, PAGE_SIZE, 0, null, search, sameCountryOnly, userCountryCode);
+      await friendService.discoverUsers(user.id, PAGE_SIZE, 0, selectedCategory, search, sameCountryOnly, userCountryCode);
       setCurrentIndex(0);
     } finally {
       setIsRefreshing(false);
@@ -278,6 +293,44 @@ export function DiscoverScreen({ navigation }: Props) {
             </View>
           )}
         </View>
+
+        {/* Category Filter Horizontal Scroll */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryFilterScroll}
+          contentContainerStyle={{ paddingRight: spacing.sm, alignItems: 'center' }}
+        >
+          {DISCOVER_CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat.key;
+            return (
+              <Pressable
+                key={cat.key ?? 'all'}
+                onPress={() => setSelectedCategory(cat.key)}
+                style={[
+                  styles.categoryFilterChip,
+                  isSelected
+                    ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                    : { backgroundColor: colors.surfaceVariant, borderColor: colors.border },
+                ]}
+              >
+                <Text style={{ fontSize: 12 }}>{cat.icon}</Text>
+                <Text
+                  style={[
+                    typography.captionBold,
+                    {
+                      color: isSelected ? '#FFF' : colors.textSecondary,
+                      marginLeft: 4,
+                      fontSize: 11,
+                    },
+                  ]}
+                >
+                  {t(cat.labelKey as any)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
       </View>
     </View>
   );
@@ -599,6 +652,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radius.full,
+  },
+  categoryFilterScroll: {
+    marginTop: spacing.xs,
+  },
+  categoryFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    marginRight: 6,
   },
   loadingCenter: {
     flex: 1,

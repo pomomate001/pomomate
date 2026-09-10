@@ -149,6 +149,10 @@ export const tr: TranslationSchema = {
     deleteScheduledTask: 'Görevi İptal Et',
     pomodoroCountLabel: 'Tamamlanan Pomodoro Sayısı',
     pomoUnit: 'Pomo',
+    dailyDuration: 'Bugünkü Süre',
+    weeklyDuration: 'Haftalık Süre',
+    monthlyDuration: 'Aylık Süre',
+    filterByTag: 'Etikete Göre Filtrele',
   },
   friends: {
     title: 'Arkadaşlarım',

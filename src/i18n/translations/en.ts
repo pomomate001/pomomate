@@ -149,6 +149,10 @@ export const en: TranslationSchema = {
     deleteScheduledTask: 'Cancel Task',
     pomodoroCountLabel: 'Completed Pomodoros',
     pomoUnit: 'Pomo',
+    dailyDuration: "Today's Time",
+    weeklyDuration: 'Weekly Time',
+    monthlyDuration: 'Monthly Time',
+    filterByTag: 'Filter by Tag',
   },
   friends: {
     title: 'Friends',

@@ -123,58 +123,11 @@ export function StatsScreen() {
   const [selectedDate, setSelectedDate] = useState(() => toLocalDateStr());
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showAddTaskSheet, setShowAddTaskSheet] = useState(false);
-  const [selectedBarIndex, setSelectedBarIndex] = useState<number | null>(null);
 
   const { totalPomodoros, totalWorkSeconds, totalTasksCompleted, streak, daily } = useStatsStore();
   const tasks = useTaskStore((s) => s.tasks);
   const addTask = useTaskStore((s) => s.addTask);
   const colors = useColors();
-
-  const handlePeriodChange = (p: Period) => {
-    setPeriod(p);
-    setSelectedBarIndex(null);
-  };
-
-  const periodStats = useMemo(() => {
-    const now = new Date();
-    const todayStr = toLocalDateStr(now);
-
-    if (period === 'daily') {
-      const todayStat = daily.find((d) => d.date === todayStr);
-      return {
-        workSeconds: todayStat?.totalSeconds ?? 0,
-        pomodoros: todayStat?.pomodorosCompleted ?? 0,
-        tasksCompleted: todayStat?.tasksCompleted ?? 0,
-        streak,
-      };
-    }
-
-    if (period === 'weekly') {
-      // 7-day rolling window ending today (matching H4 in weekly chart)
-      const start = new Date(now);
-      start.setDate(start.getDate() - 6);
-      start.setHours(0, 0, 0, 0);
-      const startStr = toLocalDateStr(start);
-
-      const matchingStats = daily.filter((s) => s.date >= startStr && s.date <= todayStr);
-      return {
-        workSeconds: matchingStats.reduce((sum, s) => sum + s.totalSeconds, 0),
-        pomodoros: matchingStats.reduce((sum, s) => sum + s.pomodorosCompleted, 0),
-        tasksCompleted: matchingStats.reduce((sum, s) => sum + s.tasksCompleted, 0),
-        streak,
-      };
-    }
-
-    // Monthly: current calendar month (matching current month in monthly chart)
-    const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const matchingStats = daily.filter((s) => s.date.startsWith(monthPrefix));
-    return {
-      workSeconds: matchingStats.reduce((sum, s) => sum + s.totalSeconds, 0),
-      pomodoros: matchingStats.reduce((sum, s) => sum + s.pomodorosCompleted, 0),
-      tasksCompleted: matchingStats.reduce((sum, s) => sum + s.tasksCompleted, 0),
-      streak,
-    };
-  }, [period, daily, streak]);
 
   const periodLabels: Record<Period, string> = {
     daily: t('stats.daily'),
@@ -191,6 +144,79 @@ export function StatsScreen() {
   const weekPrefix = language === 'en' ? 'W' : 'H';
 
   const chartData = computeRealChartData(period, daily, dayLabels, monthLabels, weekPrefix);
+
+  // Default to selecting the latest column (Today / This Week / This Month) for immediate discoverability
+  const [selectedBarIndex, setSelectedBarIndex] = useState<number | null>(() => {
+    return chartData.length > 0 ? chartData.length - 1 : null;
+  });
+
+  const handlePeriodChange = (p: Period) => {
+    setPeriod(p);
+    if (p !== 'monthly') {
+      setSelectedTag(null);
+    }
+    const newChartData = computeRealChartData(p, daily, dayLabels, monthLabels, weekPrefix);
+    setSelectedBarIndex(newChartData.length > 0 ? newChartData.length - 1 : null);
+  };
+
+  const periodStats = useMemo(() => {
+    const now = new Date();
+    const todayStr = toLocalDateStr(now);
+
+    if (period === 'daily') {
+      const todayStat = daily.find((d) => d.date === todayStr);
+      let tasksCompleted = todayStat?.tasksCompleted ?? 0;
+      if (selectedTag) {
+        tasksCompleted = tasks.filter(t => t.completed && t.tag === selectedTag && t.targetDate === todayStr).length;
+      }
+      return {
+        workSeconds: todayStat?.totalSeconds ?? 0,
+        pomodoros: todayStat?.pomodorosCompleted ?? 0,
+        tasksCompleted,
+        streak,
+      };
+    }
+
+    if (period === 'weekly') {
+      // 7-day rolling window ending today (matching H4 in weekly chart)
+      const start = new Date(now);
+      start.setDate(start.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      const startStr = toLocalDateStr(start);
+
+      const matchingStats = daily.filter((s) => s.date >= startStr && s.date <= todayStr);
+      let tasksCompleted = matchingStats.reduce((sum, s) => sum + s.tasksCompleted, 0);
+      if (selectedTag) {
+        tasksCompleted = tasks.filter(t => t.completed && t.tag === selectedTag && t.targetDate && t.targetDate >= startStr && t.targetDate <= todayStr).length;
+      }
+      return {
+        workSeconds: matchingStats.reduce((sum, s) => sum + s.totalSeconds, 0),
+        pomodoros: matchingStats.reduce((sum, s) => sum + s.pomodorosCompleted, 0),
+        tasksCompleted,
+        streak,
+      };
+    }
+
+    // Monthly: current calendar month (matching current month in monthly chart)
+    const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const matchingStats = daily.filter((s) => s.date.startsWith(monthPrefix));
+    let tasksCompleted = matchingStats.reduce((sum, s) => sum + s.tasksCompleted, 0);
+    if (selectedTag) {
+      tasksCompleted = tasks.filter(t => t.completed && t.tag === selectedTag && t.targetDate && t.targetDate.startsWith(monthPrefix)).length;
+    }
+    return {
+      workSeconds: matchingStats.reduce((sum, s) => sum + s.totalSeconds, 0),
+      pomodoros: matchingStats.reduce((sum, s) => sum + s.pomodorosCompleted, 0),
+      tasksCompleted,
+      streak,
+    };
+  }, [period, daily, streak, selectedTag, tasks]);
+
+  const durationCardLabel = useMemo(() => {
+    if (period === 'daily') return t('stats.dailyDuration') || t('stats.totalDuration');
+    if (period === 'weekly') return t('stats.weeklyDuration') || t('stats.totalDuration');
+    return t('stats.monthlyDuration') || t('stats.totalDuration');
+  }, [period, t]);
 
   const periods: Period[] = ['daily', 'weekly', 'monthly'];
   
@@ -257,38 +283,11 @@ export function StatsScreen() {
       </View>
 
       <View style={styles.contentWrap}>
-        {/* Tag Filter */}
-        {allTags.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tagFilterList}>
-            <Pressable
-              onPress={() => setSelectedTag(null)}
-              style={[
-                styles.tagChip,
-                { backgroundColor: selectedTag === null ? colors.primary : colors.surfaceVariant }
-              ]}
-            >
-              <Text style={[typography.captionBold, { color: selectedTag === null ? colors.textInverse : colors.textPrimary }]}>{t('stats.allTags')}</Text>
-            </Pressable>
-            {allTags.map(tag => (
-              <Pressable
-                key={tag}
-                onPress={() => setSelectedTag(tag)}
-                style={[
-                  styles.tagChip,
-                  { backgroundColor: selectedTag === tag ? colors.primary : colors.surfaceVariant }
-                ]}
-              >
-                <Text style={[typography.captionBold, { color: selectedTag === tag ? colors.textInverse : colors.textPrimary }]}>{tag}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        )}
-
         {/* Summary cards */}
         <View style={styles.cardRow}>
           <StatCard
             icon={<Ionicons name="time-outline" size={24} color={colors.info} />}
-            label={t('stats.totalDuration')}
+            label={durationCardLabel}
             value={formatHours(periodStats.workSeconds, language)}
           />
           <View style={{ width: spacing.sm }} />
@@ -335,6 +334,42 @@ export function StatsScreen() {
         {/* Calendar and Tasks for Selected Date (Shown in Monthly view) */}
         {period === 'monthly' && (
           <Card variant="glass" style={styles.chartCard}>
+            {/* Tag Filter for monthly calendar & date tasks */}
+            {allTags.length > 0 && (
+              <View style={{ marginBottom: spacing.md }}>
+                <Text style={[typography.overline, { color: colors.textSecondary, marginBottom: spacing.xs, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+                  🏷️ {t('stats.filterByTag') || 'Etikete Göre Filtrele'}
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tagFilterListMonthly}>
+                  <Pressable
+                    onPress={() => setSelectedTag(null)}
+                    style={[
+                      styles.tagChip,
+                      { backgroundColor: selectedTag === null ? colors.primary : colors.surfaceVariant }
+                    ]}
+                  >
+                    <Text style={[typography.captionBold, { color: selectedTag === null ? colors.textInverse : colors.textPrimary }]}>
+                      {t('stats.allTags')}
+                    </Text>
+                  </Pressable>
+                  {allTags.map(tag => (
+                    <Pressable
+                      key={tag}
+                      onPress={() => setSelectedTag(tag)}
+                      style={[
+                        styles.tagChip,
+                        { backgroundColor: selectedTag === tag ? colors.primary : colors.surfaceVariant }
+                      ]}
+                    >
+                      <Text style={[typography.captionBold, { color: selectedTag === tag ? colors.textInverse : colors.textPrimary }]}>
+                        {tag}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
             <CalendarView 
               selectedDate={selectedDate} 
               onSelectDate={setSelectedDate} 
@@ -513,6 +548,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
     gap: spacing.sm,
+  },
+  tagFilterListMonthly: {
+    gap: spacing.sm,
+    paddingVertical: 2,
   },
   tagChip: {
     paddingHorizontal: spacing.md,

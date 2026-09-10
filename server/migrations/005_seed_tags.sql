@@ -257,6 +257,15 @@ INSERT INTO tags (slug, name_tr, name_en, category, icon, sort_order) VALUES
 ('mythology', 'Mitoloji', 'Mythology', 'subject', '⚡', 38),
 ('education', 'Eğitim', 'Education', 'subject', '🏫', 39),
 ('journalism', 'Gazetecilik', 'Journalism', 'subject', '📰', 40),
+('yks', 'YKS / Üniversite Hazırlık', 'YKS Exam Prep', 'subject', '🎯', 41),
+('kpss', 'KPSS', 'KPSS Exam', 'subject', '📑', 42),
+('tus', 'TUS (Tıpta Uzmanlık)', 'TUS Medical Exam', 'subject', '🩺', 43),
+('ales', 'ALES', 'ALES Exam', 'subject', '📊', 44),
+('dgs', 'DGS', 'DGS Exam', 'subject', '📐', 45),
+('lgs', 'LGS', 'LGS Exam', 'subject', '🎒', 46),
+('vize-final', 'Vize / Final', 'Midterm / Finals', 'subject', '📝', 47),
+('ielts-toefl', 'IELTS / TOEFL', 'IELTS / TOEFL', 'subject', '🗣️', 48),
+('thesis', 'Tez / Makale Yazımı', 'Thesis / Academic Writing', 'subject', '🖋️', 49),
 
 -- tech (added 10)
 ('typescript', 'TypeScript', 'TypeScript', 'tech', '🟦', 26),
@@ -317,6 +326,11 @@ INSERT INTO tags (slug, name_tr, name_en, category, icon, sort_order) VALUES
 ('spirituality', 'Maneviyat', 'Spirituality', 'lifestyle', '✨', 23),
 ('productivity', 'Üretkenlik', 'Productivity', 'lifestyle', '⏱️', 24),
 ('finance', 'Kişisel Finans', 'Personal Finance', 'lifestyle', '💰', 25),
+('deep-work', 'Derin Odaklanma (Deep Work)', 'Deep Work', 'lifestyle', '🧠', 26),
+('early-bird', 'Erken Kalkma (5 AM Club)', 'Early Bird / 5 AM Club', 'lifestyle', '🌅', 27),
+('dopamine-detox', 'Dopamin Detoksu', 'Dopamine Detox', 'lifestyle', '🧘‍♂️', 28),
+('time-management', 'Zaman Yönetimi', 'Time Management', 'lifestyle', '⏳', 29),
+('morning-routine', 'Sabah Rutini', 'Morning Routine', 'lifestyle', '☀️', 30),
 
 -- hobby (added 10)
 ('magic-tricks', 'Sihirbazlık', 'Magic Tricks', 'hobby', '🎩', 11),

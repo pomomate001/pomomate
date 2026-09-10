@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../theme';
 import { typography } from '../../theme/typography';
@@ -40,6 +40,7 @@ export function TagSelectionSheet({ visible, onClose }: TagSelectionSheetProps) 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(userTags.map((t) => t.id)));
   const [prevUserTags, setPrevUserTags] = useState(userTags);
   const [activeCategory, setActiveCategory] = useState<TagCategory>('lifestyle');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   // Sync selectedIds when userTags change
@@ -59,8 +60,17 @@ export function TagSelectionSheet({ visible, onClose }: TagSelectionSheetProps) 
   }, [visible, user?.id]);
 
   const filteredTags = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q.length > 0) {
+      return allTags.filter((tag) => {
+        const nameTr = (tag.nameTr || '').toLowerCase();
+        const nameEn = (tag.nameEn || '').toLowerCase();
+        const slug = (tag.slug || '').toLowerCase();
+        return nameTr.includes(q) || nameEn.includes(q) || slug.includes(q);
+      });
+    }
     return allTags.filter((t) => t.category === activeCategory);
-  }, [allTags, activeCategory]);
+  }, [allTags, activeCategory, searchQuery]);
 
   const toggleTag = (tagId: string) => {
     setSelectedIds((prev) => {
@@ -112,40 +122,79 @@ export function TagSelectionSheet({ visible, onClose }: TagSelectionSheetProps) 
           </ScrollView>
         )}
 
-        {/* Category filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-          {CATEGORY_CONFIG.map((cat) => (
-            <Pressable
-              key={cat.key}
-              onPress={() => setActiveCategory(cat.key)}
-              style={[
-                styles.categoryBtn,
-                {
-                  backgroundColor: activeCategory === cat.key ? colors.primary : 'rgba(255,255,255,0.08)',
-                  borderColor: activeCategory === cat.key ? colors.primary : 'rgba(255,255,255,0.12)',
-                },
-              ]}
-            >
-              <Text style={{ fontSize: 14 }}>{cat.icon}</Text>
-              <Text
+        {/* Search Bar */}
+        <View style={[styles.searchBox, { backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)' }]}>
+          <Ionicons name="search" size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.textPrimary }]}
+            placeholder={language === 'en' ? 'Search all tags...' : 'Tüm etiketlerde ara...'}
+            placeholderTextColor={colors.textDisabled}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={16} color={colors.textDisabled} />
+            </Pressable>
+          )}
+        </View>
+
+        {/* Category filter — only when not searching */}
+        {searchQuery.trim().length === 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+            {CATEGORY_CONFIG.map((cat) => (
+              <Pressable
+                key={cat.key}
+                onPress={() => setActiveCategory(cat.key)}
                 style={[
-                  typography.captionBold,
+                  styles.categoryBtn,
                   {
-                    color: activeCategory === cat.key ? '#FFF' : colors.textSecondary,
-                    marginLeft: 4,
-                    fontSize: 11,
+                    backgroundColor: activeCategory === cat.key ? colors.primary : 'rgba(255,255,255,0.08)',
+                    borderColor: activeCategory === cat.key ? colors.primary : 'rgba(255,255,255,0.12)',
                   },
                 ]}
               >
-                {t(cat.labelKey as any)}
+                <Text style={{ fontSize: 14 }}>{cat.icon}</Text>
+                <Text
+                  style={[
+                    typography.captionBold,
+                    {
+                      color: activeCategory === cat.key ? '#FFF' : colors.textSecondary,
+                      marginLeft: 4,
+                      fontSize: 11,
+                    },
+                  ]}
+                >
+                  {t(cat.labelKey as any)}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        ) : (
+          <View style={styles.searchInfoBar}>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>
+              {language === 'en' ? `Found ${filteredTags.length} tags` : `${filteredTags.length} etiket bulundu`}
+            </Text>
+            <Pressable onPress={() => setSearchQuery('')}>
+              <Text style={[typography.captionBold, { color: colors.primary }]}>
+                {language === 'en' ? 'Show categories' : 'Kategorileri göster'}
               </Text>
             </Pressable>
-          ))}
-        </ScrollView>
+          </View>
+        )}
 
         {/* Tags grid */}
         {isLoading ? (
           <ActivityIndicator size="large" color={colors.primary} style={{ paddingVertical: spacing.xl }} />
+        ) : filteredTags.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="search-outline" size={36} color={colors.textDisabled} />
+            <Text style={[typography.caption, { color: colors.textDisabled, marginTop: spacing.xs }]}>
+              {language === 'en' ? 'No tags found.' : 'Etiket bulunamadı.'}
+            </Text>
+          </View>
         ) : (
           <ScrollView style={styles.tagGrid} showsVerticalScrollIndicator={false}>
             <View style={styles.tagGridInner}>
@@ -212,6 +261,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginRight: 6,
   },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    padding: 0,
+  },
+  searchInfoBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    paddingHorizontal: 2,
+  },
   categoryScroll: { marginBottom: spacing.md },
   categoryBtn: {
     flexDirection: 'row',
@@ -221,6 +291,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     marginRight: 8,
+  },
+  emptyContainer: {
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tagGrid: { maxHeight: 260 },
   tagGridInner: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
