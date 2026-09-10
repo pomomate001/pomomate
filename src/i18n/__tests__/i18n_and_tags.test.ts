@@ -164,5 +164,12 @@ describe('i18n and Tags Localized Handling', () => {
       expect(translate('rooms.inviteToRoomTitle', 'tr')).toBe('Odaya Davet Et');
       expect(translate('rooms.inviteToRoomTitle', 'en')).toBe('Invite to Room');
     });
+
+    it('translates task title placeholder and tag label correctly in both languages', () => {
+      expect(translate('tasks.taskTitlePlaceholder', 'tr')).toBe('Bir görev ekleyin');
+      expect(translate('tasks.taskTitlePlaceholder', 'en')).toBe('Add a task');
+      expect(translate('tasks.tagLabel', 'tr')).toBe('Etiket');
+      expect(translate('tasks.tagLabel', 'en')).toBe('Tag');
+    });
   });
 });

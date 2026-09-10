@@ -2,6 +2,18 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
+## [1.3.25] - 2026-09-10
+
+### Fixed
+- **Timer Mode Switching Locked While Running**:
+  - When the timer is active (`isRunning`), the other two timer mode buttons ("Çalışma", "Kısa Mola", "Uzun Mola") are visually dimmed and disabled to prevent accidental cancellation of active pomodoro sessions.
+  - Guarded `handleSetMode` with an `isRunning` check to block accidental state transitions.
+
+### Changed
+- **Task Creation Sheet Localization Polishing**:
+  - Updated task title placeholder from "Örn: 20 sayfa kitap oku" / "e.g. Read 20 pages of book" to "Bir görev ekleyin" / "Add a task".
+  - Simplified tag field label from "Etiket (Klas)" / "Tag (Category)" to just "Etiket" / "Tag".
+
 ## [1.3.24] - 2026-09-10
 
 ### Changed

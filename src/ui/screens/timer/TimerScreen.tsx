@@ -337,6 +337,7 @@ export function TimerScreen() {
 
   const handleSetMode = useCallback(
     (m: TimerMode) => {
+      if (isRunning) return;
       setMode(m);
       const s = useTimerStore.getState();
       syncTimerToBuddy({
@@ -347,7 +348,7 @@ export function TimerScreen() {
         targetEndTime: null,
       });
     },
-    [setMode, syncTimerToBuddy],
+    [isRunning, setMode, syncTimerToBuddy],
   );
 
   // Keep buddy updated if timer duration changes while in a paused buddy session
@@ -537,6 +538,7 @@ export function TimerScreen() {
                 variant={mode === m ? 'primary' : 'ghost'}
                 size="sm"
                 textColor={mode === m ? colors.textInverse : colors.textSecondary}
+                disabled={isRunning && mode !== m}
                 onPress={() => handleSetMode(m)}
                 style={styles.modeBtn}
               />
