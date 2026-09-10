@@ -38,8 +38,8 @@ const PAGE_SIZE = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isSmallScreen = SCREEN_HEIGHT < 750;
 const CARD_WIDTH = Math.min(SCREEN_WIDTH - 36, 324);
-const CARD_HEIGHT = isSmallScreen ? 410 : Math.min(Math.round(SCREEN_HEIGHT * 0.52), 450);
-const IMAGE_HEIGHT = isSmallScreen ? 165 : 195;
+const CARD_HEIGHT = isSmallScreen ? 395 : Math.min(Math.round(SCREEN_HEIGHT * 0.49), 430);
+const IMAGE_HEIGHT = isSmallScreen ? 155 : 185;
 const SWIPE_THRESHOLD = 120;
 const SWIPE_OUT_DURATION = 250;
 
@@ -571,13 +571,17 @@ export function DiscoverScreen({ navigation }: Props) {
       return renderAllSeen();
     }
 
-    return suggestedUsers
-      .slice(currentIndex, currentIndex + 2)
-      .reverse()
-      .map((suggestedUser, i, arr) => {
-        const isTopCard = suggestedUser.userId === suggestedUsers[currentIndex].userId;
-        return renderProfileCard(suggestedUser, isTopCard);
-      });
+    return (
+      <View style={styles.cardDeck}>
+        {suggestedUsers
+          .slice(currentIndex, currentIndex + 2)
+          .reverse()
+          .map((suggestedUser) => {
+            const isTopCard = suggestedUser.userId === suggestedUsers[currentIndex].userId;
+            return renderProfileCard(suggestedUser, isTopCard);
+          })}
+      </View>
+    );
   };
 
   // ─── MAIN RENDER ───
@@ -586,13 +590,13 @@ export function DiscoverScreen({ navigation }: Props) {
       {renderHeader()}
 
       {isLoading && !isRefreshing ? (
-        <View style={[styles.loadingCenter, { paddingBottom: 70 + insets.bottom }]}>
+        <View style={[styles.loadingCenter, { paddingBottom: 50 + insets.bottom }]}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : allSeen ? (
         renderAllSeen()
       ) : (
-        <View style={[styles.cardArea, { paddingBottom: 70 + insets.bottom }]}>
+        <View style={[styles.cardArea, { paddingBottom: 36 + insets.bottom }]}>
            {renderCards()}
         </View>
       )}
@@ -676,12 +680,19 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: spacing.xs,
   },
-  profileCard: {
+  cardDeck: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
+    position: 'relative',
+    marginTop: -22,
+  },
+  profileCard: {
+    width: '100%',
+    height: '100%',
     position: 'absolute',
+    top: 0,
+    left: 0,
     borderRadius: 20,
     borderWidth: 1,
     overflow: 'hidden',
