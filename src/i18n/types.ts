@@ -98,6 +98,16 @@ export interface TranslationSchema {
     breakCompletedBody: string;
     achievementTitle: string;
     achievementSubtitle: string;
+    duoTitle1: string;
+    duoTitle2: string;
+    duoTitle3: string;
+    duoTitle4: string;
+    duoTitle5: string;
+    duoTitle6: string;
+    duoTitle7: string;
+    duoTitle8: string;
+    duoTitle9: string;
+    duoTitle10: string;
     achievementTodayPomodoros: string;
     achievementTodayDuration: string;
     achievementStreak: string;

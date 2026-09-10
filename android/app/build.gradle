@@ -13,14 +13,14 @@ def getAppVersion(String projectRoot) {
             def json = new JsonSlurper().parseText(inputFile.text)
             def expo = json.expo
             return [
-                versionCode: (expo.android?.versionCode ?: 34) as Integer,
-                versionName: (expo.version ?: "1.3.26") as String
+                versionCode: (expo.android?.versionCode ?: 35) as Integer,
+                versionName: (expo.version ?: "1.3.27") as String
             ]
         }
     } catch (Exception e) {
         println "Failed to parse app.json for version: ${e.message}"
     }
-    return [versionCode: 34, versionName: "1.3.26"]
+    return [versionCode: 35, versionName: "1.3.27"]
 }
 
 def appVersion = getAppVersion(projectRoot)

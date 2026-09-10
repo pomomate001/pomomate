@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import com.facebook.react.bridge.*
 
@@ -72,8 +74,9 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
                 reactContext.startService(intent)
             }
             
-            // Minimize current task cleanly to background instead of launching an intrusive Home intent
-            currentActivity?.runOnUiThread {
+            // Allow FloatingWidgetService to complete its startForeground handshake and attach overlay
+            // while the Activity is still in the foreground. This eliminates Android 12 background launch restrictions.
+            Handler(Looper.getMainLooper()).postDelayed({
                 try {
                     val minimized = currentActivity?.moveTaskToBack(true) ?: false
                     if (!minimized) {
@@ -86,7 +89,7 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
-            }
+            }, 250)
             
             promise.resolve(true)
         } catch (e: Exception) {
@@ -94,7 +97,9 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
             try {
                 val fallbackIntent = Intent(reactContext, FloatingWidgetService::class.java)
                 reactContext.startService(fallbackIntent)
-                currentActivity?.moveTaskToBack(true)
+                Handler(Looper.getMainLooper()).postDelayed({
+                    currentActivity?.moveTaskToBack(true)
+                }, 250)
                 promise.resolve(true)
             } catch (fallbackEx: Exception) {
                 promise.reject("SERVICE_START_FAILED", fallbackEx.message)

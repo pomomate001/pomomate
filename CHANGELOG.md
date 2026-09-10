@@ -2,6 +2,16 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
+## [1.3.27] - 2026-09-10
+
+### Fixed
+- **Mini Mode (Floating Widget / PiP) Android Stability & Crash Prevention**:
+  - Resolved Android 12 background launch restrictions (`ForegroundServiceStartNotAllowedException`) by introducing a 250ms smooth transition delay before moving the task to background, ensuring the foreground service and overlay attach cleanly.
+  - Implemented immediate foreground notification startup in `onCreate()` and `onStartCommand()` to prevent the 5-second `ForegroundServiceDidNotStartInTimeException` timeout.
+  - Added programmatic fallback views (`createDefaultBubbleView` and `createDefaultMenuView`) with pure Android drawables and layouts, guaranteeing that the floating bubble view never returns `null` or crashes due to theme/inflation issues in a Service context.
+  - Wrapped vector drawable loading across action buttons (mic, cam, screen, open app, close) with `ContextCompat.getDrawable` and fallback protections to eliminate `Resources$NotFoundException`.
+  - Updated permission prompt dialog to mention both OEM "Üstte göster" (Samsung/Xiaomi) and stock "Diğer uygulamaların üzerinde göster" (AOSP) system setting labels.
+
 ## [1.3.26] - 2026-09-10
 
 ### Added

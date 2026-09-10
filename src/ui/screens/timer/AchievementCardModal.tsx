@@ -20,6 +20,7 @@ export function AchievementCardModal({ visible, onClose, completedDurationSecond
   const viewShotRef = useRef<any>(null);
   const [scaleAnim] = useState(() => new Animated.Value(0.8));
   const [opacityAnim] = useState(() => new Animated.Value(0));
+  const [duoTitleIndex, setDuoTitleIndex] = useState(() => Math.floor(Math.random() * 10));
 
   const user = useUserStore((s) => s.user);
   const stats = useStatsStore();
@@ -40,9 +41,10 @@ export function AchievementCardModal({ visible, onClose, completedDurationSecond
   const recentCompletedTask = tasks.find((t) => t.targetDate === todayStr && t.completed);
   const taskName = activeTask?.title || recentCompletedTask?.title;
 
-  // Entrance animation
+  // Entrance animation & random duo title re-roll
   useEffect(() => {
     if (visible) {
+      setDuoTitleIndex(Math.floor(Math.random() * 10));
       scaleAnim.setValue(0.8);
       opacityAnim.setValue(0);
       Animated.parallel([
@@ -102,6 +104,7 @@ export function AchievementCardModal({ visible, onClose, completedDurationSecond
             completedDurationMinutes={completedDurationMinutes}
             buddyName={activeSession && buddyProfile ? buddyProfile.displayName : undefined}
             buddyAvatarUrl={activeSession && buddyProfile ? buddyProfile.avatarUrl : undefined}
+            duoTitleIndex={duoTitleIndex}
           />
 
           {/* Action Buttons */}

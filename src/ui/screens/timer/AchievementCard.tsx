@@ -1,10 +1,23 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import { Avatar } from '../../components/Avatar';
 import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from '../../../i18n';
+import { useTranslation, TranslationKey } from '../../../i18n';
 import { LinearGradient } from 'expo-linear-gradient';
+
+export const DUO_ACHIEVEMENT_TITLE_KEYS: TranslationKey[] = [
+  'timer.duoTitle1',
+  'timer.duoTitle2',
+  'timer.duoTitle3',
+  'timer.duoTitle4',
+  'timer.duoTitle5',
+  'timer.duoTitle6',
+  'timer.duoTitle7',
+  'timer.duoTitle8',
+  'timer.duoTitle9',
+  'timer.duoTitle10',
+];
 
 interface AchievementCardProps {
   userName: string;
@@ -16,10 +29,11 @@ interface AchievementCardProps {
   completedDurationMinutes: number;
   buddyName?: string;
   buddyAvatarUrl?: string;
+  duoTitleIndex?: number;
 }
 
 export const AchievementCard = forwardRef<any, AchievementCardProps>(
-  function AchievementCard({ userName, avatarUrl, taskName, todayPomodoros, todayDurationMinutes, streak, completedDurationMinutes, buddyName, buddyAvatarUrl }, ref) {
+  function AchievementCard({ userName, avatarUrl, taskName, todayPomodoros, todayDurationMinutes, streak, completedDurationMinutes, buddyName, buddyAvatarUrl, duoTitleIndex }, ref) {
     const { t } = useTranslation();
     
     const formatDuration = (minutes: number) => {
@@ -28,6 +42,18 @@ export const AchievementCard = forwardRef<any, AchievementCardProps>(
       if (h > 0) return `${h}s ${m}d`;
       return `${m} dk`;
     };
+
+    // When completing a pomodoro together with a friend, randomly pick one of 10 motivating duo titles.
+    const duoTitle = useMemo(() => {
+      if (!buddyName) return null;
+      const index =
+        typeof duoTitleIndex === 'number'
+          ? Math.abs(duoTitleIndex) % DUO_ACHIEVEMENT_TITLE_KEYS.length
+          : Math.floor(Math.random() * DUO_ACHIEVEMENT_TITLE_KEYS.length);
+      return t(DUO_ACHIEVEMENT_TITLE_KEYS[index]);
+    }, [buddyName, duoTitleIndex, t]);
+
+    const title = duoTitle || t('timer.achievementTitle');
 
     return (
       <ViewShot ref={ref} options={{ format: 'png', quality: 1 }}>
@@ -46,8 +72,12 @@ export const AchievementCard = forwardRef<any, AchievementCardProps>(
             <View style={styles.iconContainer}>
               <Ionicons name="trophy" size={32} color="#FFD700" />
             </View>
-            <Text style={[styles.title, { color: '#FFFFFF' }]}>
-              {t('timer.achievementTitle')}
+            <Text
+              style={[styles.title, { color: '#FFFFFF' }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {title}
             </Text>
             <Text style={[styles.subtitle, { color: 'rgba(255,255,255,0.7)' }]}>
               {t('timer.achievementSubtitle')}
@@ -164,6 +194,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     letterSpacing: 0.5,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,

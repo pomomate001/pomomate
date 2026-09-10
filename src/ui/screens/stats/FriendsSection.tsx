@@ -126,8 +126,7 @@ export function FriendsSection({ period = 'daily', userPeriodStats }: FriendsSec
   return (
     <View style={styles.container}>
       {/* Main Leaderboard Header */}
-      <Pressable
-        onPress={() => setExpanded((v) => !v)}
+      <View
         style={[
           styles.header,
           {
@@ -136,20 +135,29 @@ export function FriendsSection({ period = 'daily', userPeriodStats }: FriendsSec
           },
         ]}
       >
-        <View style={styles.headerLeft}>
-          {/* Trophy Icon with glowing aura */}
-          <LinearGradient
-            colors={['#FFE259', '#FFA751']}
-            style={styles.trophyBadge}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name="trophy" size={18} color="#FFFFFF" />
-          </LinearGradient>
+        {/* Top Row: Trophy, Title, Period Badge, Chevron */}
+        <Pressable
+          onPress={() => setExpanded((v) => !v)}
+          style={styles.headerTopRow}
+          hitSlop={4}
+        >
+          <View style={styles.headerLeft}>
+            {/* Trophy Icon with glowing aura */}
+            <LinearGradient
+              colors={['#FFE259', '#FFA751']}
+              style={styles.trophyBadge}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name="trophy" size={18} color="#FFFFFF" />
+            </LinearGradient>
 
-          <View style={{ marginLeft: spacing.sm }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={[typography.h3, { color: colors.textPrimary }]}>
+            <View style={styles.titleWrap}>
+              <Text
+                style={[styles.headerTitle, { color: colors.textPrimary }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {t('friends.leaderboardTitle')}
               </Text>
               <View style={[styles.periodBadge, { backgroundColor: `${colors.primary}18` }]}>
@@ -162,71 +170,76 @@ export function FriendsSection({ period = 'daily', userPeriodStats }: FriendsSec
                 </Text>
               </View>
             </View>
+          </View>
 
-            {/* Collapsed state quick preview */}
-            {!expanded && currentUserEntry && (
-              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+          <View style={styles.chevronWrap}>
+            <Ionicons
+              name={expanded ? 'chevron-up' : 'chevron-down'}
+              size={22}
+              color={colors.textSecondary}
+            />
+          </View>
+        </Pressable>
+
+        {/* Sub Row: Rank summary on left, Action buttons on right */}
+        <View style={styles.headerSubRow}>
+          <Pressable
+            onPress={() => setExpanded((v) => !v)}
+            style={styles.rankInfoWrap}
+          >
+            {currentUserEntry ? (
+              <Text
+                style={[typography.caption, { color: colors.textSecondary }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {t('friends.yourRankInfo', { rank: currentUserEntry.rank })} ·{' '}
                 {formatHours(currentUserEntry.workSeconds, language)}
               </Text>
-            )}
+            ) : null}
+          </Pressable>
+
+          {/* Header Action Buttons */}
+          <View style={styles.headerActions}>
+            {/* Share Button */}
+            <Pressable
+              onPress={() => setShowShareModal(true)}
+              hitSlop={8}
+              style={[styles.actionIconBtn, { backgroundColor: `${colors.primary}18` }]}
+              accessibilityLabel={t('friends.shareRanking')}
+            >
+              <Ionicons name="share-social" size={17} color={colors.primary} />
+            </Pressable>
+
+            {/* Discover Button */}
+            <Pressable
+              onPress={() => navigation.navigate('Discover')}
+              hitSlop={8}
+              style={[styles.actionIconBtn, { backgroundColor: colors.surfaceVariant }]}
+              accessibilityLabel={t('friends.discoverTab')}
+            >
+              <Ionicons name="search" size={16} color={colors.textPrimary} />
+            </Pressable>
+
+            {/* Add Friend Button */}
+            <Pressable
+              onPress={() => setShowAddFriend(true)}
+              hitSlop={8}
+              style={[styles.actionIconBtn, { backgroundColor: colors.surfaceVariant, position: 'relative' }]}
+              accessibilityLabel={t('friends.addFriend')}
+            >
+              <Ionicons name="person-add" size={16} color={colors.textPrimary} />
+              {incomingRequests.length > 0 && (
+                <View style={[styles.reqBadge, { backgroundColor: colors.error }]}>
+                  <Text style={{ fontSize: 10, color: '#FFF', fontWeight: 'bold' }}>
+                    {incomingRequests.length}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
           </View>
         </View>
-
-        {/* Header Action Buttons */}
-        <View style={styles.headerRight}>
-          {/* Share Button */}
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation();
-              setShowShareModal(true);
-            }}
-            hitSlop={8}
-            style={[styles.actionIconBtn, { backgroundColor: `${colors.primary}18` }]}
-            accessibilityLabel={t('friends.shareRanking')}
-          >
-            <Ionicons name="share-social" size={17} color={colors.primary} />
-          </Pressable>
-
-          {/* Discover Button */}
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation();
-              navigation.navigate('Discover');
-            }}
-            hitSlop={8}
-            style={[styles.actionIconBtn, { backgroundColor: colors.surfaceVariant }]}
-          >
-            <Ionicons name="search" size={16} color={colors.textPrimary} />
-          </Pressable>
-
-          {/* Add Friend Button */}
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation();
-              setShowAddFriend(true);
-            }}
-            hitSlop={8}
-            style={[styles.actionIconBtn, { backgroundColor: colors.surfaceVariant, position: 'relative' }]}
-          >
-            <Ionicons name="person-add" size={16} color={colors.textPrimary} />
-            {incomingRequests.length > 0 && (
-              <View style={[styles.reqBadge, { backgroundColor: colors.error }]}>
-                <Text style={{ fontSize: 10, color: '#FFF', fontWeight: 'bold' }}>
-                  {incomingRequests.length}
-                </Text>
-              </View>
-            )}
-          </Pressable>
-
-          <Ionicons
-            name={expanded ? 'chevron-up' : 'chevron-down'}
-            size={22}
-            color={colors.textSecondary}
-            style={{ marginLeft: 2 }}
-          />
-        </View>
-      </Pressable>
+      </View>
 
       {/* Expanded Content */}
       {expanded && (
@@ -330,16 +343,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    minWidth: 0,
   },
   trophyBadge: {
     width: 36,
@@ -353,19 +370,56 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 3,
   },
+  titleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: spacing.sm,
+    flex: 1,
+    minWidth: 0,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+    flexShrink: 1,
+  },
   periodBadge: {
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: radius.sm,
+    flexShrink: 0,
   },
   periodBadgeText: {
     fontSize: 10,
     fontWeight: '800',
   },
-  headerRight: {
+  chevronWrap: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginLeft: spacing.xs,
+  },
+  headerSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    minHeight: 34,
+  },
+  rankInfoWrap: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: spacing.sm,
+    justifyContent: 'center',
+  },
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   actionIconBtn: {
     width: 34,

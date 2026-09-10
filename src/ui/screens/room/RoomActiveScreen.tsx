@@ -71,7 +71,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       if (!hasPermission) {
         Alert.alert(
           'Mini Mod İzni Gerekli',
-          'PomoMate\'in diğer uygulamaların üzerinde mini kontrol penceresi olarak çalışabilmesi için "Diğer uygulamaların üzerinde göster" iznine ihtiyacı var.\n\nŞimdi ayarlardan bu izni açmak ister misiniz?',
+          'PomoMate\'in diğer uygulamaların üzerinde mini kontrol penceresi olarak çalışabilmesi için "Üstte göster" (veya "Diğer uygulamaların üzerinde göster") iznine ihtiyacı var.\n\nŞimdi ayarlardan bu izni açmak ister misiniz?',
           [
             { text: 'Vazgeç', style: 'cancel' },
             {

@@ -5,19 +5,26 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import com.facebook.react.ReactApplication
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.torrydo.floatingbubbleview.*
 import com.torrydo.floatingbubbleview.service.expandable.*
-
-import android.content.pm.ServiceInfo
-import android.os.Handler
-import android.os.Looper
-import androidx.core.app.ServiceCompat
 
 class FloatingWidgetService : ExpandableBubbleService() {
 
@@ -37,13 +44,26 @@ class FloatingWidgetService : ExpandableBubbleService() {
 
     override fun onCreate() {
         try {
+            startNotificationForeground()
             super.onCreate()
             instance = this
             minimize()
         } catch (e: Exception) {
             e.printStackTrace()
+            try {
+                startNotificationForeground()
+            } catch (ignored: Exception) {}
             stopSelf()
         }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        try {
+            startNotificationForeground()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
@@ -104,87 +124,179 @@ class FloatingWidgetService : ExpandableBubbleService() {
     }
 
     override fun configBubble(): BubbleBuilder? {
-        return try {
+        val bubbleView: View = try {
             val themedContext = android.view.ContextThemeWrapper(this, R.style.AppTheme)
-            val bubbleView = LayoutInflater.from(themedContext).inflate(R.layout.floating_bubble, null)
-            bubbleView.setOnClickListener { expand() }
-            bubbleView.setOnLongClickListener {
-                try {
-                    val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-                    if (launchIntent != null) {
-                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-                        startActivity(launchIntent)
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-                true
-            }
-
-            BubbleBuilder(this)
-                .bubbleView(bubbleView)
-                .startLocation(0, 100)
-                .enableAnimateToEdge(true)
-                .distanceToClose(100)
+            val v = LayoutInflater.from(themedContext).inflate(R.layout.floating_bubble, null)
+            v ?: createDefaultBubbleView()
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            createDefaultBubbleView()
         }
+
+        bubbleView.setOnClickListener { expand() }
+        bubbleView.setOnLongClickListener {
+            bringAppToFront()
+            true
+        }
+
+        return BubbleBuilder(this)
+            .bubbleView(bubbleView)
+            .startLocation(0, 100)
+            .enableAnimateToEdge(true)
+            .distanceToClose(100)
+    }
+
+    private fun createDefaultBubbleView(): View {
+        val density = resources.displayMetrics.density
+        val size = (60 * density).toInt()
+        val innerSize = (32 * density).toInt()
+        val frame = FrameLayout(this).apply {
+            layoutParams = ViewGroup.LayoutParams(size, size)
+            val bg = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#212121"))
+                setStroke((2 * density).toInt(), Color.parseColor("#A855F7"))
+            }
+            background = bg
+            elevation = 8 * density
+        }
+
+        val iv = ImageView(this).apply {
+            layoutParams = FrameLayout.LayoutParams(innerSize, innerSize, Gravity.CENTER)
+            val logoRes = resources.getIdentifier("ic_logo", "drawable", packageName)
+            if (logoRes != 0) {
+                setImageResource(logoRes)
+            } else {
+                setImageResource(android.R.drawable.ic_dialog_info)
+            }
+        }
+        frame.addView(iv)
+        return frame
     }
 
     override fun configExpandedBubble(): ExpandedBubbleBuilder? {
-        return try {
+        val menuView: View = try {
             val themedContext = android.view.ContextThemeWrapper(this, R.style.AppTheme)
-            val menuView = LayoutInflater.from(themedContext).inflate(R.layout.floating_menu, null)
-
-            micButton = menuView.findViewById(R.id.btn_mic)
-            camButton = menuView.findViewById(R.id.btn_cam)
-            screenButton = menuView.findViewById(R.id.btn_screen)
-            val openAppButton = menuView.findViewById<ImageButton?>(R.id.btn_open_app)
-            val closeButton = menuView.findViewById<ImageButton>(R.id.btn_close_menu)
-
-            updateButtonStates()
-
-            micButton?.setOnClickListener {
-                sendEventToJS("toggleMic")
-            }
-            camButton?.setOnClickListener {
-                sendEventToJS("toggleCam")
-            }
-            screenButton?.setOnClickListener {
-                sendEventToJS("toggleScreen")
-            }
-            openAppButton?.setOnClickListener {
-                try {
-                    val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-                    if (launchIntent != null) {
-                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-                        startActivity(launchIntent)
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-                minimize()
-            }
-            closeButton?.setOnClickListener {
-                minimize()
-            }
-
-            ExpandedBubbleBuilder(this)
-                .expandedView(menuView)
-                .dimAmount(0.0f) // No dimming to keep it unintrusive
-                .fillMaxWidth(false)
+            val v = LayoutInflater.from(themedContext).inflate(R.layout.floating_menu, null)
+            v ?: createDefaultMenuView()
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            createDefaultMenuView()
+        }
+
+        micButton = menuView.findViewById(R.id.btn_mic)
+        camButton = menuView.findViewById(R.id.btn_cam)
+        screenButton = menuView.findViewById(R.id.btn_screen)
+        val openAppButton = menuView.findViewById<ImageButton?>(R.id.btn_open_app)
+        val closeButton = menuView.findViewById<ImageButton?>(R.id.btn_close_menu)
+
+        updateButtonStates()
+
+        micButton?.setOnClickListener {
+            sendEventToJS("toggleMic")
+        }
+        camButton?.setOnClickListener {
+            sendEventToJS("toggleCam")
+        }
+        screenButton?.setOnClickListener {
+            sendEventToJS("toggleScreen")
+        }
+        openAppButton?.setOnClickListener {
+            bringAppToFront()
+            minimize()
+        }
+        closeButton?.setOnClickListener {
+            minimize()
+        }
+
+        return ExpandedBubbleBuilder(this)
+            .expandedView(menuView)
+            .dimAmount(0.0f) // No dimming to keep it unintrusive
+            .fillMaxWidth(false)
+    }
+
+    private fun createDefaultMenuView(): View {
+        val density = resources.displayMetrics.density
+        val padding = (8 * density).toInt()
+        val btnSize = (48 * density).toInt()
+        val margin = (8 * density).toInt()
+
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(padding, padding, padding, padding)
+            gravity = Gravity.CENTER
+            val bg = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 24 * density
+                setColor(Color.parseColor("#212121"))
+                setStroke((1 * density).toInt(), Color.parseColor("#A855F7"))
+            }
+            background = bg
+            elevation = 8 * density
+        }
+
+        fun createBtn(id: Int, iconResName: String, fallbackIcon: Int): ImageButton {
+            return ImageButton(this).apply {
+                this.id = id
+                layoutParams = LinearLayout.LayoutParams(btnSize, btnSize).apply {
+                    marginEnd = margin
+                }
+                setBackgroundColor(Color.TRANSPARENT)
+                val resId = resources.getIdentifier(iconResName, "drawable", packageName)
+                if (resId != 0) setImageResource(resId) else setImageResource(fallbackIcon)
+            }
+        }
+
+        layout.addView(createBtn(R.id.btn_mic, "ic_pip_mic_on", android.R.drawable.ic_btn_speak_now))
+        layout.addView(createBtn(R.id.btn_cam, "ic_pip_cam_off", android.R.drawable.ic_menu_camera))
+        layout.addView(createBtn(R.id.btn_screen, "ic_pip_screen_off", android.R.drawable.ic_menu_share))
+        layout.addView(createBtn(R.id.btn_open_app, "ic_pip_expand", android.R.drawable.ic_menu_view))
+        val closeBtn = ImageButton(this).apply {
+            this.id = R.id.btn_close_menu
+            layoutParams = LinearLayout.LayoutParams(btnSize, btnSize)
+            setBackgroundColor(Color.TRANSPARENT)
+            val resId = resources.getIdentifier("ic_pip_close", "drawable", packageName)
+            if (resId != 0) setImageResource(resId) else setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+        }
+        layout.addView(closeBtn)
+
+        return layout
+    }
+
+    private fun bringAppToFront() {
+        try {
+            val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+            if (launchIntent != null) {
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                startActivity(launchIntent)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     fun updateButtonStates() {
         Handler(Looper.getMainLooper()).post {
-            micButton?.setImageResource(if (currentMicOn) R.drawable.ic_pip_mic_on else R.drawable.ic_pip_mic_off)
-            camButton?.setImageResource(if (currentCamOn) R.drawable.ic_pip_cam_on else R.drawable.ic_pip_cam_off)
-            screenButton?.setImageResource(if (currentScreenShareOn) R.drawable.ic_pip_screen_on else R.drawable.ic_pip_screen_off)
+            try {
+                val micDrawable = androidx.core.content.ContextCompat.getDrawable(this, if (currentMicOn) R.drawable.ic_pip_mic_on else R.drawable.ic_pip_mic_off)
+                if (micDrawable != null) micButton?.setImageDrawable(micDrawable) else micButton?.setImageResource(if (currentMicOn) android.R.drawable.ic_btn_speak_now else android.R.drawable.ic_delete)
+            } catch (e: Exception) {
+                micButton?.setImageResource(if (currentMicOn) android.R.drawable.ic_btn_speak_now else android.R.drawable.ic_delete)
+            }
+
+            try {
+                val camDrawable = androidx.core.content.ContextCompat.getDrawable(this, if (currentCamOn) R.drawable.ic_pip_cam_on else R.drawable.ic_pip_cam_off)
+                if (camDrawable != null) camButton?.setImageDrawable(camDrawable) else camButton?.setImageResource(if (currentCamOn) android.R.drawable.ic_menu_camera else android.R.drawable.ic_delete)
+            } catch (e: Exception) {
+                camButton?.setImageResource(if (currentCamOn) android.R.drawable.ic_menu_camera else android.R.drawable.ic_delete)
+            }
+
+            try {
+                val screenDrawable = androidx.core.content.ContextCompat.getDrawable(this, if (currentScreenShareOn) R.drawable.ic_pip_screen_on else R.drawable.ic_pip_screen_off)
+                if (screenDrawable != null) screenButton?.setImageDrawable(screenDrawable) else screenButton?.setImageResource(if (currentScreenShareOn) android.R.drawable.ic_menu_share else android.R.drawable.ic_delete)
+            } catch (e: Exception) {
+                screenButton?.setImageResource(if (currentScreenShareOn) android.R.drawable.ic_menu_share else android.R.drawable.ic_delete)
+            }
         }
     }
 
