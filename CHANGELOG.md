@@ -2,6 +2,26 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
+## [1.3.26] - 2026-09-10
+
+### Added
+- **Friends Leaderboard & Podium (Liderlik Sıralaması ve Ödül Kürsüsü)**:
+  - Transformed the Friends expandable section on the Statistics screen into a competitive social Leaderboard ranking users by focused duration, pomodoros, and streak.
+  - Included the current user in the ranking with an eye-catching "SEN" / "YOU" neon accent badge and highlighted row card.
+  - Implemented an Olympic 3-tier Podium (`LeaderboardPodium`) featuring 1st place in the center with golden crown and aura, 2nd place on the left with silver medal badge, and 3rd place on the right with bronze badge.
+  - Designed prestigious medals and ranking badges (🥇, 🥈, 🥉, and `#4+` minimal numeral pills).
+- **Timeframe Synchronization (Günlük, Haftalık, Aylık)**:
+  - Synchronized the active period filter ("Günlük", "Haftalık", "Aylık") directly with friend statistics and leaderboard rankings.
+  - Selecting "Haftalık" immediately reflects the 7-day focus duration race among friends, while "Günlük" shows today's race, and "Aylık" reflects the current month.
+- **Social Media Achievement Ranking Card & Sharing (`LeaderboardShareCard`)**:
+  - Added a prominent Share button in the Leaderboard header opening an animated modal (`LeaderboardShareModal`).
+  - Rendered a luxury cosmic dark-gradient achievement card using `react-native-view-shot` featuring PomoMate branding, active period tag, podium champions, top 5 rankings, and the user's personal achievement box.
+  - Integrated native image sharing across Instagram Stories, WhatsApp, and social media via `expo-sharing`.
+- **Backend Supabase Migration 015 (`015_friend_stats_period_rpc.sql`)**:
+  - Updated `public.get_friends_stats(UUID[], TIMESTAMPTZ, TIMESTAMPTZ)` RPC function to support optional `p_start_date` and `p_end_date` parameters for timeframe filtering.
+- **Friend Details Sheet Enhancement**:
+  - Displaying both the active period stats (e.g. "Haftalık Süre", "Haftalık Pomodoro") and all-time totals in clean cards.
+
 ## [1.3.25] - 2026-09-10
 
 ### Fixed

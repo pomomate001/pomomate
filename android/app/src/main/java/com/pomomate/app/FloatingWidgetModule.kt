@@ -22,19 +22,37 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun checkPermission(promise: Promise) {
-        promise.resolve(Settings.canDrawOverlays(reactContext))
+        try {
+            val granted = Settings.canDrawOverlays(reactContext)
+            promise.resolve(granted)
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
     }
 
     @ReactMethod
     fun requestPermission(promise: Promise) {
-        if (!Settings.canDrawOverlays(reactContext)) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:" + reactContext.packageName)
-            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-            reactContext.startActivity(intent)
+        try {
+            if (!Settings.canDrawOverlays(reactContext)) {
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + reactContext.packageName)
+                ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                reactContext.startActivity(intent)
+            }
+            promise.resolve(true)
+        } catch (e: Exception) {
+            try {
+                // Fallback for OEM devices (Xiaomi, Vivo, Huawei, etc.) where package URI is rejected
+                val genericIntent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                reactContext.startActivity(genericIntent)
+                promise.resolve(true)
+            } catch (fallbackEx: Exception) {
+                promise.reject("PERMISSION_ERROR", fallbackEx.message)
+            }
         }
-        promise.resolve(true)
     }
 
     @ReactMethod

@@ -116,6 +116,7 @@ describe('Mini Mode Android Native Architecture & Contract Validation', () => {
       expect(content).toContain('@+id/btn_mic');
       expect(content).toContain('@+id/btn_cam');
       expect(content).toContain('@+id/btn_screen');
+      expect(content).toContain('@+id/btn_open_app');
       expect(content).toContain('@+id/btn_close_menu');
     });
 
@@ -130,6 +131,8 @@ describe('Mini Mode Android Native Architecture & Contract Validation', () => {
         'bg_bubble.xml',
         'bg_menu.xml',
         'ic_logo.xml',
+        'ic_pip_close.xml',
+        'ic_pip_expand.xml',
       ];
 
       for (const drawable of drawables) {

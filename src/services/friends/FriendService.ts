@@ -10,9 +10,33 @@ import { statsService } from '../stats';
 import type { SuggestedUser } from '../../state/friendsStore';
 import { t } from '../../i18n';
 
+export function getPeriodDateRange(period?: 'daily' | 'weekly' | 'monthly'): { startDate?: string; endDate?: string } {
+  if (!period) return {};
+  const now = new Date();
+  if (period === 'daily') {
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    return { startDate: start.toISOString(), endDate: end.toISOString() };
+  }
+  if (period === 'weekly') {
+    const start = new Date(now);
+    start.setDate(start.getDate() - 6);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    return { startDate: start.toISOString(), endDate: end.toISOString() };
+  }
+  // monthly
+  const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { startDate: start.toISOString(), endDate: end.toISOString() };
+}
+
 export class FriendService {
-  /** Fetch list of accepted friends and update the store. */
-  async fetchFriends(userId: string): Promise<FriendSummary[]> {
+  /** Fetch list of accepted friends and update the store, optionally for a specific period. */
+  async fetchFriends(userId: string, period?: 'daily' | 'weekly' | 'monthly'): Promise<FriendSummary[]> {
     useFriendsStore.getState().setLoading(true);
     useFriendsStore.getState().setError(null);
 
@@ -47,19 +71,42 @@ export class FriendService {
         logger.warn('[FriendService] Failed to load friend profiles:', pErr.message);
       }
 
-      // 3. Fetch friend stats from Supabase
-      const statsMap = await statsService.fetchFriendsStats(friendIds);
+      // 3. Fetch friend stats from Supabase for selected period
+      const { startDate, endDate } = getPeriodDateRange(period);
+      const periodStatsMap = await statsService.fetchFriendsStats(friendIds, startDate, endDate);
+
+      // Also get all-time stats if needed
+      const allTimeStatsMap = period ? await statsService.fetchFriendsStats(friendIds) : periodStatsMap;
+
+      const existingFriends = useFriendsStore.getState().friends;
+      const existingMap = new Map(existingFriends.map((f) => [f.userId, f]));
 
       // 4. Assemble summaries with real stats
       const friendList: FriendSummary[] = (profiles ?? []).map((p: any) => {
-        const stats = statsMap[p.id];
+        const pStats = periodStatsMap[p.id];
+        const allStats = allTimeStatsMap[p.id];
+        const existing = existingMap.get(p.id);
+
+        const currentPeriodStats = {
+          workSeconds: pStats?.totalWorkSeconds || 0,
+          pomodoros: pStats?.totalPomodoros || 0,
+          streak: pStats?.streak || 0,
+        };
+
+        const existingPeriodStats = existing?.periodStats || {};
+
         return {
           userId: p.id,
           displayName: p.display_name ?? 'Kullanıcı',
           avatarUrl: p.avatar_url,
-          totalWorkSeconds: stats?.totalWorkSeconds || 0,
-          totalPomodoros: stats?.totalPomodoros || 0,
-          streak: stats?.streak || 0,
+          totalWorkSeconds: allStats?.totalWorkSeconds || existing?.totalWorkSeconds || 0,
+          totalPomodoros: allStats?.totalPomodoros || existing?.totalPomodoros || 0,
+          streak: allStats?.streak || existing?.streak || 0,
+          periodStats: {
+            ...existingPeriodStats,
+            ...(period ? { [period]: currentPeriodStats } : {}),
+          },
+          currentPeriodStats,
         };
       });
 

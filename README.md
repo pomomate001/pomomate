@@ -42,10 +42,11 @@ PomoMate is a productivity app that combines the Pomodoro Technique with real-ti
 - **Cloud sync**: Automatic historical recording to Supabase `completed_tasks`
 
 ### 📊 Statistics & Calendar Insights
-- **Daily/Weekly/Monthly views**: Interactive bar charts tracking productive focus hours
+- **Daily/Weekly/Monthly views**: Interactive bar charts tracking productive focus hours with synchronized timeframe filtering
+- **Social Leaderboard & 3D Olympic Podium**: Real-time ranking with friends and self-inclusion, complete with 🥇 Gold Champion, 🥈 Silver Master, and 🥉 Bronze Rising Star badges and podium pedestals
+- **Social Media Achievement Ranking Card**: Generate and share luxury cosmic-gradient leaderboard achievement cards directly to Instagram Stories and WhatsApp via `expo-sharing`
 - **Streak tracking**: Consistent daily streaks and historical milestone records
-- **Calendar Heatmap**: Day-by-day Pomodoro density visualization
-- **Friend comparisons**: Friendly leaderboard with opt-in privacy controls
+- **Calendar Heatmap**: Day-by-day Pomodoro density visualization and historical task checklist restoration
 
 ### 👫 Social & Tag-Based Friend Discovery
 - **Tinder-Style Discover Cards**: Engaging edge-to-edge square photo presentation with physical left/right swipe gestures. Users can swipe left to Skip (with a red "GEÇ" stamp) or swipe right to Send Request (with a green "İSTEK AT" stamp), revealing the next card underneath in a layered stack.

@@ -81,6 +81,7 @@ export function TimerScreen() {
   const workAnimationId = useSettingsStore((s) => s.workAnimationId);
   const breakAnimationId = useSettingsStore((s) => s.breakAnimationId);
   const isPremium = useSettingsStore((s) => s.isPremium);
+  const deepFocusEnabled = useSettingsStore((s) => s.deepFocusEnabled);
   const isVisualWallpaperActive =
     backgroundEffectId.startsWith('video_') ||
     backgroundEffectId.startsWith('image_');
@@ -565,11 +566,34 @@ export function TimerScreen() {
             />
           </View>
 
-          {/* Cycle indicator */}
-          <View style={[styles.cycleIndicator, { backgroundColor: surfaceBg, borderColor: surfaceBorder, borderWidth: 1 }]}>
-            <Text style={[typography.captionBold, { color: colors.textPrimary, textShadowColor: (isVisualWallpaperActive || theme.dark) ? 'rgba(0,0,0,0.6)' : 'transparent', textShadowRadius: (isVisualWallpaperActive || theme.dark) ? 3 : 0 }]}>
-              {t('timer.cycle')} {currentCycle}
-            </Text>
+          {/* Cycle & Deep Focus indicators */}
+          <View style={styles.indicatorRow}>
+            {/* Cycle indicator */}
+            <View style={[styles.cycleIndicator, { backgroundColor: surfaceBg, borderColor: surfaceBorder, borderWidth: 1 }]}>
+              <Text style={[typography.captionBold, { color: colors.textPrimary, textShadowColor: (isVisualWallpaperActive || theme.dark) ? 'rgba(0,0,0,0.6)' : 'transparent', textShadowRadius: (isVisualWallpaperActive || theme.dark) ? 3 : 0 }]}>
+                {t('timer.cycle')} {currentCycle}
+              </Text>
+            </View>
+
+            {/* Deep Focus Badge */}
+            {deepFocusEnabled && (
+              <Pressable
+                onPress={() => setShowDurationPicker(true)}
+                style={[
+                  styles.deepFocusBadge,
+                  {
+                    backgroundColor: surfaceBg,
+                    borderColor: colors.primary,
+                    borderWidth: 1,
+                  },
+                ]}
+              >
+                <Ionicons name="moon" size={12} color={colors.primary} style={{ marginRight: 4 }} />
+                <Text style={[typography.captionBold, { color: colors.primary }]}>
+                  {t('timerSettings.deepFocusBadge')}
+                </Text>
+              </Pressable>
+            )}
           </View>
 
           {/* Buddy Avatar Bar */}
@@ -613,7 +637,7 @@ export function TimerScreen() {
           <View style={styles.controls}>
             {!isRunning ? (
               <Button
-                title="Odaklanmaya Başla"
+                title={t('timer.startFocus')}
                 onPress={handleStart}
                 size="lg"
                 style={{ width: '100%', maxWidth: 280, borderRadius: 24, height: 54, shadowColor: colors.primary, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 6 }}
@@ -622,7 +646,7 @@ export function TimerScreen() {
               <>
                 <HoldButton
                   icon={<Ionicons name="refresh" size={18} color={theme.dark || isVisualWallpaperActive ? '#FFFFFF' : colors.textPrimary} />}
-                  label="Yeniden Başlat"
+                  label={t('timer.restart')}
                   onComplete={handleRestart}
                   variant="ghost"
                   style={{ flex: 1, maxWidth: 145 }}
@@ -630,7 +654,7 @@ export function TimerScreen() {
 
                 <HoldButton
                   icon={<Ionicons name="stop" size={18} color="#FFFFFF" />}
-                  label="Bitir"
+                  label={t('timer.finish')}
                   onComplete={handleFinish}
                   variant="danger"
                   style={{ flex: 1, maxWidth: 145 }}
@@ -779,12 +803,25 @@ const styles = StyleSheet.create({
     width: '100%',
     transform: [{ scale: 0.74 }], // %10 daha küçük (0.82 -> 0.74)
   },
+  indicatorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.xs,
+  },
   cycleIndicator: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: 12,
-    marginTop: -spacing.sm,
-    marginBottom: spacing.xs,
+  },
+  deepFocusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
   },
   middleAnimationSection: {
     width: '100%',

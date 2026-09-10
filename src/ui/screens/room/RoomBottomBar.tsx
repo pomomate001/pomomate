@@ -189,9 +189,18 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
             </View>
           </View>
           
-          <View style={styles.participantsWrap}>
+          <Pressable
+            style={styles.participantsWrap}
+            onPress={() => {
+              if (isHost) {
+                setActiveTab('settings');
+                height.value = withSpring(CHAT_HEIGHT, { damping: 20, stiffness: 130 });
+              }
+            }}
+            disabled={!isHost}
+          >
             <ParticipantsBar participants={participants} />
-          </View>
+          </Pressable>
         </Animated.View>
 
         {/* Controls Row */}

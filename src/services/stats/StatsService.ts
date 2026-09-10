@@ -84,11 +84,9 @@ export class StatsService {
     this.isFlushing = true;
     const remaining: OfflineQueueItem[] = [];
     let flushedAny = false;
-    let syncUserId: string | null = null;
 
     try {
       for (const item of queue) {
-        syncUserId = item.userId;
         try {
           if (item.type === 'session') {
             const { error } = await supabase.from('pomodoro_sessions').insert({
@@ -330,14 +328,23 @@ export class StatsService {
 
   /**
    * Fetches aggregated statistics for a list of friend user IDs using Supabase RPC.
+   * Optionally filters by date range (startDate to endDate) for period-specific stats.
    */
-  async fetchFriendsStats(friendIds: string[]): Promise<Record<string, FriendStatSummary>> {
+  async fetchFriendsStats(
+    friendIds: string[],
+    startDate?: string,
+    endDate?: string
+  ): Promise<Record<string, FriendStatSummary>> {
     if (!friendIds || friendIds.length === 0) return {};
 
     try {
-      const { data, error } = await supabase.rpc('get_friends_stats', {
+      const params: Record<string, any> = {
         p_friend_ids: friendIds,
-      });
+      };
+      if (startDate) params.p_start_date = startDate;
+      if (endDate) params.p_end_date = endDate;
+
+      const { data, error } = await supabase.rpc('get_friends_stats', params);
 
       if (error) {
         logger.warn('[StatsService] fetchFriendsStats RPC error:', error.message);

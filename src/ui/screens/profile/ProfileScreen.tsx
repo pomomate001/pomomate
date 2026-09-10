@@ -265,7 +265,7 @@ export function ProfileScreen({
           <View style={[styles.settingsSection, shadows.sm, { backgroundColor: colors.surface }]}>
             <SettingRow 
               icon="star-outline" 
-              label="Abonelikler" 
+              label={t('profile.subscription')} 
               onPress={() => {
                 if (isPremium) {
                   setShowManageSubscription(true);

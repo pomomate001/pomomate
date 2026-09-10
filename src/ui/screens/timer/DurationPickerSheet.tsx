@@ -95,7 +95,11 @@ export function DurationPickerSheet({ visible, onClose, mode }: DurationPickerSh
 
   const handleOpenSettings = useCallback(() => {
     if (Platform.OS === 'android') {
-      Linking.openSettings();
+      Linking.sendIntent('android.settings.ZEN_MODE_PRIORITY_SETTINGS').catch(() => {
+        Linking.sendIntent('android.settings.SOUND_SETTINGS').catch(() => {
+          Linking.openSettings();
+        });
+      });
     } else {
       Linking.openURL('app-settings:');
     }
@@ -186,15 +190,33 @@ export function DurationPickerSheet({ visible, onClose, mode }: DurationPickerSh
           </View>
 
           {deepFocusEnabled && (
-            <Pressable
-              onPress={handleOpenSettings}
-              style={styles.deepFocusGuide}
-            >
-              <Text style={[typography.caption, { color: colors.primary }]}>
-                {t('timerSettings.openSystemSettings')}
+            <View style={styles.deepFocusGuide}>
+              <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 18 }]}>
+                {Platform.OS === 'android'
+                  ? t('timerSettings.deepFocusDndAndroid')
+                  : t('timerSettings.deepFocusDndIos')}
               </Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-            </Pressable>
+
+              {Platform.OS === 'android' && (
+                <Pressable
+                  onPress={handleOpenSettings}
+                  style={[styles.dndBtn, { backgroundColor: colors.primary }]}
+                >
+                  <Ionicons name="notifications-off-outline" size={15} color="#FFFFFF" style={{ marginRight: 6 }} />
+                  <Text style={[typography.captionBold, { color: '#FFFFFF' }]}>
+                    {t('timerSettings.openDndSettings')}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={14} color="#FFFFFF" style={{ marginLeft: 4 }} />
+                </Pressable>
+              )}
+
+              <View style={[styles.protectedBadge, { backgroundColor: 'rgba(16, 185, 129, 0.12)', borderColor: 'rgba(16, 185, 129, 0.25)' }]}>
+                <Ionicons name="shield-checkmark" size={14} color="#10B981" style={{ marginRight: 6 }} />
+                <Text style={[typography.caption, { color: '#10B981', flex: 1, fontSize: 11 }]}>
+                  {t('timerSettings.deepFocusAlarmProtected')}
+                </Text>
+              </View>
+            </View>
           )}
         </View>
       </View>
@@ -208,22 +230,23 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   title: {
-    textAlign: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs,
   },
   durationDisplay: {
     fontSize: 48,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: spacing.lg,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+    marginVertical: spacing.md,
   },
   rulerContainer: {
     width: '100%',
-    height: 70,
+    height: 60,
+    justifyContent: 'center',
     marginBottom: spacing.xl,
-    position: 'relative',
   },
   tickContainer: {
+    width: TICK_SPACING,
+    height: 60,
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
@@ -238,9 +261,8 @@ const styles = StyleSheet.create({
     height: 16,
   },
   tickLabel: {
-    fontSize: 10,
-    marginTop: 4,
-    fontWeight: '500',
+    marginTop: 6,
+    fontSize: 11,
   },
   centerIndicator: {
     position: 'absolute',
@@ -263,12 +285,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deepFocusGuide: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.08)',
+    gap: spacing.sm,
+  },
+  dndBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 12,
+    marginTop: 2,
+  },
+  protectedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 2,
   },
 });

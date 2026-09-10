@@ -479,8 +479,8 @@ export function StatsScreen() {
         {/* Ad between sections */}
         <AdPlacement size="banner" />
 
-        {/* Friends */}
-        <FriendsSection />
+        {/* Friends & Leaderboard */}
+        <FriendsSection period={period} userPeriodStats={periodStats} />
       </View>
 
       <View style={{ height: spacing.xxxl }} />

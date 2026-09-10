@@ -14,6 +14,7 @@ interface FriendDetailSheetProps {
   friend: FriendSummary | null;
   visible: boolean;
   onClose: () => void;
+  period?: 'daily' | 'weekly' | 'monthly';
 }
 
 function formatHours(seconds: number, lang: Language): string {
@@ -25,11 +26,20 @@ function formatHours(seconds: number, lang: Language): string {
   return h > 0 ? `${h}s ${m}dk` : `${m}dk`;
 }
 
-export function FriendDetailSheet({ friend, visible, onClose }: FriendDetailSheetProps) {
+export function FriendDetailSheet({ friend, visible, onClose, period }: FriendDetailSheetProps) {
   const colors = useColors();
   const { t, language } = useTranslation();
 
   if (!friend) return null;
+
+  const activePeriodStat = friend.currentPeriodStats || (period && friend.periodStats?.[period]);
+  const periodLabel = period === 'daily'
+    ? t('stats.daily')
+    : period === 'weekly'
+    ? t('stats.weekly')
+    : period === 'monthly'
+    ? t('stats.monthly')
+    : null;
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
@@ -42,6 +52,56 @@ export function FriendDetailSheet({ friend, visible, onClose }: FriendDetailShee
             {friend.displayName}
           </Text>
         </View>
+
+        {/* Active Period Stats Banner (if filtered) */}
+        {periodLabel && activePeriodStat && (
+          <View style={{ marginBottom: spacing.md, width: '100%' }}>
+            <Text style={[typography.captionBold, { color: colors.primary, marginBottom: spacing.xs }]}>
+              📅 {periodLabel} {t('friends.periodStatsTitle')}
+            </Text>
+            <View style={styles.cardsRow}>
+              {/* Period Work Time */}
+              <View style={[styles.statBox, { backgroundColor: colors.surface, borderColor: `${colors.primary}40` }]}>
+                <View style={[styles.iconBadge, { backgroundColor: `${colors.primary}18` }]}>
+                  <Ionicons name="time-outline" size={20} color={colors.primary} />
+                </View>
+                <Text
+                  style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.xs }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                >
+                  {formatHours(activePeriodStat.workSeconds, language)}
+                </Text>
+                <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2, textAlign: 'center' }]} numberOfLines={1}>
+                  {periodLabel} {t('stats.totalDuration')}
+                </Text>
+              </View>
+
+              {/* Period Pomodoro */}
+              <View style={[styles.statBox, { backgroundColor: colors.surface, borderColor: `${colors.primary}40` }]}>
+                <View style={[styles.iconBadge, { backgroundColor: `${colors.primary}18` }]}>
+                  <Ionicons name="disc-outline" size={20} color={colors.primary} />
+                </View>
+                <Text
+                  style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.xs }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                >
+                  {String(activePeriodStat.pomodoros)}
+                </Text>
+                <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2, textAlign: 'center' }]} numberOfLines={1}>
+                  {periodLabel} {t('stats.pomodoro')}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.xs, width: '100%' }]}>
+          🌐 {t('friends.totalStatsTitle')}
+        </Text>
 
         <View style={styles.cardsRow}>
           {/* Card 1: Toplam Süre */}

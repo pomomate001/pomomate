@@ -103,6 +103,12 @@ export class RoomService {
         return { room: null, error: 'Bu koda sahip aktif bir çalışma odası bulunamadı.' };
       }
 
+      // Check if user was kicked from this room
+      const kickedUsers: string[] = (roomData.settings as any)?.kickedUserIds || [];
+      if (kickedUsers.includes(userId)) {
+        return { room: null, error: 'Bu çalışma odasından yönetici tarafından çıkarıldınız.' };
+      }
+
       // Check current members count
       const { count } = await supabase
         .from('room_members')
@@ -179,11 +185,23 @@ export class RoomService {
   /**
    * Update room permissions/settings in Supabase.
    */
-  async updateRoomSettings(roomId: string, settings: Record<string, boolean>): Promise<boolean> {
+  async updateRoomSettings(roomId: string, settings: Record<string, any>): Promise<boolean> {
     try {
+      const { data: existingData } = await supabase
+        .from('rooms')
+        .select('settings')
+        .eq('id', roomId)
+        .maybeSingle();
+
+      const existingSettings = (existingData?.settings as Record<string, any>) || {};
+      const merged = {
+        ...existingSettings,
+        ...settings,
+      };
+
       const { error } = await supabase
         .from('rooms')
-        .update({ settings })
+        .update({ settings: merged })
         .eq('id', roomId);
 
       if (error) {
@@ -194,6 +212,114 @@ export class RoomService {
     } catch (err: any) {
       logger.warn('[RoomService] updateRoomSettings exception:', err?.message || err);
       return false;
+    }
+  }
+
+  /**
+   * Broadcast updated room settings to all participants in real-time.
+   */
+  async broadcastRoomSettings(roomId: string, settings: Record<string, boolean>): Promise<void> {
+    try {
+      const channelName = `room_settings_${roomId}`;
+      const channels = supabase.getChannels();
+      let channel = channels.find((ch) => ch.topic === `realtime:${channelName}`);
+
+      if (!channel || channel.state !== 'joined') {
+        channel = supabase.channel(channelName, {
+          config: { broadcast: { ack: false } },
+        });
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(resolve, 1500);
+          channel!.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              clearTimeout(timeout);
+              resolve();
+            }
+          });
+        });
+      }
+
+      await channel.send({
+        type: 'broadcast',
+        event: 'settings_update',
+        payload: settings,
+      });
+    } catch (err: any) {
+      logger.warn('[RoomService] broadcastRoomSettings error:', err?.message || err);
+    }
+  }
+
+  /**
+   * Kick a participant from the room (Host only).
+   */
+  async kickParticipant(roomId: string, userId: string): Promise<{ success: boolean; error: string | null }> {
+    try {
+      // 1. Remove user from room_members in database
+      const { error: deleteError } = await supabase
+        .from('room_members')
+        .delete()
+        .eq('room_id', roomId)
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        logger.warn('[RoomService] kickParticipant delete error:', deleteError.message);
+        return { success: false, error: deleteError.message };
+      }
+
+      // 2. Fetch current settings and append kicked userId so they cannot re-join
+      const { data: roomData } = await supabase
+        .from('rooms')
+        .select('settings')
+        .eq('id', roomId)
+        .maybeSingle();
+
+      const currentSettings = (roomData?.settings as Record<string, any>) || {};
+      const existingKicked: string[] = currentSettings.kickedUserIds || [];
+      if (!existingKicked.includes(userId)) {
+        const updatedSettings = {
+          ...currentSettings,
+          kickedUserIds: [...existingKicked, userId],
+        };
+        await supabase
+          .from('rooms')
+          .update({ settings: updatedSettings })
+          .eq('id', roomId);
+      }
+
+      // 3. Broadcast kick event on room_settings channel for instant eviction
+      const channelName = `room_settings_${roomId}`;
+      const channels = supabase.getChannels();
+      let channel = channels.find((ch) => ch.topic === `realtime:${channelName}`);
+
+      if (!channel || channel.state !== 'joined') {
+        channel = supabase.channel(channelName, {
+          config: { broadcast: { ack: false } },
+        });
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(resolve, 1500);
+          channel!.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              clearTimeout(timeout);
+              resolve();
+            }
+          });
+        });
+      }
+
+      await channel.send({
+        type: 'broadcast',
+        event: 'kick_participant',
+        payload: {
+          roomId,
+          userId,
+          kickedAt: new Date().toISOString(),
+        },
+      });
+
+      return { success: true, error: null };
+    } catch (err: any) {
+      logger.warn('[RoomService] kickParticipant exception:', err?.message || err);
+      return { success: false, error: err?.message || 'Katılımcı çıkarılırken bir hata oluştu.' };
     }
   }
 

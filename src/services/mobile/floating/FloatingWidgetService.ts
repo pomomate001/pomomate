@@ -6,7 +6,8 @@ class FloatingWidgetService {
   private listener: any;
 
   async checkPermission(): Promise<boolean> {
-    if (Platform.OS !== 'android' || !FloatingWidget) return true;
+    if (Platform.OS !== 'android') return true;
+    if (!FloatingWidget) return false;
     try {
       return await FloatingWidget.checkPermission();
     } catch {

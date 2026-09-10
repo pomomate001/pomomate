@@ -140,6 +140,11 @@ class SoundService {
 
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        interruptionMode: 'duckOthers',
+      });
       const player = createAudioPlayer(soundItem.url);
       player.play();
       logger.info(`[SoundService] Playing completion sound: ${soundItem.label}`);

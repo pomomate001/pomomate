@@ -35,9 +35,14 @@ class FloatingWidgetService : ExpandableBubbleService() {
     private var screenButton: ImageButton? = null
 
     override fun onCreate() {
-        super.onCreate()
-        instance = this
-        minimize()
+        try {
+            super.onCreate()
+            instance = this
+            minimize()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            stopSelf()
+        }
     }
 
     override fun onDestroy() {
@@ -81,55 +86,97 @@ class FloatingWidgetService : ExpandableBubbleService() {
             manager.createNotificationChannel(channel)
         }
 
+        val iconRes = try {
+            val resId = resources.getIdentifier("notification_icon", "drawable", packageName)
+            if (resId != 0) resId else android.R.drawable.ic_dialog_info
+        } catch (e: Exception) {
+            android.R.drawable.ic_dialog_info
+        }
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("PomoMate")
             .setContentText("Mini Mod aktif")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(iconRes)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }
 
     override fun configBubble(): BubbleBuilder? {
-        val bubbleView = LayoutInflater.from(this).inflate(R.layout.floating_bubble, null)
-        bubbleView.setOnClickListener { expand() }
+        return try {
+            val themedContext = android.view.ContextThemeWrapper(this, R.style.AppTheme)
+            val bubbleView = LayoutInflater.from(themedContext).inflate(R.layout.floating_bubble, null)
+            bubbleView.setOnClickListener { expand() }
+            bubbleView.setOnLongClickListener {
+                try {
+                    val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+                    if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                        startActivity(launchIntent)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                true
+            }
 
-        return BubbleBuilder(this)
-            .bubbleView(bubbleView)
-            .startLocation(0, 100)
-            .enableAnimateToEdge(true)
-            .distanceToClose(100)
+            BubbleBuilder(this)
+                .bubbleView(bubbleView)
+                .startLocation(0, 100)
+                .enableAnimateToEdge(true)
+                .distanceToClose(100)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     override fun configExpandedBubble(): ExpandedBubbleBuilder? {
-        val menuView = LayoutInflater.from(this).inflate(R.layout.floating_menu, null)
+        return try {
+            val themedContext = android.view.ContextThemeWrapper(this, R.style.AppTheme)
+            val menuView = LayoutInflater.from(themedContext).inflate(R.layout.floating_menu, null)
 
-        micButton = menuView.findViewById(R.id.btn_mic)
-        camButton = menuView.findViewById(R.id.btn_cam)
-        screenButton = menuView.findViewById(R.id.btn_screen)
-        val closeButton = menuView.findViewById<ImageButton>(R.id.btn_close_menu)
+            micButton = menuView.findViewById(R.id.btn_mic)
+            camButton = menuView.findViewById(R.id.btn_cam)
+            screenButton = menuView.findViewById(R.id.btn_screen)
+            val openAppButton = menuView.findViewById<ImageButton?>(R.id.btn_open_app)
+            val closeButton = menuView.findViewById<ImageButton>(R.id.btn_close_menu)
 
-        updateButtonStates()
+            updateButtonStates()
 
-        micButton?.setOnClickListener {
-            sendEventToJS("toggleMic")
-            // We expect JS to update states and call updateWidgetActions, 
-            // but we can optimistic UI here if wanted.
-        }
-        camButton?.setOnClickListener {
-            sendEventToJS("toggleCam")
-        }
-        screenButton?.setOnClickListener {
-            sendEventToJS("toggleScreen")
-        }
-        closeButton?.setOnClickListener {
-            minimize()
-        }
+            micButton?.setOnClickListener {
+                sendEventToJS("toggleMic")
+            }
+            camButton?.setOnClickListener {
+                sendEventToJS("toggleCam")
+            }
+            screenButton?.setOnClickListener {
+                sendEventToJS("toggleScreen")
+            }
+            openAppButton?.setOnClickListener {
+                try {
+                    val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+                    if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                        startActivity(launchIntent)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                minimize()
+            }
+            closeButton?.setOnClickListener {
+                minimize()
+            }
 
-        return ExpandedBubbleBuilder(this)
-            .expandedView(menuView)
-            .dimAmount(0.0f) // No dimming to keep it unintrusive
-            .fillMaxWidth(false)
+            ExpandedBubbleBuilder(this)
+                .expandedView(menuView)
+                .dimAmount(0.0f) // No dimming to keep it unintrusive
+                .fillMaxWidth(false)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     fun updateButtonStates() {

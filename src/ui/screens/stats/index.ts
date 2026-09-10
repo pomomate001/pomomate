@@ -5,3 +5,7 @@ export { FriendsSection } from './FriendsSection';
 export { FriendRow } from './FriendRow';
 export { FriendDetailSheet } from './FriendDetailSheet';
 export { DiscoverScreen } from './DiscoverScreen';
+export { LeaderboardPodium } from './LeaderboardPodium';
+export { LeaderboardRow } from './LeaderboardRow';
+export { LeaderboardShareCard } from './LeaderboardShareCard';
+export { LeaderboardShareModal } from './LeaderboardShareModal';

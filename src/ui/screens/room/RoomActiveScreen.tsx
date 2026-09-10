@@ -65,21 +65,35 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
 
   const handleEnterMiniMode = useCallback(async () => {
     if (Platform.OS !== 'android') return;
-    const hasPermission = await floatingWidgetService.checkPermission();
-    if (!hasPermission) {
-      Alert.alert(
-        'İzin Gerekli',
-        'Mini Modu kullanabilmek için PomoMate\'in "Diğer uygulamaların üzerinde göster" iznine ihtiyacı var.',
-        [
-          { text: 'İptal', style: 'cancel' },
-          { text: 'Ayarlara Git', onPress: () => floatingWidgetService.requestPermission() },
-        ]
-      );
-      return;
-    }
-    const success = await floatingWidgetService.showWidget();
-    if (!success) {
-      Alert.alert('Hata', 'Mini Mod başlatılamadı.');
+
+    try {
+      const hasPermission = await floatingWidgetService.checkPermission();
+      if (!hasPermission) {
+        Alert.alert(
+          'Mini Mod İzni Gerekli',
+          'PomoMate\'in diğer uygulamaların üzerinde mini kontrol penceresi olarak çalışabilmesi için "Diğer uygulamaların üzerinde göster" iznine ihtiyacı var.\n\nŞimdi ayarlardan bu izni açmak ister misiniz?',
+          [
+            { text: 'Vazgeç', style: 'cancel' },
+            {
+              text: 'İzin Ver',
+              onPress: () => {
+                void floatingWidgetService.requestPermission();
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      const success = await floatingWidgetService.showWidget();
+      if (!success) {
+        Alert.alert(
+          'Mini Mod Başlatılamadı',
+          'Mini mod servisi başlatılamadı. Lütfen sistem ayarlarından uygulamanın diğer uygulamaların üzerinde gösterim izninin açık olduğunu kontrol edin.'
+        );
+      }
+    } catch {
+      Alert.alert('Hata', 'Mini moda geçilirken beklenmedik bir hata oluştu.');
     }
   }, []);
 
@@ -159,7 +173,101 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     };
   }, [roomId, user, room?.hostId, isHost]);
 
-  // Synchronize room permissions from database and real-time host updates
+  const micOnRef = useRef(micOn);
+  const camOnRef = useRef(camOn);
+  const isHostRef = useRef(isHost);
+
+  useEffect(() => {
+    micOnRef.current = micOn;
+    camOnRef.current = camOn;
+    isHostRef.current = isHost;
+  });
+
+  const handleApplyPermissions = useCallback((payload: any) => {
+    if (!payload) return;
+    useRoomStore.getState().setRoomSettings(payload);
+
+    if (!isHostRef.current) {
+      if (payload.allowMic === false && micOnRef.current) {
+        if (camOnRef.current) {
+          if (roomClientRef.current) {
+            void roomClientRef.current.enableAudioVideo(false, true);
+          } else {
+            void mediaService.getUserMedia({ audio: false, video: true });
+          }
+        } else {
+          if (roomClientRef.current) {
+            roomClientRef.current.stopMedia();
+          } else {
+            mediaService.stopUserMedia();
+          }
+          setLocalStream(null);
+        }
+        setMicOn(false);
+        Alert.alert(t('rooms.permissionUpdatedTitle'), t('rooms.permissionMicDisabledMsg'));
+      }
+
+      if (payload.allowCamera === false && camOnRef.current) {
+        if (micOnRef.current) {
+          if (roomClientRef.current) {
+            void roomClientRef.current.enableAudioVideo(true, false);
+          } else {
+            void mediaService.getUserMedia({ audio: true, video: false });
+          }
+        } else {
+          if (roomClientRef.current) {
+            roomClientRef.current.stopMedia();
+          } else {
+            mediaService.stopUserMedia();
+          }
+        }
+        setCamOn(false);
+        setLocalStream(null);
+        Alert.alert(t('rooms.permissionUpdatedTitle'), t('rooms.permissionCamDisabledMsg'));
+      }
+    }
+  }, [t]);
+
+  const handleKickedOut = useCallback(() => {
+    if (roomClientRef.current) {
+      try {
+        roomClientRef.current.stopMedia();
+        roomClientRef.current.disconnect();
+      } catch {
+        // ignore
+      }
+      roomClientRef.current = null;
+    }
+    mediaService.stopUserMedia();
+    setLocalStream(null);
+    setMicOn(false);
+    setCamOn(false);
+    setScreenShareOn(false);
+    setRemoteStreams({});
+
+    useRoomStore.getState().leave();
+    void floatingWidgetService.hideWidget();
+
+    Alert.alert(
+      t('rooms.kickedAlertTitle'),
+      t('rooms.kickedAlertMsg'),
+      [{ text: t('common.ok') || 'Tamam', onPress: () => onLeave() }],
+      { cancelable: false }
+    );
+  }, [t, onLeave]);
+
+  const handleRemoteMemberRemoved = useCallback((removedUserId: string) => {
+    useRoomStore.getState().removeMember(removedUserId);
+    setRemoteStreams((prev) => {
+      if (!prev[removedUserId]) return prev;
+      const next = { ...prev };
+      delete next[removedUserId];
+      return next;
+    });
+    setRemoteScreenSharer((prev) => (prev?.userId === removedUserId ? null : prev));
+  }, []);
+
+  // Synchronize room permissions and member moderation from real-time and database
   useEffect(() => {
     if (!roomId) return;
 
@@ -170,63 +278,70 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       }
     });
 
-    // Listen for live permission updates from admin
+    // Listen for live permission updates and kick events
     const channel = supabase.channel(`room_settings_${roomId}`, {
       config: { broadcast: { ack: false } },
     });
 
     channel
       .on('broadcast', { event: 'settings_update' }, ({ payload }) => {
-        if (payload) {
-          useRoomStore.getState().setRoomSettings(payload);
-
-          if (!isHost) {
-            if (payload.allowMic === false && micOn) {
-              if (camOn) {
-                if (roomClientRef.current) {
-                  void roomClientRef.current.enableAudioVideo(false, true);
-                } else {
-                  void mediaService.getUserMedia({ audio: false, video: true });
-                }
-              } else {
-                if (roomClientRef.current) {
-                  roomClientRef.current.stopMedia();
-                } else {
-                  mediaService.stopUserMedia();
-                }
-                setLocalStream(null);
-              }
-              setMicOn(false);
-              Alert.alert('Yetki Güncellendi', 'Oda yöneticisi mikrofon kullanımını kapattı.');
-            }
-
-            if (payload.allowCamera === false && camOn) {
-              if (micOn) {
-                if (roomClientRef.current) {
-                  void roomClientRef.current.enableAudioVideo(true, false);
-                } else {
-                  void mediaService.getUserMedia({ audio: true, video: false });
-                }
-              } else {
-                if (roomClientRef.current) {
-                  roomClientRef.current.stopMedia();
-                } else {
-                  mediaService.stopUserMedia();
-                }
-              }
-              setCamOn(false);
-              setLocalStream(null);
-              Alert.alert('Yetki Güncellendi', 'Oda yöneticisi kamera kullanımını kapattı.');
-            }
+        handleApplyPermissions(payload);
+      })
+      .on('broadcast', { event: 'kick_participant' }, ({ payload }) => {
+        if (payload?.roomId === roomId) {
+          if (payload.userId === user?.id) {
+            handleKickedOut();
+          } else if (payload.userId) {
+            handleRemoteMemberRemoved(payload.userId);
           }
         }
       })
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rooms',
+          filter: `id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newRow = payload.new as any;
+          if (newRow?.settings) {
+            handleApplyPermissions(newRow.settings);
+          }
+          if (newRow?.is_active === false && !isHostRef.current) {
+            Alert.alert(t('common.warning'), 'Oda sonlandırıldı.', [
+              { text: t('common.ok'), onPress: () => onLeave() },
+            ]);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'room_members',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const oldRow = payload.old as any;
+          const deletedUserId = oldRow?.user_id;
+          if (deletedUserId) {
+            if (deletedUserId === user?.id) {
+              handleKickedOut();
+            } else {
+              handleRemoteMemberRemoved(deletedUserId);
+            }
+          }
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId, isHost, micOn, camOn]);
+  }, [roomId, user?.id, handleApplyPermissions, handleKickedOut, handleRemoteMemberRemoved, t, onLeave]);
 
   // Synchronize screen share status across all room participants
   useEffect(() => {

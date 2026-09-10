@@ -105,6 +105,9 @@ export interface TranslationSchema {
     achievementShare: string;
     achievementContinue: string;
     durationPickerTitle: string;
+    startFocus: string;
+    restart: string;
+    finish: string;
   };
   tasks: {
     title: string;
@@ -216,6 +219,28 @@ export interface TranslationSchema {
     alreadyFriendsWithUser: string;
     requestAlreadyPending: string;
     requestSendFailed: string;
+    leaderboardTitle: string;
+    leaderboardSubtitle: string;
+    shareRanking: string;
+    shareModalTitle: string;
+    shareModalSubtitle: string;
+    shareBtn: string;
+    closeBtn: string;
+    you: string;
+    rank: string;
+    champion: string;
+    master: string;
+    risingStar: string;
+    podiumTitle: string;
+    yourRankInfo: string;
+    emptyLeaderboardMsg: string;
+    inviteFriendsToCompete: string;
+    dailyRanking: string;
+    weeklyRanking: string;
+    monthlyRanking: string;
+    allTimeRanking: string;
+    periodStatsTitle: string;
+    totalStatsTitle: string;
   };
   rooms: {
     title: string;
@@ -285,6 +310,19 @@ export interface TranslationSchema {
     adminDisabledMic: string;
     adminDisabledCam: string;
     adminDisabledFiles: string;
+    participantsSectionTitle: string;
+    noOtherParticipants: string;
+    kickParticipantBtn: string;
+    kickParticipantConfirmTitle: string;
+    kickParticipantConfirmMsg: string;
+    kickedAlertTitle: string;
+    kickedAlertMsg: string;
+    kickedJoinBlocked: string;
+    hostRoleBadge: string;
+    memberRoleBadge: string;
+    permissionUpdatedTitle: string;
+    permissionMicDisabledMsg: string;
+    permissionCamDisabledMsg: string;
     micPermissionRequired: string;
     micPermissionBody: string;
     camPermissionRequired: string;
@@ -340,6 +378,7 @@ export interface TranslationSchema {
     privacyData: string;
     privacyAlert: string;
     about: string;
+    subscription: string;
     signOut: string;
     myCorner: string;
     myCornerPlaceholder: string;
@@ -366,6 +405,11 @@ export interface TranslationSchema {
     deepFocusDesc: string;
     deepFocusGuide: string;
     openSystemSettings: string;
+    deepFocusBadge: string;
+    openDndSettings: string;
+    deepFocusDndAndroid: string;
+    deepFocusDndIos: string;
+    deepFocusAlarmProtected: string;
   };
   soundSettings: {
     effectsTitle: string;

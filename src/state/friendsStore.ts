@@ -4,6 +4,12 @@
 import { create } from 'zustand';
 import type { Tag } from '../types';
 
+export interface FriendStatPeriodSummary {
+  workSeconds: number;
+  pomodoros: number;
+  streak: number;
+}
+
 export interface FriendSummary {
   userId: string;
   displayName: string;
@@ -13,6 +19,12 @@ export interface FriendSummary {
   streak: number;
   tags?: Tag[];
   countryCode?: string;
+  periodStats?: {
+    daily?: FriendStatPeriodSummary;
+    weekly?: FriendStatPeriodSummary;
+    monthly?: FriendStatPeriodSummary;
+  };
+  currentPeriodStats?: FriendStatPeriodSummary;
 }
 
 export type FriendRequestStatus = 'pending' | 'accepted' | 'rejected';

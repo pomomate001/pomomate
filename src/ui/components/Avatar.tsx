@@ -24,26 +24,22 @@ function getInitials(name?: string): string {
 
 export function Avatar({ uri, name, size = 40, showGradientBorder = false, isOnline = false }: AvatarProps) {
   const colors = useColors();
-  const [hasError, setHasError] = React.useState(false);
-
-  React.useEffect(() => {
-    setHasError(false);
-  }, [uri]);
+  const [failedUri, setFailedUri] = React.useState<string | null>(null);
 
   const half = size / 2;
   const padding = showGradientBorder ? 3 : 0;
   const innerSize = size - padding * 2;
   const innerHalf = innerSize / 2;
 
-  // If uri is invalid or a stale local cache file path, cleanly fall back to initials
-  const isInvalid = !uri || hasError || uri.startsWith('file://');
+  // If uri is invalid, failed to load, or a stale local cache file path, cleanly fall back to initials
+  const isInvalid = !uri || uri === failedUri || uri.startsWith('file://');
 
   const renderContent = () => {
     if (!isInvalid) {
       return (
         <Image
           source={{ uri }}
-          onError={() => setHasError(true)}
+          onError={() => setFailedUri(uri)}
           style={[styles.image, { width: innerSize, height: innerSize, borderRadius: innerHalf }]}
         />
       );
