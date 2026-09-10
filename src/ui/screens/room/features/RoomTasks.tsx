@@ -33,8 +33,21 @@ export function RoomTasks({ tasks, onAddTask }: RoomTasksProps) {
       }
     } else {
       undoTaskCompleted();
+      if (user?.id) {
+        statsService.undoCompletedTask(user.id, task.title);
+      }
     }
     toggleCompleted(task.id);
+  };
+
+  const handleDelete = (task: Task) => {
+    if (task.completed) {
+      undoTaskCompleted();
+      if (user?.id) {
+        statsService.undoCompletedTask(user.id, task.title);
+      }
+    }
+    removeTask(task.id);
   };
 
   if (tasks.length === 0) {
@@ -97,7 +110,7 @@ export function RoomTasks({ tasks, onAddTask }: RoomTasksProps) {
           </View>
 
           {/* Delete Task */}
-          <Pressable onPress={() => removeTask(item.id)} hitSlop={10} style={styles.deleteBtn}>
+          <Pressable onPress={() => handleDelete(item)} hitSlop={10} style={styles.deleteBtn}>
             <Ionicons name="trash-outline" size={18} color={colors.error} />
           </Pressable>
         </View>

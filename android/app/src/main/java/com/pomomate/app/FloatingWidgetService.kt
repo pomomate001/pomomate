@@ -37,7 +37,6 @@ class FloatingWidgetService : ExpandableBubbleService() {
     override fun onCreate() {
         super.onCreate()
         instance = this
-        startForegroundServiceWithNotification()
         minimize()
     }
 
@@ -48,7 +47,30 @@ class FloatingWidgetService : ExpandableBubbleService() {
         super.onDestroy()
     }
 
-    private fun startForegroundServiceWithNotification() {
+    /**
+     * Overrides FloatingBubbleService's open method startNotificationForeground().
+     * This intercepts the library's internal startForeground call, ensuring our custom
+     * notification channel and Android 14+ foreground service types are used safely without duplicates.
+     */
+    override fun startNotificationForeground() {
+        try {
+            val notification = createNotification()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ServiceCompat.startForeground(
+                    this,
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun createNotification(): Notification {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
@@ -59,22 +81,13 @@ class FloatingWidgetService : ExpandableBubbleService() {
             manager.createNotificationChannel(channel)
         }
 
-        val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("PomoMate")
             .setContentText("Mini Mod aktif")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            ServiceCompat.startForeground(
-                this,
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
     }
 
     override fun configBubble(): BubbleBuilder? {

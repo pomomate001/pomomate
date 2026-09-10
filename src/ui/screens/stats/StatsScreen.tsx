@@ -123,11 +123,58 @@ export function StatsScreen() {
   const [selectedDate, setSelectedDate] = useState(() => toLocalDateStr());
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showAddTaskSheet, setShowAddTaskSheet] = useState(false);
+  const [selectedBarIndex, setSelectedBarIndex] = useState<number | null>(null);
 
   const { totalPomodoros, totalWorkSeconds, totalTasksCompleted, streak, daily } = useStatsStore();
   const tasks = useTaskStore((s) => s.tasks);
   const addTask = useTaskStore((s) => s.addTask);
   const colors = useColors();
+
+  const handlePeriodChange = (p: Period) => {
+    setPeriod(p);
+    setSelectedBarIndex(null);
+  };
+
+  const periodStats = useMemo(() => {
+    const now = new Date();
+    const todayStr = toLocalDateStr(now);
+
+    if (period === 'daily') {
+      const todayStat = daily.find((d) => d.date === todayStr);
+      return {
+        workSeconds: todayStat?.totalSeconds ?? 0,
+        pomodoros: todayStat?.pomodorosCompleted ?? 0,
+        tasksCompleted: todayStat?.tasksCompleted ?? 0,
+        streak,
+      };
+    }
+
+    if (period === 'weekly') {
+      // 7-day rolling window ending today (matching H4 in weekly chart)
+      const start = new Date(now);
+      start.setDate(start.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      const startStr = toLocalDateStr(start);
+
+      const matchingStats = daily.filter((s) => s.date >= startStr && s.date <= todayStr);
+      return {
+        workSeconds: matchingStats.reduce((sum, s) => sum + s.totalSeconds, 0),
+        pomodoros: matchingStats.reduce((sum, s) => sum + s.pomodorosCompleted, 0),
+        tasksCompleted: matchingStats.reduce((sum, s) => sum + s.tasksCompleted, 0),
+        streak,
+      };
+    }
+
+    // Monthly: current calendar month (matching current month in monthly chart)
+    const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const matchingStats = daily.filter((s) => s.date.startsWith(monthPrefix));
+    return {
+      workSeconds: matchingStats.reduce((sum, s) => sum + s.totalSeconds, 0),
+      pomodoros: matchingStats.reduce((sum, s) => sum + s.pomodorosCompleted, 0),
+      tasksCompleted: matchingStats.reduce((sum, s) => sum + s.tasksCompleted, 0),
+      streak,
+    };
+  }, [period, daily, streak]);
 
   const periodLabels: Record<Period, string> = {
     daily: t('stats.daily'),
@@ -189,7 +236,7 @@ export function StatsScreen() {
             {periods.map((p) => (
               <Pressable
                 key={p}
-                onPress={() => setPeriod(p)}
+                onPress={() => handlePeriodChange(p)}
                 style={[
                   styles.periodTab,
                   p === period && { backgroundColor: colors.primary },
@@ -242,13 +289,13 @@ export function StatsScreen() {
           <StatCard
             icon={<Ionicons name="time-outline" size={24} color={colors.info} />}
             label={t('stats.totalDuration')}
-            value={formatHours(totalWorkSeconds, language)}
+            value={formatHours(periodStats.workSeconds, language)}
           />
           <View style={{ width: spacing.sm }} />
           <StatCard
             icon={<Ionicons name="disc-outline" size={24} color={colors.primary} />}
             label={t('stats.pomodoro')}
-            value={String(totalPomodoros)}
+            value={String(periodStats.pomodoros)}
           />
         </View>
 
@@ -256,22 +303,33 @@ export function StatsScreen() {
           <StatCard
             icon={<Ionicons name="checkmark-done-outline" size={24} color={colors.success} />}
             label={t('stats.tasks')}
-            value={String(totalTasksCompleted)}
+            value={String(periodStats.tasksCompleted)}
           />
           <View style={{ width: spacing.sm }} />
           <StatCard
             icon={<Ionicons name="flame" size={24} color={colors.warning} />}
             label={t('stats.streak')}
-            value={`${streak} ${streak === 1 ? t('stats.dayUnit') : t('stats.daysUnit')}`}
+            value={`${periodStats.streak} ${periodStats.streak === 1 ? t('stats.dayUnit') : t('stats.daysUnit')}`}
           />
         </View>
 
         {/* Chart */}
         <Card variant="glass" style={styles.chartCard}>
-          <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-            {t('stats.activityTitle')}
-          </Text>
-          <MiniBarChart data={chartData} />
+          <View style={styles.chartHeaderRow}>
+            <Text style={[typography.captionBold, { color: colors.textSecondary }]}>
+              {t('stats.activityTitle')}
+            </Text>
+            <Text style={[typography.caption, { color: colors.primary, fontSize: 11 }]}>
+              {selectedBarIndex !== null && chartData[selectedBarIndex]
+                ? `${chartData[selectedBarIndex].label}: ${chartData[selectedBarIndex].value} ${t('stats.pomoUnit') || 'Pomo'}`
+                : `(${t('stats.pomodoroCountLabel') || 'Tamamlanan Pomodoro'})`}
+            </Text>
+          </View>
+          <MiniBarChart
+            data={chartData}
+            selectedIndex={selectedBarIndex}
+            onSelectBar={setSelectedBarIndex}
+          />
         </Card>
 
         {/* Calendar and Tasks for Selected Date (Shown in Monthly view) */}
@@ -445,6 +503,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   chartCard: { marginHorizontal: spacing.lg, marginTop: spacing.xl },
+  chartHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
   tagFilterList: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,

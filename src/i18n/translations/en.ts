@@ -147,6 +147,8 @@ export const en: TranslationSchema = {
     addTaskForDate: 'Add Task for this Date',
     skipForDate: 'Skip for this date',
     deleteScheduledTask: 'Cancel Task',
+    pomodoroCountLabel: 'Completed Pomodoros',
+    pomoUnit: 'Pomo',
   },
   friends: {
     title: 'Friends',

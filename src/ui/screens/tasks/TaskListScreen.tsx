@@ -60,6 +60,9 @@ export function TaskListScreen() {
           }
         } else {
           undoTaskCompleted();
+          if (user?.id) {
+            statsService.undoCompletedTask(user.id, task.title);
+          }
         }
       }
       toggleCompleted(id);
@@ -67,11 +70,25 @@ export function TaskListScreen() {
     [tasks, toggleCompleted, recordTaskCompleted, undoTaskCompleted, user],
   );
 
+  const handleDelete = useCallback(
+    (id: string) => {
+      const task = tasks.find((t) => t.id === id);
+      if (task?.completed) {
+        undoTaskCompleted();
+        if (user?.id) {
+          statsService.undoCompletedTask(user.id, task.title);
+        }
+      }
+      removeTask(id);
+    },
+    [tasks, removeTask, undoTaskCompleted, user],
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: Task }) => (
-      <TaskItem task={item} onToggle={handleToggle} onDelete={removeTask} />
+      <TaskItem task={item} onToggle={handleToggle} onDelete={handleDelete} />
     ),
-    [handleToggle, removeTask],
+    [handleToggle, handleDelete],
   );
 
   return (

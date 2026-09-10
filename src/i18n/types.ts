@@ -147,6 +147,8 @@ export interface TranslationSchema {
     addTaskForDate: string;
     skipForDate: string;
     deleteScheduledTask: string;
+    pomodoroCountLabel?: string;
+    pomoUnit?: string;
   };
   friends: {
     title: string;

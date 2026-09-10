@@ -147,6 +147,8 @@ export const tr: TranslationSchema = {
     addTaskForDate: 'Bu Güne Görev Ekle',
     skipForDate: 'Bu gün için kaldır',
     deleteScheduledTask: 'Görevi İptal Et',
+    pomodoroCountLabel: 'Tamamlanan Pomodoro Sayısı',
+    pomoUnit: 'Pomo',
   },
   friends: {
     title: 'Arkadaşlarım',

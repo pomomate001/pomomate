@@ -2,7 +2,7 @@
  * StatsService — handles synchronizing user and friends statistics with Supabase.
  */
 import { supabase } from '../auth/supabaseClient';
-import { useStatsStore, DailyStat } from '../../state/statsStore';
+import { useStatsStore, DailyStat, calculateStreak } from '../../state/statsStore';
 import { logger } from '../../utils/logger';
 import { toLocalDateStr } from '../../utils/datetime';
 import type { TimerMode } from '../../types';
@@ -61,6 +61,41 @@ export class StatsService {
       }
     } catch (err: any) {
       logger.warn('[StatsService] recordCompletedTask error:', err);
+    }
+  }
+
+  /**
+   * Removes the most recent matching completed task record from Supabase when a task is unchecked.
+   */
+  async undoCompletedTask(userId: string, taskTitle: string): Promise<void> {
+    if (!userId || !taskTitle) return;
+
+    try {
+      const { data, error: selectError } = await supabase
+        .from('completed_tasks')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('task_title', taskTitle)
+        .order('completed_at', { ascending: false })
+        .limit(1);
+
+      if (selectError) {
+        logger.warn('[StatsService] Failed to find completed task to undo:', selectError.message);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('completed_tasks')
+          .delete()
+          .eq('id', data[0].id);
+
+        if (deleteError) {
+          logger.warn('[StatsService] Failed to delete completed task:', deleteError.message);
+        }
+      }
+    } catch (err: any) {
+      logger.warn('[StatsService] undoCompletedTask error:', err);
     }
   }
 
@@ -190,6 +225,7 @@ export class StatsService {
       }
 
       const mergedDaily: DailyStat[] = Array.from(localDailyMap.values());
+      const streak = calculateStreak(mergedDaily);
 
       // Use max of remote vs local totals
       const mergedTotalPomodoros = Math.max(remoteTotalPomodoros, localStore.totalPomodoros);
@@ -201,6 +237,7 @@ export class StatsService {
         totalWorkSeconds: mergedTotalWorkSeconds,
         totalTasksCompleted: mergedTotalTasks,
         daily: mergedDaily,
+        streak,
       });
     } catch (err: any) {
       logger.warn('[StatsService] syncUserStats error:', err);

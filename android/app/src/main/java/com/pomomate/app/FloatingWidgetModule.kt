@@ -42,21 +42,43 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
             promise.reject("PERMISSION_DENIED", "Overlay permission not granted")
             return
         }
-        val intent = Intent(reactContext, FloatingWidgetService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            reactContext.startForegroundService(intent)
-        } else {
-            reactContext.startService(intent)
-        }
         
-        // Go to Home screen
-        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_HOME)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        try {
+            val intent = Intent(reactContext, FloatingWidgetService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                reactContext.startForegroundService(intent)
+            } else {
+                reactContext.startService(intent)
+            }
+            
+            // Minimize current task cleanly to background instead of launching an intrusive Home intent
+            currentActivity?.runOnUiThread {
+                try {
+                    val minimized = currentActivity?.moveTaskToBack(true) ?: false
+                    if (!minimized) {
+                        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                            addCategory(Intent.CATEGORY_HOME)
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        reactContext.startActivity(homeIntent)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            
+            promise.resolve(true)
+        } catch (e: Exception) {
+            // In case of Android 12+ strict foreground service start limitation, fallback gracefully
+            try {
+                val fallbackIntent = Intent(reactContext, FloatingWidgetService::class.java)
+                reactContext.startService(fallbackIntent)
+                currentActivity?.moveTaskToBack(true)
+                promise.resolve(true)
+            } catch (fallbackEx: Exception) {
+                promise.reject("SERVICE_START_FAILED", fallbackEx.message)
+            }
         }
-        reactContext.startActivity(homeIntent)
-        
-        promise.resolve(true)
     }
 
     @ReactMethod

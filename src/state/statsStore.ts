@@ -48,7 +48,7 @@ const initialStats: StatsState = {
  * Calculates the current streak (consecutive days with at least one pomodoro)
  * counting backwards from today.
  */
-function calculateStreak(daily: DailyStat[]): number {
+export function calculateStreak(daily: DailyStat[]): number {
   if (daily.length === 0) return 0;
 
   // Build a set of dates that have at least one pomodoro

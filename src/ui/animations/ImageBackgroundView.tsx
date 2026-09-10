@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Image, ImageSourcePropType } from 'react-native';
+import { StyleSheet, View, Image, ImageSourcePropType, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface ImageBackgroundViewProps {
@@ -11,15 +11,23 @@ export function ImageBackgroundView({
   source,
   overlayOpacity = 0.35,
 }: ImageBackgroundViewProps) {
+  const { width, height } = useWindowDimensions();
+
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFill, { width: '100%', height: '100%', overflow: 'hidden' }]} pointerEvents="none">
       <Image
         source={source}
-        style={StyleSheet.absoluteFill}
-        resizeMode="stretch"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width,
+          height,
+        }}
+        resizeMode="cover"
       />
 
-      {/* 3. Atmospheric gradient overlay for readability of status bar, clock, and controls */}
+      {/* Atmospheric gradient overlay for readability of status bar, clock, and controls */}
       <LinearGradient
         colors={[
           'rgba(0, 0, 0, 0.55)',

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from '@jest/globals';
 import { useSettingsStore } from '../../state/settingsStore';
 import { useTimerStore } from '../../state/timerStore';
 import { useTaskStore } from '../../state/taskStore';
-import { useStatsStore } from '../../state/statsStore';
+import { useStatsStore, calculateStreak, DailyStat } from '../../state/statsStore';
 import { useBuddyStore } from '../../state/buddyStore';
 import { timerDesigns } from '../../ui/screens/timer/timerDesigns';
 import type { Task } from '../../types';
@@ -318,6 +318,108 @@ describe('Stats Tracking and Daily Stats', () => {
     
     // We already had 5 days (including today), adding one more today shouldn't change the days count, just values
     expect(useStatsStore.getState().streak).toBe(5);
+  });
+
+  it('calculates daily stats separately from weekly and all-time totals', () => {
+    const now = new Date();
+    const todayStr = toLocalDateStr(now);
+
+    const twoDaysAgo = new Date(now);
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const twoDaysAgoStr = toLocalDateStr(twoDaysAgo);
+
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = toLocalDateStr(yesterday);
+
+    const mockDaily: DailyStat[] = [
+      {
+        date: twoDaysAgoStr,
+        totalSeconds: 300, // 5 min
+        pomodorosCompleted: 1,
+        tasksCompleted: 1,
+      },
+      {
+        date: yesterdayStr,
+        totalSeconds: 600, // 10 min
+        pomodorosCompleted: 2,
+        tasksCompleted: 1,
+      },
+      {
+        date: todayStr,
+        totalSeconds: 300, // 5 min
+        pomodorosCompleted: 1,
+        tasksCompleted: 1,
+      },
+    ];
+
+    useStatsStore.getState().setDaily(mockDaily);
+    useStatsStore.setState({
+      totalPomodoros: 4,
+      totalWorkSeconds: 1200,
+      totalTasksCompleted: 3,
+      streak: calculateStreak(mockDaily),
+    });
+
+    // 1. Daily calculation: only today
+    const dailyToday = mockDaily.find((d) => d.date === todayStr);
+    const dailyDuration = dailyToday?.totalSeconds ?? 0;
+    const dailyPomodoros = dailyToday?.pomodorosCompleted ?? 0;
+    const dailyTasks = dailyToday?.tasksCompleted ?? 0;
+
+    expect(dailyDuration).toBe(300);
+    expect(dailyPomodoros).toBe(1);
+    expect(dailyTasks).toBe(1);
+
+    // 2. Weekly calculation: last 7 days window
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const startStr = toLocalDateStr(sevenDaysAgo);
+
+    const weeklyStats = mockDaily.filter((s) => s.date >= startStr && s.date <= todayStr);
+    const weeklyDuration = weeklyStats.reduce((sum, s) => sum + s.totalSeconds, 0);
+    const weeklyPomodoros = weeklyStats.reduce((sum, s) => sum + s.pomodorosCompleted, 0);
+    const weeklyTasks = weeklyStats.reduce((sum, s) => sum + s.tasksCompleted, 0);
+
+    expect(weeklyDuration).toBe(1200);
+    expect(weeklyPomodoros).toBe(4);
+    expect(weeklyTasks).toBe(3);
+
+    // Verify daily values are strictly differentiated from weekly totals
+    expect(dailyPomodoros).toBeLessThan(weeklyPomodoros);
+    expect(dailyDuration).toBeLessThan(weeklyDuration);
+
+    // Streak should be 3
+    expect(useStatsStore.getState().streak).toBe(3);
+  });
+
+  it('calculates monthly stats within current calendar month only', () => {
+    const now = new Date();
+    const todayStr = toLocalDateStr(now);
+    const currentMonthPrefix = todayStr.substring(0, 7);
+
+    const mockDaily: DailyStat[] = [
+      {
+        date: '2020-01-01',
+        totalSeconds: 3600,
+        pomodorosCompleted: 4,
+        tasksCompleted: 2,
+      },
+      {
+        date: todayStr,
+        totalSeconds: 1500,
+        pomodorosCompleted: 1,
+        tasksCompleted: 1,
+      },
+    ];
+
+    const monthlyStats = mockDaily.filter((s) => s.date.startsWith(currentMonthPrefix));
+    const monthlyDuration = monthlyStats.reduce((sum, s) => sum + s.totalSeconds, 0);
+    const monthlyPomodoros = monthlyStats.reduce((sum, s) => sum + s.pomodorosCompleted, 0);
+
+    expect(monthlyDuration).toBe(1500);
+    expect(monthlyPomodoros).toBe(1);
   });
 
   describe('Buddy Timer Synchronization with Duration Adaptation', () => {

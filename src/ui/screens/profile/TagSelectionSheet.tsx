@@ -17,7 +17,7 @@ interface TagSelectionSheetProps {
 }
 
 const CATEGORY_CONFIG: { key: TagCategory; icon: string; labelKey: string }[] = [
-  { key: 'game', icon: '🎮', labelKey: 'tags.game' },
+  { key: 'lifestyle', icon: '🌿', labelKey: 'tags.lifestyle' },
   { key: 'music', icon: '🎵', labelKey: 'tags.music' },
   { key: 'language', icon: '🌍', labelKey: 'tags.language' },
   { key: 'subject', icon: '📚', labelKey: 'tags.subject' },
@@ -25,8 +25,8 @@ const CATEGORY_CONFIG: { key: TagCategory; icon: string; labelKey: string }[] = 
   { key: 'creative', icon: '🎨', labelKey: 'tags.creative' },
   { key: 'sport', icon: '⚽', labelKey: 'tags.sport' },
   { key: 'entertainment', icon: '🎬', labelKey: 'tags.entertainment' },
-  { key: 'lifestyle', icon: '🌿', labelKey: 'tags.lifestyle' },
   { key: 'hobby', icon: '🎲', labelKey: 'tags.hobby' },
+  { key: 'game', icon: '🎮', labelKey: 'tags.game' },
 ];
 
 export function TagSelectionSheet({ visible, onClose }: TagSelectionSheetProps) {
@@ -39,7 +39,7 @@ export function TagSelectionSheet({ visible, onClose }: TagSelectionSheetProps) 
   
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(userTags.map((t) => t.id)));
   const [prevUserTags, setPrevUserTags] = useState(userTags);
-  const [activeCategory, setActiveCategory] = useState<TagCategory>('game');
+  const [activeCategory, setActiveCategory] = useState<TagCategory>('lifestyle');
   const [isSaving, setIsSaving] = useState(false);
 
   // Sync selectedIds when userTags change

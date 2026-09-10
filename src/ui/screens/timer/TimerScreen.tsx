@@ -453,6 +453,9 @@ export function TimerScreen() {
           }
         } else {
           undoTaskCompleted();
+          if (user?.id) {
+            statsService.undoCompletedTask(user.id, task.title);
+          }
         }
       }
       toggleCompleted(id);
@@ -466,12 +469,19 @@ export function TimerScreen() {
   
   const handleRemoveTask = useCallback(
     (id: string) => {
+      const task = tasks.find((t) => t.id === id);
+      if (task?.completed) {
+        undoTaskCompleted();
+        if (user?.id) {
+          statsService.undoCompletedTask(user.id, task.title);
+        }
+      }
       removeTask(id);
       if (activeSession) {
         buddyService.broadcastTask(activeSession.id, 'delete', id);
       }
     },
-    [removeTask, activeSession]
+    [tasks, removeTask, undoTaskCompleted, user, activeSession]
   );
 
   const modeButtons: TimerMode[] = ['work', 'shortBreak', 'longBreak'];
