@@ -21,7 +21,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.pomomate.app",
-      "buildNumber": "33",
+      "buildNumber": "34",
       "scheme": "pomomate",
       "infoPlist": {
         "NSCameraUsageDescription": "Profil fotoğrafı eklemek için kamera erişimi gerekiyor.",
@@ -41,7 +41,7 @@
     },
     "android": {
       "package": "com.pomomate.app",
-      "versionCode": 33,
+      "versionCode": 34,
       "adaptiveIcon": {
         "backgroundColor": "#121212",
         "foregroundImage": "./assets/android-icon-foreground.png",
