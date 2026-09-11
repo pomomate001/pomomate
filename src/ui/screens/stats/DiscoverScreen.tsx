@@ -85,8 +85,7 @@ export function DiscoverScreen({ navigation }: Props) {
   const [sameCountryOnly, setSameCountryOnly] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-
-  const filterAnim = React.useRef(new Animated.Value(0)).current;
+  const [filterAnim] = useState(() => new Animated.Value(0));
 
   const toggleFilter = useCallback(
     (open?: boolean) => {
