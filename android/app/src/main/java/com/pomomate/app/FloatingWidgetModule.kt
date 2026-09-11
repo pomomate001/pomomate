@@ -75,7 +75,7 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                     else
                         WindowManager.LayoutParams.TYPE_PHONE,
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                     PixelFormat.TRANSLUCENT
                 )
                 try {
@@ -159,11 +159,9 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
 
         try {
             val intent = Intent(reactContext, FloatingWidgetService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                reactContext.startForegroundService(intent)
-            } else {
-                reactContext.startService(intent)
-            }
+            // Use startService universally. SYSTEM_ALERT_WINDOW provides background start exemption.
+            // This prevents ForegroundServiceStartNotAllowedException and 10s ANR crashes on Android 12+.
+            reactContext.startService(intent)
 
             // Only minimize the app to background IF the overlay has confirmed it is attached and displaying!
             // This prevents dumping the user to the home screen if the service encounters an error.
