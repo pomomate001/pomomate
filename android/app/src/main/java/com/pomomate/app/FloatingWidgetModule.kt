@@ -99,7 +99,7 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
      */
     @ReactMethod
     fun requestPermission(promise: Promise) {
-        val activity = currentActivity ?: MainActivity.instance
+        val activity = reactContext.currentActivity ?: MainActivity.instance
 
         try {
             val intent = Intent(
@@ -155,7 +155,7 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
             return
         }
 
-        val activity = currentActivity ?: MainActivity.instance
+        val activity = reactContext.currentActivity ?: MainActivity.instance
 
         try {
             val intent = Intent(reactContext, FloatingWidgetService::class.java)

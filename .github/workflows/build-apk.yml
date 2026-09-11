@@ -81,13 +81,6 @@ jobs:
           git checkout android/app/src/main/res/drawable/
           git checkout android/app/build.gradle
           
-          # Add floating bubble view library dependency to build.gradle if not present
-          if ! grep -q "floating-bubble-view" android/app/build.gradle; then
-            echo "" >> android/app/build.gradle
-            echo "dependencies {" >> android/app/build.gradle
-            echo "    implementation 'io.github.torrydo:floating-bubble-view:0.6.5'" >> android/app/build.gradle
-            echo "}" >> android/app/build.gradle
-          fi
           
           # C++ derlemelerinde bellek taşmasını önlemek için mimarileri ve Gradle bellek limitlerini optimize ediyoruz
           echo "" >> android/gradle.properties
