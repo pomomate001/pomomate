@@ -75,7 +75,8 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
             }
             
             // Allow FloatingWidgetService to complete its startForeground handshake and attach overlay
-            // while the Activity is still in the foreground. This eliminates Android 12 background launch restrictions.
+            // while the Activity is still in the foreground. 500ms ensures budget devices (Samsung A22)
+            // running heavy WebRTC screen share don't drop to background prematurely.
             Handler(Looper.getMainLooper()).postDelayed({
                 try {
                     val minimized = currentActivity?.moveTaskToBack(true) ?: false
@@ -89,7 +90,7 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
-            }, 250)
+            }, 500)
             
             promise.resolve(true)
         } catch (e: Exception) {
@@ -99,7 +100,7 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
                 reactContext.startService(fallbackIntent)
                 Handler(Looper.getMainLooper()).postDelayed({
                     currentActivity?.moveTaskToBack(true)
-                }, 250)
+                }, 500)
                 promise.resolve(true)
             } catch (fallbackEx: Exception) {
                 promise.reject("SERVICE_START_FAILED", fallbackEx.message)

@@ -47,19 +47,24 @@ class FloatingWidgetService : ExpandableBubbleService() {
             startNotificationForeground()
             super.onCreate()
             instance = this
-            minimize()
+            // super.onCreate() calls setup() which already adds the floating bubble to the WindowManager.
+            // Calling minimize() here causes IllegalStateException (view already added) and crashes the service.
         } catch (e: Exception) {
             e.printStackTrace()
             try {
                 startNotificationForeground()
             } catch (ignored: Exception) {}
-            stopSelf()
+            // Avoid killing the service synchronously before Android acknowledges startForeground
+            Handler(Looper.getMainLooper()).post {
+                stopSelf()
+            }
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         try {
             startNotificationForeground()
+            super.onStartCommand(intent, flags, startId)
         } catch (e: Exception) {
             e.printStackTrace()
         }

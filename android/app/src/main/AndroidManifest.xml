@@ -61,7 +61,8 @@
     <service
       android:name=".FloatingWidgetService"
       android:exported="false"
-      android:foregroundServiceType="specialUse">
+      android:foregroundServiceType="specialUse"
+      tools:targetApi="34">
       <property
           android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
           android:value="Floating quick-action widget" />

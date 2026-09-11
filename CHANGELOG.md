@@ -2,6 +2,15 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
+## [1.3.29] - 2026-09-11
+
+### Fixed
+- **Mini Mode (Floating Widget / PiP) Android 12 Screen Share Crash Loop Fix**:
+  - Eliminated fatal `IllegalStateException: View has already been added to the window manager` caused by calling `minimize()` in `FloatingWidgetService.onCreate()` when `super.onCreate()` already attaches the bubble view.
+  - Resolved `RemoteServiceException: Context.startForegroundService() did not then call Service.startForeground()` by ensuring the foreground notification handshake is acknowledged and not abruptly killed with synchronous `stopSelf()` in error paths.
+  - Increased activity backgrounding delay to 500ms in `FloatingWidgetModule.kt` to eliminate the `ForegroundServiceStartNotAllowedException` race condition under heavy WebRTC screen share load on budget devices (Samsung A22).
+  - Added `tools:targetApi="34"` to `FloatingWidgetService` in `AndroidManifest.xml` for clean Android 12 backward compatibility with Android 14 `specialUse` foreground service types.
+
 ## [1.3.28] - 2026-09-10
 
 ### Changed
