@@ -19,6 +19,10 @@ export class PermissionManager {
   
   async requestCamera(): Promise<PermissionResult> {
     try {
+      const current = await this.checkCamera();
+      if (current === 'granted') {
+        return { status: 'granted', canAskAgain: true };
+      }
       const { status, canAskAgain } = await Camera.requestCameraPermissionsAsync();
       logger.info(`[Permissions] Camera: ${status}`);
       return { status: this.mapStatus(status), canAskAgain };
@@ -37,6 +41,10 @@ export class PermissionManager {
   
   async requestMicrophone(): Promise<PermissionResult> {
     try {
+      const current = await this.checkMicrophone();
+      if (current === 'granted') {
+        return { status: 'granted', canAskAgain: true };
+      }
       const { status, canAskAgain } = await Camera.requestMicrophonePermissionsAsync();
       logger.info(`[Permissions] Microphone: ${status}`);
       return { status: this.mapStatus(status), canAskAgain };
@@ -55,6 +63,10 @@ export class PermissionManager {
   
   async requestNotifications(): Promise<PermissionResult> {
     try {
+      const current = await this.checkNotifications();
+      if (current === 'granted') {
+        return { status: 'granted', canAskAgain: true };
+      }
       const { status, canAskAgain } = await Notifications.requestPermissionsAsync();
       logger.info(`[Permissions] Notifications: ${status}`);
       return { status: this.mapStatus(status), canAskAgain };

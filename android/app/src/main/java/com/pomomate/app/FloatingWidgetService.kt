@@ -301,6 +301,7 @@ class FloatingWidgetService : Service() {
         layout.addView(createBtn(R.id.btn_cam, "ic_pip_cam_off", android.R.drawable.ic_menu_camera))
         layout.addView(createBtn(R.id.btn_screen, "ic_pip_screen_off", android.R.drawable.ic_menu_share))
         layout.addView(createBtn(R.id.btn_open_app, "ic_pip_expand", android.R.drawable.ic_menu_view))
+        layout.addView(createBtn(R.id.btn_minimize_menu, "ic_pip_minimize", android.R.drawable.ic_menu_revert))
 
         val closeBtn = ImageButton(this).apply {
             this.id = R.id.btn_close_menu
@@ -380,6 +381,7 @@ class FloatingWidgetService : Service() {
         camButton = view.findViewById(R.id.btn_cam)
         screenButton = view.findViewById(R.id.btn_screen)
         val openAppButton = view.findViewById<ImageButton?>(R.id.btn_open_app)
+        val minimizeButton = view.findViewById<ImageButton?>(R.id.btn_minimize_menu)
         val closeButton = view.findViewById<ImageButton?>(R.id.btn_close_menu)
 
         updateButtonStates()
@@ -397,8 +399,24 @@ class FloatingWidgetService : Service() {
             bringAppToFront()
             minimize()
         }
-        closeButton?.setOnClickListener {
+        minimizeButton?.setOnClickListener {
             minimize()
+        }
+        closeButton?.setOnClickListener {
+            closeWidget()
+        }
+    }
+
+    fun closeWidget() {
+        Handler(Looper.getMainLooper()).post {
+            try {
+                removeViews()
+                isOverlayAttached = false
+                sendEventToJS("onWidgetClosed")
+                stopSelf()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

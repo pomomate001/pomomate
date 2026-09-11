@@ -42,6 +42,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [showAddTask, setShowAddTask] = useState(false);
   const [isScreenShrunk, setIsScreenShrunk] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  const [isMiniModeActive, setIsMiniModeActive] = useState(false);
+
   // Detect Floating Widget action events
   useEffect(() => {
     if (Platform.OS !== 'android') return;
@@ -53,6 +55,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         handleToggleCamRef.current?.();
       } else if (action === 'toggleScreen') {
         handleToggleScreenRef.current?.();
+      } else if (action === 'onWidgetClosed') {
+        setIsMiniModeActive(false);
       }
     });
 
@@ -61,10 +65,14 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     };
   }, []);
 
-
-
-  const handleEnterMiniMode = useCallback(async () => {
+  const handleToggleMiniMode = useCallback(async () => {
     if (Platform.OS !== 'android') return;
+
+    if (isMiniModeActive) {
+      await floatingWidgetService.hideWidget();
+      setIsMiniModeActive(false);
+      return;
+    }
 
     try {
       const hasPermission = await floatingWidgetService.checkPermission();
@@ -86,7 +94,9 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       }
 
       const success = await floatingWidgetService.showWidget();
-      if (!success) {
+      if (success) {
+        setIsMiniModeActive(true);
+      } else {
         Alert.alert(
           'Mini Mod Başlatılamadı',
           'Mini mod servisi başlatılamadı. Lütfen sistem ayarlarından uygulamanın diğer uygulamaların üzerinde gösterim izninin açık olduğunu kontrol edin.'
@@ -95,7 +105,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     } catch {
       Alert.alert('Hata', 'Mini moda geçilirken beklenmedik bir hata oluştu.');
     }
-  }, []);
+  }, [isMiniModeActive]);
 
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -491,6 +501,14 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     }
 
     if (!micOn) {
+      // In-place track re-enabling if local audio track already exists
+      const audioTracks = localStream?.getAudioTracks();
+      if (audioTracks && audioTracks.length > 0) {
+        audioTracks.forEach((t) => { t.enabled = true; });
+        setMicOn(true);
+        return;
+      }
+
       let stream = null;
       if (roomClientRef.current) {
         stream = await roomClientRef.current.enableAudioVideo(true, camOn);
@@ -500,11 +518,19 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       
       if (stream) {
         setMicOn(true);
-        if (camOn) setLocalStream(stream);
+        setLocalStream(stream);
       } else {
         Alert.alert(t('rooms.micPermissionRequired'), t('rooms.micPermissionBody'));
       }
     } else {
+      // In-place track mute if camera is still active
+      const audioTracks = localStream?.getAudioTracks();
+      if (audioTracks && audioTracks.length > 0 && camOn) {
+        audioTracks.forEach((t) => { t.enabled = false; });
+        setMicOn(false);
+        return;
+      }
+
       if (camOn) {
         let stream = null;
         if (roomClientRef.current) {
@@ -523,7 +549,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       }
       setMicOn(false);
     }
-  }, [micOn, camOn, isHost, roomSettings.allowMic, t]);
+  }, [micOn, camOn, localStream, isHost, roomSettings.allowMic, t]);
 
   const handleToggleCam = useCallback(async () => {
     if (!isHost && !roomSettings.allowCamera) {
@@ -532,6 +558,17 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
     }
 
     if (!camOn) {
+      // In-place track re-enabling if local video track already exists
+      const videoTracks = localStream?.getVideoTracks();
+      if (videoTracks && videoTracks.length > 0) {
+        videoTracks.forEach((t) => { t.enabled = true; });
+        setCamOn(true);
+        if (!viewToggles.cameras) {
+          toggleView('cameras');
+        }
+        return;
+      }
+
       let stream = null;
       if (roomClientRef.current) {
         stream = await roomClientRef.current.enableAudioVideo(micOn, true);
@@ -549,6 +586,14 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         Alert.alert(t('rooms.camPermissionRequired'), t('rooms.camPermissionBody'));
       }
     } else {
+      // In-place track pause if mic is still active
+      const videoTracks = localStream?.getVideoTracks();
+      if (videoTracks && videoTracks.length > 0 && micOn) {
+        videoTracks.forEach((t) => { t.enabled = false; });
+        setCamOn(false);
+        return;
+      }
+
       if (micOn) {
         if (roomClientRef.current) {
           await roomClientRef.current.enableAudioVideo(true, false);
@@ -561,11 +606,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         } else {
           mediaService.stopUserMedia();
         }
+        setLocalStream(null);
       }
       setCamOn(false);
-      setLocalStream(null);
     }
-  }, [camOn, micOn, viewToggles.cameras, toggleView, isHost, roomSettings.allowCamera, t]);
+  }, [camOn, micOn, localStream, viewToggles.cameras, toggleView, isHost, roomSettings.allowCamera, t]);
 
   const handleToggleScreen = useCallback(async () => {
     if (!isHost) {
@@ -653,6 +698,8 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       setScreenShareOn(false);
       setScreenStream(null);
       setIsScreenShrunk(false);
+      void floatingWidgetService.hideWidget();
+      setIsMiniModeActive(false);
 
       const channel = supabase.channel(`room_screen_${roomId}`);
       channel.send({
@@ -930,7 +977,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
               onRemoveFile={() => {
                 if (activeSharedFile) handleRemoveFile(activeSharedFile.id);
               }}
-              onEnterPiP={handleEnterMiniMode}
+              onEnterPiP={handleToggleMiniMode}
               onStopScreenShare={screenShareOn ? handleToggleScreen : undefined}
             />
           </View>
@@ -960,17 +1007,26 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         showShrinkToggle={showShrinkToggle}
         isShrunk={isScreenShrunk}
         onToggleShrink={() => setIsScreenShrunk(!isScreenShrunk)}
-        onEnterPiP={handleEnterMiniMode}
+        onEnterPiP={handleToggleMiniMode}
       />
 
       {/* ─── Mini Mod (PiP) Floating Button — only when screen sharing ─── */}
       {screenShareOn && (
         <Pressable
-          style={styles.miniModButton}
-          onPress={handleEnterMiniMode}
+          style={[
+            styles.miniModButton,
+            isMiniModeActive && styles.miniModCloseButton,
+          ]}
+          onPress={handleToggleMiniMode}
         >
-          <Ionicons name="contract-outline" size={18} color="#FFF" />
-          <Text style={styles.miniModText}>Mini Mod</Text>
+          <Ionicons
+            name={isMiniModeActive ? "close-circle" : "contract-outline"}
+            size={18}
+            color="#FFF"
+          />
+          <Text style={styles.miniModText}>
+            {isMiniModeActive ? "Mini Modu Kapat" : "Mini Mod"}
+          </Text>
         </Pressable>
       )}
 
@@ -1053,6 +1109,10 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 12,
     fontWeight: '700',
+  },
+  miniModCloseButton: {
+    backgroundColor: 'rgba(220, 38, 38, 0.9)',
+    shadowColor: '#DC2626',
   },
 });
 

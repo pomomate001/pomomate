@@ -141,6 +141,7 @@ describe('Mini Mode Android Native Architecture & Contract Validation', () => {
         'ic_logo.xml',
         'ic_pip_close.xml',
         'ic_pip_expand.xml',
+        'ic_pip_minimize.xml',
       ];
 
       for (const drawable of drawables) {
