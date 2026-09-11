@@ -31,8 +31,8 @@ export function RoomSettingsPanel({ roomId }: RoomSettingsPanelProps) {
   const hostParticipant = {
     userId: hostId,
     displayName: currentUser?.id === hostId
-      ? `${currentUser?.displayName || 'Siz'} (${t('rooms.hostRoleBadge')})`
-      : t('rooms.hostRoleBadge'),
+      ? (currentUser?.displayName || 'Siz')
+      : (currentRoom?.hostName || t('rooms.hostRoleBadge')),
     avatarUrl: currentUser?.id === hostId ? currentUser?.avatarUrl : undefined,
     isHost: true,
   };
@@ -95,89 +95,13 @@ export function RoomSettingsPanel({ roomId }: RoomSettingsPanelProps) {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={true}
+      nestedScrollEnabled={true}
+      keyboardShouldPersistTaps="handled"
+      bounces={true}
+      overScrollMode="always"
     >
-      {/* ─── Room Permissions Section ─── */}
-      <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
-        {t('rooms.settingsTitle')}
-      </Text>
-      
-      <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-        {t('rooms.settingsDesc')}
-      </Text>
-
-      <View style={styles.settingRow}>
-        <View style={styles.settingInfo}>
-          <View style={[styles.iconBox, { backgroundColor: colors.surfaceVariant }]}>
-            <Ionicons name="mic" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.settingTextCol}>
-            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.micUsageTitle')}</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.micUsageDesc')}</Text>
-          </View>
-        </View>
-        <Switch
-          value={roomSettings.allowMic}
-          onValueChange={() => toggleSetting('allowMic')}
-          trackColor={{ false: colors.border, true: colors.primary }}
-        />
-      </View>
-
-      <View style={styles.settingRow}>
-        <View style={styles.settingInfo}>
-          <View style={[styles.iconBox, { backgroundColor: colors.surfaceVariant }]}>
-            <Ionicons name="videocam" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.settingTextCol}>
-            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.camUsageTitle')}</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.camUsageDesc')}</Text>
-          </View>
-        </View>
-        <Switch
-          value={roomSettings.allowCamera}
-          onValueChange={() => toggleSetting('allowCamera')}
-          trackColor={{ false: colors.border, true: colors.primary }}
-        />
-      </View>
-
-      <View style={styles.settingRow}>
-        <View style={styles.settingInfo}>
-          <View style={[styles.iconBox, { backgroundColor: colors.surfaceVariant }]}>
-            <Ionicons name="document-text" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.settingTextCol}>
-            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.fileUploadTitle')}</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.fileUploadDesc')}</Text>
-          </View>
-        </View>
-        <Switch
-          value={roomSettings.allowFiles}
-          onValueChange={() => toggleSetting('allowFiles')}
-          trackColor={{ false: colors.border, true: colors.primary }}
-        />
-      </View>
-
-      <View style={styles.settingRow}>
-        <View style={styles.settingInfo}>
-          <View style={[styles.iconBox, { backgroundColor: colors.surfaceVariant }]}>
-            <Ionicons name="chatbubbles" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.settingTextCol}>
-            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.chatAccessTitle')}</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.chatAccessDesc')}</Text>
-          </View>
-        </View>
-        <Switch
-          value={roomSettings.allowChat}
-          onValueChange={() => toggleSetting('allowChat')}
-          trackColor={{ false: colors.border, true: colors.primary }}
-        />
-      </View>
-
-      {/* ─── Divider ─── */}
-      <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-      {/* ─── Participant Management Section ─── */}
+      {/* ─── Participant Management Section (Now at Top for Easy Access) ─── */}
       <View style={styles.sectionHeaderRow}>
         <Text style={[typography.h4, { color: colors.textPrimary }]}>
           {t('rooms.participantsSectionTitle')}
@@ -268,6 +192,86 @@ export function RoomSettingsPanel({ roomId }: RoomSettingsPanelProps) {
           </View>
         )}
       </View>
+
+      {/* ─── Divider ─── */}
+      <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+      {/* ─── Room Permissions Section ─── */}
+      <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
+        {t('rooms.settingsTitle')}
+      </Text>
+      
+      <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
+        {t('rooms.settingsDesc')}
+      </Text>
+
+      <View style={styles.settingRow}>
+        <View style={styles.settingInfo}>
+          <View style={[styles.iconBox, { backgroundColor: colors.surfaceVariant }]}>
+            <Ionicons name="mic" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.settingTextCol}>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.micUsageTitle')}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.micUsageDesc')}</Text>
+          </View>
+        </View>
+        <Switch
+          value={roomSettings.allowMic}
+          onValueChange={() => toggleSetting('allowMic')}
+          trackColor={{ false: colors.border, true: colors.primary }}
+        />
+      </View>
+
+      <View style={styles.settingRow}>
+        <View style={styles.settingInfo}>
+          <View style={[styles.iconBox, { backgroundColor: colors.surfaceVariant }]}>
+            <Ionicons name="videocam" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.settingTextCol}>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.camUsageTitle')}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.camUsageDesc')}</Text>
+          </View>
+        </View>
+        <Switch
+          value={roomSettings.allowCamera}
+          onValueChange={() => toggleSetting('allowCamera')}
+          trackColor={{ false: colors.border, true: colors.primary }}
+        />
+      </View>
+
+      <View style={styles.settingRow}>
+        <View style={styles.settingInfo}>
+          <View style={[styles.iconBox, { backgroundColor: colors.surfaceVariant }]}>
+            <Ionicons name="document-text" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.settingTextCol}>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.fileUploadTitle')}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.fileUploadDesc')}</Text>
+          </View>
+        </View>
+        <Switch
+          value={roomSettings.allowFiles}
+          onValueChange={() => toggleSetting('allowFiles')}
+          trackColor={{ false: colors.border, true: colors.primary }}
+        />
+      </View>
+
+      <View style={styles.settingRow}>
+        <View style={styles.settingInfo}>
+          <View style={[styles.iconBox, { backgroundColor: colors.surfaceVariant }]}>
+            <Ionicons name="chatbubbles" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.settingTextCol}>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>{t('rooms.chatAccessTitle')}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('rooms.chatAccessDesc')}</Text>
+          </View>
+        </View>
+        <Switch
+          value={roomSettings.allowChat}
+          onValueChange={() => toggleSetting('allowChat')}
+          trackColor={{ false: colors.border, true: colors.primary }}
+        />
+      </View>
     </ScrollView>
   );
 }
@@ -278,7 +282,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingVertical: spacing.sm,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xxl + 32,
   },
   settingRow: {
     flexDirection: 'row',

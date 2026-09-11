@@ -471,14 +471,24 @@ export class StatsService {
         }
       }
 
-      // If no remote data at all, skip stats store merge
-      if (remoteTotalPomodoros === 0 && remoteTotalTasks === 0) return;
+      // If no remote data at all, ensure clean stats for this user
+      if (remoteTotalPomodoros === 0 && remoteTotalTasks === 0) {
+        const localStore = useStatsStore.getState();
+        if (localStore.userId !== userId) {
+          useStatsStore.getState().reset();
+          useStatsStore.setState({ userId });
+        }
+        return;
+      }
 
-      // Merge with local store — take the maximum of each metric per day
+      // Merge with local store — take the maximum of each metric per day ONLY if same user
       const localStore = useStatsStore.getState();
+      const isSameUser = localStore.userId === userId;
       const localDailyMap = new Map<string, DailyStat>();
-      for (const d of localStore.daily) {
-        localDailyMap.set(d.date, { ...d });
+      if (isSameUser) {
+        for (const d of localStore.daily) {
+          localDailyMap.set(d.date, { ...d });
+        }
       }
 
       // Merge: for each date, take the max of remote and local values
@@ -504,12 +514,19 @@ export class StatsService {
       const mergedDaily: DailyStat[] = Array.from(localDailyMap.values());
       const streak = calculateStreak(mergedDaily);
 
-      // Use max of remote vs local totals
-      const mergedTotalPomodoros = Math.max(remoteTotalPomodoros, localStore.totalPomodoros);
-      const mergedTotalWorkSeconds = Math.max(remoteTotalSeconds, localStore.totalWorkSeconds);
-      const mergedTotalTasks = Math.max(remoteTotalTasks, localStore.totalTasksCompleted);
+      // Use max of remote vs local totals if same user, otherwise use remote totals
+      const mergedTotalPomodoros = isSameUser
+        ? Math.max(remoteTotalPomodoros, localStore.totalPomodoros)
+        : remoteTotalPomodoros;
+      const mergedTotalWorkSeconds = isSameUser
+        ? Math.max(remoteTotalSeconds, localStore.totalWorkSeconds)
+        : remoteTotalSeconds;
+      const mergedTotalTasks = isSameUser
+        ? Math.max(remoteTotalTasks, localStore.totalTasksCompleted)
+        : remoteTotalTasks;
 
       useStatsStore.setState({
+        userId,
         totalPomodoros: mergedTotalPomodoros,
         totalWorkSeconds: mergedTotalWorkSeconds,
         totalTasksCompleted: mergedTotalTasks,

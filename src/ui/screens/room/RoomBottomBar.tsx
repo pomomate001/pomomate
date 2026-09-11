@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -43,9 +43,10 @@ interface RoomBottomBarProps {
   onRemoveFile?: (fileId: string) => void;
 }
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const COLLAPSED_HEIGHT = 80;
 const EXPANDED_HEIGHT = 190;
-const CHAT_HEIGHT = 520;
+const CHAT_HEIGHT = Math.max(520, Math.min(Math.round(SCREEN_HEIGHT * 0.78), 660));
 
 export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
   roomId,
@@ -80,11 +81,11 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
     const levels = [COLLAPSED_HEIGHT, EXPANDED_HEIGHT, CHAT_HEIGHT];
 
     // Strong velocity override
-    if (velocityY < -600 && currentHeight < CHAT_HEIGHT) {
+    if (velocityY < -500 && currentHeight < CHAT_HEIGHT) {
       if (currentHeight < EXPANDED_HEIGHT) return EXPANDED_HEIGHT;
       return CHAT_HEIGHT;
     }
-    if (velocityY > 600 && currentHeight > COLLAPSED_HEIGHT) {
+    if (velocityY > 500 && currentHeight > COLLAPSED_HEIGHT) {
       if (currentHeight > EXPANDED_HEIGHT) return EXPANDED_HEIGHT;
       return COLLAPSED_HEIGHT;
     }
@@ -106,15 +107,21 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
       startHeight.value = height.value;
     })
     .onUpdate((event) => {
-      const newHeight = startHeight.value - event.translationY;
-      if (newHeight >= COLLAPSED_HEIGHT && newHeight <= CHAT_HEIGHT) {
-        height.value = newHeight;
-      }
+      const newHeight = Math.max(
+        COLLAPSED_HEIGHT,
+        Math.min(startHeight.value - event.translationY, CHAT_HEIGHT)
+      );
+      height.value = newHeight;
     })
     .onEnd((event) => {
       const target = snapToNearest(height.value, event.velocityY);
       height.value = withSpring(target, { damping: 20, stiffness: 130 });
     });
+
+  const toggleSheet = () => {
+    const target = height.value >= CHAT_HEIGHT - 30 ? EXPANDED_HEIGHT : CHAT_HEIGHT;
+    height.value = withSpring(target, { damping: 20, stiffness: 130 });
+  };
 
   const animatedStyle = useAnimatedStyle(() => ({
     height: height.value + insets.bottom,
@@ -155,126 +162,157 @@ export const RoomBottomBar: React.FC<RoomBottomBarProps> = ({
   });
 
   return (
-    <GestureDetector gesture={panGesture}>
-      <Animated.View
-        style={[
-          styles.container,
-          animatedStyle,
-          {
-            backgroundColor: `${colors.surface}FA`,
-            borderTopColor: colors.border,
-            paddingBottom: insets.bottom,
-          },
-        ]}
-      >
-        {/* Drag handle */}
-        <View style={styles.dragHandleContainer}>
-          <View style={[styles.dragHandle, { backgroundColor: colors.border || 'rgba(255, 255, 255, 0.3)' }]} />
-        </View>
-
-        {/* Room Header Info (shown when expanded) */}
-        <Animated.View style={[styles.topSection, topSectionStyle]}>
-          <View style={styles.headerRow}>
-            {isLive && (
-              <View style={[styles.liveBadge, { backgroundColor: colors.error }]}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>CANLI</Text>
-              </View>
-            )}
-            <Text style={[styles.roomName, { color: colors.textPrimary }]} numberOfLines={1}>
-              {roomName}
-            </Text>
-            <View style={[styles.invitePill, { backgroundColor: colors.surfaceVariant }]}>
-              <Text style={[styles.inviteText, { color: colors.primary }]}>{inviteCode}</Text>
-            </View>
-          </View>
-          
+    <Animated.View
+      style={[
+        styles.container,
+        animatedStyle,
+        {
+          backgroundColor: `${colors.surface}FA`,
+          borderTopColor: colors.border,
+          paddingBottom: insets.bottom,
+        },
+      ]}
+    >
+      {/* Draggable header area (GestureDetector isolated to header so content can scroll freely) */}
+      <GestureDetector gesture={panGesture}>
+        <View style={styles.draggableHeader}>
+          {/* Drag handle */}
           <Pressable
-            style={styles.participantsWrap}
+            style={styles.dragHandleContainer}
+            onPress={toggleSheet}
+            hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }}
+          >
+            <View style={[styles.dragHandle, { backgroundColor: colors.border || 'rgba(255, 255, 255, 0.3)' }]} />
+          </Pressable>
+
+          {/* Room Header Info (shown when expanded) */}
+          <Animated.View style={[styles.topSection, topSectionStyle]}>
+            <View style={styles.headerRow}>
+              {isLive && (
+                <View style={[styles.liveBadge, { backgroundColor: colors.error }]}>
+                  <View style={styles.liveDot} />
+                  <Text style={styles.liveText}>CANLI</Text>
+                </View>
+              )}
+              <Text style={[styles.roomName, { color: colors.textPrimary }]} numberOfLines={1}>
+                {roomName}
+              </Text>
+              <View style={[styles.invitePill, { backgroundColor: colors.surfaceVariant }]}>
+                <Text style={[styles.inviteText, { color: colors.primary }]}>{inviteCode}</Text>
+              </View>
+            </View>
+            
+            <Pressable
+              style={styles.participantsWrap}
+              onPress={() => {
+                if (isHost) {
+                  setActiveTab('settings');
+                  height.value = withSpring(CHAT_HEIGHT, { damping: 20, stiffness: 130 });
+                }
+              }}
+              disabled={!isHost}
+            >
+              <ParticipantsBar participants={participants} />
+            </Pressable>
+          </Animated.View>
+
+          {/* Controls Row */}
+          <View style={styles.controlsRow}>
+            <Pressable
+              style={[styles.controlButton, { backgroundColor: micOn ? colors.surfaceVariant : colors.error }]}
+              onPress={onToggleMic}
+            >
+              <Ionicons name={micOn ? 'mic' : 'mic-off'} size={22} color={micOn ? colors.textPrimary : '#FFF'} />
+            </Pressable>
+            
+            <Pressable
+              style={[styles.controlButton, { backgroundColor: camOn ? colors.surfaceVariant : colors.error }]}
+              onPress={onToggleCam}
+            >
+              <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={22} color={camOn ? colors.textPrimary : '#FFF'} />
+            </Pressable>
+
+            <Pressable
+              style={[styles.controlButton, { backgroundColor: screenShareOn ? colors.success : colors.surfaceVariant }]}
+              onPress={onToggleScreen}
+            >
+              <Ionicons name={screenShareOn ? 'desktop' : 'desktop-outline'} size={22} color={screenShareOn ? '#FFF' : colors.textPrimary} />
+            </Pressable>
+
+            <Pressable
+              style={[styles.controlButton, { backgroundColor: colors.surfaceVariant }]}
+              onPress={onShare}
+            >
+              <Ionicons name="share-social-outline" size={22} color={colors.textPrimary} />
+            </Pressable>
+
+            <Pressable
+              style={[styles.controlButton, { backgroundColor: colors.error }]}
+              onPress={onLeave}
+            >
+              <Ionicons name="call" size={22} color="#FFF" />
+            </Pressable>
+          </View>
+        </View>
+      </GestureDetector>
+
+      {/* Content Section (Tabs: Chat, Files, Settings) */}
+      <Animated.View style={[styles.contentSection, contentSectionStyle]}>
+        <View style={[styles.tabHeader, { borderBottomColor: colors.border }]}>
+          <Pressable
+            style={styles.tabBtn}
             onPress={() => {
-              if (isHost) {
-                setActiveTab('settings');
+              setActiveTab('chat');
+              if (height.value < CHAT_HEIGHT - 30) {
                 height.value = withSpring(CHAT_HEIGHT, { damping: 20, stiffness: 130 });
               }
             }}
-            disabled={!isHost}
           >
-            <ParticipantsBar participants={participants} />
+            <Text style={[styles.tabText, { color: activeTab === 'chat' ? colors.primary : colors.textSecondary }]}>{t('rooms.tabChat')}</Text>
+            {activeTab === 'chat' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
           </Pressable>
-        </Animated.View>
-
-        {/* Controls Row */}
-        <View style={styles.controlsRow}>
           <Pressable
-            style={[styles.controlButton, { backgroundColor: micOn ? colors.surfaceVariant : colors.error }]}
-            onPress={onToggleMic}
+            style={styles.tabBtn}
+            onPress={() => {
+              setActiveTab('files');
+              if (height.value < CHAT_HEIGHT - 30) {
+                height.value = withSpring(CHAT_HEIGHT, { damping: 20, stiffness: 130 });
+              }
+            }}
           >
-            <Ionicons name={micOn ? 'mic' : 'mic-off'} size={22} color={micOn ? colors.textPrimary : '#FFF'} />
+            <Text style={[styles.tabText, { color: activeTab === 'files' ? colors.primary : colors.textSecondary }]}>{t('rooms.tabFiles')}</Text>
+            {activeTab === 'files' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
           </Pressable>
-          
-          <Pressable
-            style={[styles.controlButton, { backgroundColor: camOn ? colors.surfaceVariant : colors.error }]}
-            onPress={onToggleCam}
-          >
-            <Ionicons name={camOn ? 'videocam' : 'videocam-off'} size={22} color={camOn ? colors.textPrimary : '#FFF'} />
-          </Pressable>
-
-          <Pressable
-            style={[styles.controlButton, { backgroundColor: screenShareOn ? colors.success : colors.surfaceVariant }]}
-            onPress={onToggleScreen}
-          >
-            <Ionicons name={screenShareOn ? 'desktop' : 'desktop-outline'} size={22} color={screenShareOn ? '#FFF' : colors.textPrimary} />
-          </Pressable>
-
-          <Pressable
-            style={[styles.controlButton, { backgroundColor: colors.surfaceVariant }]}
-            onPress={onShare}
-          >
-            <Ionicons name="share-social-outline" size={22} color={colors.textPrimary} />
-          </Pressable>
-
-          <Pressable
-            style={[styles.controlButton, { backgroundColor: colors.error }]}
-            onPress={onLeave}
-          >
-            <Ionicons name="call" size={22} color="#FFF" />
-          </Pressable>
+          {isHost && (
+            <Pressable
+              style={styles.tabBtn}
+              onPress={() => {
+                setActiveTab('settings');
+                if (height.value < CHAT_HEIGHT - 30) {
+                  height.value = withSpring(CHAT_HEIGHT, { damping: 20, stiffness: 130 });
+                }
+              }}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'settings' ? colors.primary : colors.textSecondary }]}>{t('rooms.tabSettings')}</Text>
+              {activeTab === 'settings' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
+            </Pressable>
+          )}
         </View>
-
-        {/* Content Section (Tabs: Chat, Files, Settings) */}
-        <Animated.View style={[styles.contentSection, contentSectionStyle]}>
-          <View style={[styles.tabHeader, { borderBottomColor: colors.border }]}>
-            <Pressable style={styles.tabBtn} onPress={() => setActiveTab('chat')}>
-              <Text style={[styles.tabText, { color: activeTab === 'chat' ? colors.primary : colors.textSecondary }]}>{t('rooms.tabChat')}</Text>
-              {activeTab === 'chat' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
-            </Pressable>
-            <Pressable style={styles.tabBtn} onPress={() => setActiveTab('files')}>
-              <Text style={[styles.tabText, { color: activeTab === 'files' ? colors.primary : colors.textSecondary }]}>{t('rooms.tabFiles')}</Text>
-              {activeTab === 'files' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
-            </Pressable>
-            {isHost && (
-              <Pressable style={styles.tabBtn} onPress={() => setActiveTab('settings')}>
-                <Text style={[styles.tabText, { color: activeTab === 'settings' ? colors.primary : colors.textSecondary }]}>{t('rooms.tabSettings')}</Text>
-                {activeTab === 'settings' && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
-              </Pressable>
-            )}
-          </View>
-          
-          <View style={styles.tabContentArea}>
-            {activeTab === 'chat' && <RoomChat roomId={roomId} isHost={isHost} />}
-            {activeTab === 'files' && (
-              <RoomFilesBoard
-                isHost={isHost}
-                onPickFile={onPickFile}
-                onSelectFile={onSelectFile}
-                onRemoveFile={onRemoveFile}
-              />
-            )}
-            {activeTab === 'settings' && isHost && <RoomSettingsPanel roomId={roomId} />}
-          </View>
-        </Animated.View>
+        
+        <View style={styles.tabContentArea}>
+          {activeTab === 'chat' && <RoomChat roomId={roomId} isHost={isHost} />}
+          {activeTab === 'files' && (
+            <RoomFilesBoard
+              isHost={isHost}
+              onPickFile={onPickFile}
+              onSelectFile={onSelectFile}
+              onRemoveFile={onRemoveFile}
+            />
+          )}
+          {activeTab === 'settings' && isHost && <RoomSettingsPanel roomId={roomId} />}
+        </View>
       </Animated.View>
-    </GestureDetector>
+    </Animated.View>
   );
 };
 
@@ -294,6 +332,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 20,
+  },
+  draggableHeader: {
+    width: '100%',
   },
   dragHandleContainer: {
     width: '100%',

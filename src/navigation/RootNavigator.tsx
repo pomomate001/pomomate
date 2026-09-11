@@ -15,7 +15,7 @@ import { AuthNavigator } from './AuthNavigator';
 import { UpdatePasswordModal } from '../ui/screens/auth';
 import { OnboardingScreen } from '../ui/screens/onboarding';
 import type { RootTabParamList } from './types';
-import { useUserStore, useFriendsStore, useRoomStore, useSettingsStore } from '../state';
+import { useUserStore, useFriendsStore, useRoomStore, useSettingsStore, useStatsStore, useTaskStore } from '../state';
 import { authService, supabase } from '../services/auth';
 import { countryService } from '../services/location/CountryService';
 import { useTranslation } from '../i18n';
@@ -130,6 +130,11 @@ export function RootNavigator() {
     const hydrateUser = async () => {
       const currentUser = await authService.getCurrentUser();
       if (isMounted) {
+        if (!currentUser) {
+          useStatsStore.getState().reset();
+          useTaskStore.getState().reset();
+          useFriendsStore.getState().reset();
+        }
         setUser(currentUser);
         // Auto-detect and save country code for discovery
         if (currentUser?.id) {
@@ -147,10 +152,19 @@ export function RootNavigator() {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!session?.user) {
         setUser(null);
+        useStatsStore.getState().reset();
+        useTaskStore.getState().reset();
+        useFriendsStore.getState().reset();
         return;
       }
 
       const currentUser = await authService.getCurrentUser();
+      const previousUserId = useUserStore.getState().user?.id;
+      if (previousUserId && currentUser?.id && previousUserId !== currentUser.id) {
+        useStatsStore.getState().reset();
+        useTaskStore.getState().reset();
+        useFriendsStore.getState().reset();
+      }
       setUser(currentUser);
       // Auto-detect and save country code for discovery
       if (currentUser?.id) {

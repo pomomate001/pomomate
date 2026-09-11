@@ -483,7 +483,8 @@ export function StatsScreen() {
         <FriendsSection period={period} userPeriodStats={periodStats} />
       </View>
 
-      <View style={{ height: spacing.xxxl }} />
+      {/* Bottom spacer to prevent bottom navigation bar overlap */}
+      <View style={{ height: 120 }} />
 
       {/* Add Task for Selected Date */}
       <AddTaskSheet

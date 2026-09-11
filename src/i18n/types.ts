@@ -672,6 +672,28 @@ export interface TranslationSchema {
     slide6ThemesTitle: string;
     slide6SoundsTitle: string;
     slide6FinalReady: string;
+    // Mock Guidance Overlays
+    mockAdjustTitle: string;
+    mockFocusDesc: string;
+    mockTargetTitle: string;
+    mockTargetDesc: string;
+    mockRecurrenceTitle: string;
+    mockInviteDesc: string;
+    mockLeaderboardTitle: string;
+    mockLeaderboardDesc: string;
+    mockDiscoverTitle: string;
+    mockDiscoverDesc: string;
+    mockHowToJoin: string;
+    mockHowToJoinDesc: string;
+    mockJoinRoom: string;
+    mockLiveStudyRoom: string;
+    mockMembersCount: string;
+    mockRoomDesc: string;
+    mockManageFromProfile: string;
+    mockManageFromProfileDesc: string;
+    mockTagsTitle: string;
+    mockThemesSoundsTitle: string;
+    mockSoundsText: string;
   };
 }
 

@@ -7,7 +7,7 @@ import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { shadows } from '../../theme/shadows';
-import { useUserStore, useTagStore } from '../../../state';
+import { useUserStore, useTagStore, useStatsStore, useTaskStore, useFriendsStore } from '../../../state';
 import { AvatarPicker } from './AvatarPicker';
 import { PremiumReferralCard } from './PremiumReferralCard';
 import { PremiumPaywallSheet } from './PremiumPaywallSheet';
@@ -294,6 +294,9 @@ export function ProfileScreen({
           <Pressable 
             style={[styles.signOut, { backgroundColor: `${colors.error}15` }]} 
             onPress={async () => { 
+              useStatsStore.getState().reset();
+              useTaskStore.getState().reset();
+              useFriendsStore.getState().reset();
               await import('../../../services/auth').then(m => m.authService.signOut());
               useUserStore.getState().setUser(null);
             }}

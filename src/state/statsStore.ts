@@ -17,6 +17,7 @@ export interface DailyStat {
 }
 
 export interface StatsState {
+  userId?: string | null;
   daily: DailyStat[];
   streak: number;
   totalPomodoros: number;
@@ -36,6 +37,7 @@ interface StatsActions {
 }
 
 const initialStats: StatsState = {
+  userId: null,
   daily: [],
   streak: 0,
   totalPomodoros: 0,
@@ -178,6 +180,7 @@ export const useStatsStore = create<StatsState & StatsActions>()(
       name: 'pomomate-stats',
       storage: createJSONStorage(() => storage),
       partialize: (state) => ({
+        userId: state.userId,
         daily: state.daily,
         streak: state.streak,
         totalPomodoros: state.totalPomodoros,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, useTheme } from '../../theme';
@@ -12,734 +12,546 @@ interface OnboardingCardMockProps {
   slideIndex: number;
 }
 
+// Local real screenshot assets (Localized TR & EN)
+const SCREENSHOT_TIMER_TR = require('../../../../assets/onboarding/slide1_timer.jpg');
+const SCREENSHOT_TIMER_EN = require('../../../../assets/onboarding/slide1_timer_en.jpg');
+const SCREENSHOT_TASK_TR = require('../../../../assets/onboarding/slide2_task.jpg');
+const SCREENSHOT_TASK_EN = require('../../../../assets/onboarding/slide2_task_en.jpg');
+const SCREENSHOT_BUDDY_TR = require('../../../../assets/onboarding/slide3_buddy.jpg');
+const SCREENSHOT_BUDDY_EN = require('../../../../assets/onboarding/slide3_buddy_en.jpg');
+const SCREENSHOT_LEADERBOARD_TR = require('../../../../assets/onboarding/slide4_leaderboard.jpg');
+const SCREENSHOT_LEADERBOARD_EN = require('../../../../assets/onboarding/slide4_leaderboard_en.jpg');
+
 export function OnboardingCardMock({ slideIndex }: OnboardingCardMockProps) {
+  const { height } = useWindowDimensions();
   const colors = useColors();
   const { theme } = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+
+  const isEn = language === 'en';
+  const screenshotTimer = isEn ? SCREENSHOT_TIMER_EN : SCREENSHOT_TIMER_TR;
+  const screenshotTask = isEn ? SCREENSHOT_TASK_EN : SCREENSHOT_TASK_TR;
+  const screenshotBuddy = isEn ? SCREENSHOT_BUDDY_EN : SCREENSHOT_BUDDY_TR;
+  const screenshotLeaderboard = isEn ? SCREENSHOT_LEADERBOARD_EN : SCREENSHOT_LEADERBOARD_TR;
+
+  const bezelHeight = Math.min(380, Math.max(270, height * 0.42));
+  const bezelWidth = Math.round(bezelHeight * 0.58);
 
   const isDark = theme.dark;
-  const cardBg = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.85)';
-  const borderCol = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
+  const frameBorder = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.12)';
+  const calloutBg = isDark ? 'rgba(15, 18, 28, 0.92)' : 'rgba(255, 255, 255, 0.95)';
+  const calloutBorder = colors.primary;
 
-  // SLIDE 0: Timer Screen (Start Focus & Adjust Duration)
+  const bezelStyle = [
+    styles.phoneBezel,
+    { width: bezelWidth, height: bezelHeight, borderColor: frameBorder },
+  ];
+
+  // SLIDE 0: Real Timer Screen with Guided Pointers
   if (slideIndex === 0) {
     return (
-      <View style={[styles.card, { backgroundColor: cardBg, borderColor: borderCol }]}>
-        {/* Mode pill selector */}
-        <View style={styles.timerHeaderPills}>
-          <View style={[styles.timerPillActive, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.pillTextActive, { color: colors.textInverse }]}>
-              {t('timer.work')}
+      <View style={styles.mockOuter}>
+        <View style={bezelStyle}>
+          <Image source={screenshotTimer} style={styles.screenshotImage} resizeMode="cover" />
+
+          {/* Semi-transparent focal overlay */}
+          <View style={styles.imageOverlay} />
+
+          {/* Pointer 1: Tap to Adjust Duration (around 25:00 digits) */}
+          <View style={[styles.guidedCallout, { top: '16%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: calloutBorder }]}>
+            <View style={styles.calloutHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}25` }]}>
+                <Ionicons name="finger-print" size={14} color={colors.primary} />
+              </View>
+              <Text style={[styles.calloutTitle, { color: colors.primary }]}>
+                {t('onboarding.mockAdjustTitle')}
+              </Text>
+            </View>
+            <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
+              {t('onboarding.slide1AdjustTip')}
             </Text>
+            <View style={[styles.pointerArrowDown, { borderTopColor: calloutBorder }]} />
           </View>
-          <View style={[styles.timerPillInactive, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}>
-            <Text style={[styles.pillTextInactive, { color: colors.textSecondary }]}>
-              {t('timer.shortBreak')}
-            </Text>
-          </View>
-          <View style={[styles.timerPillInactive, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }]}>
-            <Text style={[styles.pillTextInactive, { color: colors.textSecondary }]}>
-              {t('timer.longBreak')}
+
+          {/* Spotlight box over 25:00 digits */}
+          <View style={[styles.spotlightRing, { top: '27%', left: '22%', width: '56%', height: '11%', borderColor: colors.primary }]} />
+
+          {/* Pointer 2: Start Focus Button */}
+          <View style={[styles.spotlightRing, { top: '61%', left: '16%', width: '68%', height: '9%', borderColor: colors.primary, borderRadius: 20 }]} />
+          <View style={[styles.guidedCallout, { top: '72%', left: '10%', right: '10%', backgroundColor: calloutBg, borderColor: calloutBorder }]}>
+            <View style={[styles.pointerArrowUp, { borderBottomColor: calloutBorder }]} />
+            <View style={styles.calloutHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}25` }]}>
+                <Ionicons name="play" size={14} color={colors.primary} />
+              </View>
+              <Text style={[styles.calloutTitle, { color: colors.primary }]}>
+                {t('onboarding.slide1FocusBtn')}
+              </Text>
+            </View>
+            <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
+              {t('onboarding.mockFocusDesc')}
             </Text>
           </View>
         </View>
+      </View>
+    );
+  }
 
-        {/* Circular Timer Mockup */}
-        <View style={styles.timerCircleOuter}>
-          <View style={[styles.timerCircleGlow, { borderColor: `${colors.primary}33` }]}>
-            <View style={[styles.timerCircleInner, { borderColor: colors.primary }]}>
-              <Text style={[styles.timerDigits, { color: colors.textPrimary }]}>25:00</Text>
-              <View style={[styles.tapHintBadge, { backgroundColor: `${colors.primary}25` }]}>
-                <Ionicons name="finger-print-outline" size={14} color={colors.primary} />
-                <Text style={[styles.tapHintText, { color: colors.primary }]}>
-                  {t('onboarding.slide1AdjustTip')}
+  // SLIDE 1: Real Task Creation Sheet with Guided Pointers
+  if (slideIndex === 1) {
+    return (
+      <View style={styles.mockOuter}>
+        <View style={bezelStyle}>
+          <Image source={screenshotTask} style={styles.screenshotImage} resizeMode="cover" />
+
+          {/* Semi-transparent focal overlay */}
+          <View style={styles.imageOverlay} />
+
+          {/* Pointer 1: Pomodoro Duration Target (1..6) */}
+          <View style={[styles.spotlightRing, { top: '66%', left: '6%', width: '88%', height: '9%', borderColor: colors.primary, borderRadius: 16 }]} />
+          <View style={[styles.guidedCallout, { top: '50%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: calloutBorder }]}>
+            <View style={styles.calloutHeader}>
+              <Text style={styles.emojiIcon}>🍅</Text>
+              <Text style={[styles.calloutTitle, { color: colors.primary }]}>
+                {t('onboarding.mockTargetTitle')}
+              </Text>
+            </View>
+            <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
+              {t('onboarding.mockTargetDesc')}
+            </Text>
+            <View style={[styles.pointerArrowDown, { borderTopColor: calloutBorder }]} />
+          </View>
+
+          {/* Pointer 2: Recurrence (Her Gün / Hafta İçi) */}
+          <View style={[styles.spotlightRing, { top: '80%', left: '26%', width: '25%', height: '8%', borderColor: colors.success, borderRadius: 18 }]} />
+          <View style={[styles.guidedCallout, { top: '89%', left: '10%', right: '10%', backgroundColor: calloutBg, borderColor: colors.success }]}>
+            <View style={[styles.pointerArrowUp, { borderBottomColor: colors.success }]} />
+            <View style={styles.calloutHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: `${colors.success}25` }]}>
+                <Ionicons name="repeat" size={14} color={colors.success} />
+              </View>
+              <Text style={[styles.calloutTitle, { color: colors.success }]}>
+                {t('onboarding.mockRecurrenceTitle')}
+              </Text>
+            </View>
+            <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
+              {t('onboarding.slide2HabitTip')}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // SLIDE 2: Real Buddy Session with Invite Button Pointer & Warm Guidance
+  if (slideIndex === 2) {
+    return (
+      <View style={styles.mockOuter}>
+        <View style={bezelStyle}>
+          <Image source={screenshotBuddy} style={styles.screenshotImage} resizeMode="cover" />
+
+          {/* Semi-transparent focal overlay */}
+          <View style={styles.imageOverlay} />
+
+          {/* Top-Right Invite Button Pointer & Spotlight */}
+          <View style={[styles.spotlightRing, { top: '4%', right: '5%', width: 36, height: 36, borderRadius: 18, borderColor: '#FF4081', borderWidth: 2.5 }]} />
+          
+          <View style={[styles.guidedCallout, { top: '12%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: '#FF4081' }]}>
+            <View style={[styles.pointerArrowUpRight, { borderBottomColor: '#FF4081' }]} />
+            <View style={styles.calloutHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: 'rgba(255, 64, 129, 0.2)' }]}>
+                <Ionicons name="person-add" size={14} color="#FF4081" />
+              </View>
+              <Text style={[styles.calloutTitle, { color: '#FF4081' }]}>
+                {t('onboarding.slide3InviteBtn')}
+              </Text>
+            </View>
+            <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
+              {t('onboarding.mockInviteDesc')}
+            </Text>
+          </View>
+
+          {/* Center: Live Buddy Avatars Guidance */}
+          <View style={[styles.spotlightRing, { top: '42%', left: '26%', width: '48%', height: '14%', borderColor: colors.primary, borderRadius: 24 }]} />
+          
+          <View style={[styles.guidedCallout, { top: '58%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: colors.primary }]}>
+            <View style={[styles.pointerArrowUp, { borderBottomColor: colors.primary }]} />
+            <View style={styles.calloutHeader}>
+              <Text style={styles.emojiIcon}>🤝</Text>
+              <Text style={[styles.calloutTitle, { color: colors.primary }]}>
+                {t('onboarding.slide3TogetherBadge')}
+              </Text>
+            </View>
+            <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
+              {t('onboarding.slide3WarmNote')}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // SLIDE 3: Real Leaderboard Screen (Localized EN / TR) with Guidance & Invite Callout
+  if (slideIndex === 3) {
+    return (
+      <View style={styles.mockOuter}>
+        <View style={bezelStyle}>
+          <Image source={screenshotLeaderboard} style={styles.screenshotImage} resizeMode="cover" />
+
+          {/* Semi-transparent focal overlay */}
+          <View style={styles.imageOverlay} />
+
+          {/* Pointer 1: Leaderboard & Personal Rank */}
+          <View style={[styles.spotlightRing, { top: '34%', left: '6%', width: '88%', height: '15%', borderColor: '#FFD700', borderRadius: 20 }]} />
+          <View style={[styles.guidedCallout, { top: '16%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: '#FFD700' }]}>
+            <View style={styles.calloutHeader}>
+              <Text style={styles.emojiIcon}>🏆</Text>
+              <Text style={[styles.calloutTitle, { color: '#FFD700' }]}>
+                {t('onboarding.mockLeaderboardTitle')}
+              </Text>
+            </View>
+            <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
+              {t('onboarding.mockLeaderboardDesc')}
+            </Text>
+            <View style={[styles.pointerArrowDown, { borderTopColor: '#FFD700' }]} />
+          </View>
+
+          {/* Pointer 2: Invite Friends to Leaderboard */}
+          <View style={[styles.spotlightRing, { top: '89%', left: '6%', width: '88%', height: '7%', borderColor: colors.primary, borderRadius: 16 }]} />
+          <View style={[styles.guidedCallout, { top: '74%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: colors.primary }]}>
+            <View style={styles.calloutHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}25` }]}>
+                <Ionicons name="share-social" size={14} color={colors.primary} />
+              </View>
+              <Text style={[styles.calloutTitle, { color: colors.primary }]}>
+                {t('onboarding.mockDiscoverTitle')}
+              </Text>
+            </View>
+            <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
+              {t('onboarding.mockDiscoverDesc')}
+            </Text>
+            <View style={[styles.pointerArrowDown, { borderTopColor: colors.primary }]} />
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // SLIDE 4: Virtual Study Rooms with Step-by-Step Navigation Guidance
+  if (slideIndex === 4) {
+    return (
+      <View style={styles.mockOuter}>
+        <View style={[...bezelStyle, { backgroundColor: isDark ? '#121018' : '#F5F5F7' }]}>
+          {/* Room Screen Visual Header */}
+          <LinearGradient
+            colors={['#1E1B4B', '#312E81']}
+            style={styles.virtualRoomCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.roomBadgeRow}>
+              <View style={styles.liveIndicatorPill}>
+                <View style={styles.redDot} />
+                <Text style={styles.liveText}>{t('onboarding.mockLiveStudyRoom')}</Text>
+              </View>
+              <View style={styles.memberPill}>
+                <Ionicons name="people" size={12} color="#FFF" />
+                <Text style={styles.memberText}>{t('onboarding.mockMembersCount')}</Text>
+              </View>
+            </View>
+
+            <Text style={styles.roomTitle}>{t('onboarding.slide5RoomName')}</Text>
+            <Text style={styles.roomSubtitle}>{t('onboarding.mockRoomDesc')}</Text>
+
+            <View style={styles.roomActionBtn}>
+              <Ionicons name="log-in-outline" size={16} color="#FFF" style={{ marginRight: 6 }} />
+              <Text style={styles.roomActionText}>{t('onboarding.mockJoinRoom')}</Text>
+            </View>
+          </LinearGradient>
+
+          {/* Step Guidance Callout */}
+          <View style={[styles.guidedCalloutStatic, { backgroundColor: calloutBg, borderColor: colors.primary }]}>
+            <View style={styles.calloutHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}25` }]}>
+                <Ionicons name="navigate" size={14} color={colors.primary} />
+              </View>
+              <Text style={[styles.calloutTitle, { color: colors.primary }]}>
+                {t('onboarding.mockHowToJoin')}
+              </Text>
+            </View>
+            <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
+              {t('onboarding.mockHowToJoinDesc')}
+            </Text>
+          </View>
+
+          {/* Mock Bottom Tab Bar with Arrow pointing to 'Çalışma Odası' */}
+          <View style={styles.mockBottomTabBar}>
+            <View style={styles.mockTabItem}>
+              <Ionicons name="timer-outline" size={18} color={colors.textSecondary} />
+              <Text style={[styles.mockTabLabel, { color: colors.textSecondary }]}>{t('tabs.timer')}</Text>
+            </View>
+            <View style={styles.mockTabItem}>
+              <Ionicons name="stats-chart-outline" size={18} color={colors.textSecondary} />
+              <Text style={[styles.mockTabLabel, { color: colors.textSecondary }]}>{t('tabs.stats')}</Text>
+            </View>
+            <View style={[styles.mockTabItemActive, { borderColor: colors.primary }]}>
+              <Ionicons name="people" size={18} color={colors.primary} />
+              <Text style={[styles.mockTabLabel, { color: colors.primary, fontWeight: '700' }]}>{t('tabs.room')}</Text>
+              {/* Pointing arrow */}
+              <View style={[styles.pointerArrowUp, { borderBottomColor: colors.primary, top: -10 }]} />
+            </View>
+            <View style={styles.mockTabItem}>
+              <Ionicons name="person-outline" size={18} color={colors.textSecondary} />
+              <Text style={[styles.mockTabLabel, { color: colors.textSecondary }]}>{t('tabs.profile')}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // SLIDE 5: Profile Customization (Tags, Themes & Sounds) with Navigation Pointer
+  return (
+    <View style={styles.mockOuter}>
+      <View style={[...bezelStyle, { backgroundColor: isDark ? '#121018' : '#F5F5F7' }]}>
+        {/* Customization items mock */}
+        <View style={styles.profileSectionWrap}>
+          {/* Tags */}
+          <View style={[styles.profileSettingCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#FFF', borderColor: frameBorder }]}>
+            <View style={styles.settingCardHeader}>
+              <Ionicons name="pricetags-outline" size={16} color={colors.primary} />
+              <Text style={[styles.settingCardTitle, { color: colors.textPrimary }]}>
+                {t('onboarding.mockTagsTitle')}
+              </Text>
+            </View>
+            <View style={styles.tagChipsRow}>
+              <View style={[styles.tagChipActive, { backgroundColor: `${colors.primary}25`, borderColor: colors.primary }]}>
+                <Text style={[styles.tagChipText, { color: colors.primary }]}>#YKS2026</Text>
+              </View>
+              <View style={[styles.tagChipActive, { backgroundColor: `${colors.primary}25`, borderColor: colors.primary }]}>
+                <Text style={[styles.tagChipText, { color: colors.primary }]}>#Yazılım</Text>
+              </View>
+              <View style={[styles.tagChipInactive, { borderColor: frameBorder }]}>
+                <Text style={[styles.tagChipText, { color: colors.textSecondary }]}>#Kitap</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Theme & Sound */}
+          <View style={[styles.profileSettingCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#FFF', borderColor: frameBorder }]}>
+            <View style={styles.settingCardHeader}>
+              <Ionicons name="color-palette-outline" size={16} color={colors.primary} />
+              <Text style={[styles.settingCardTitle, { color: colors.textPrimary }]}>
+                {t('onboarding.mockThemesSoundsTitle')}
+              </Text>
+            </View>
+            <View style={styles.swatchesAndSounds}>
+              <View style={styles.swatchesRow}>
+                {['#E91E63', '#3F51B5', '#00BCD4', '#00E676'].map((col, i) => (
+                  <View key={i} style={[styles.colorDot, { backgroundColor: col }, i === 0 && { borderWidth: 2, borderColor: colors.textPrimary }]} />
+                ))}
+              </View>
+              <View style={styles.soundsRow}>
+                <Text style={[styles.soundBadgeText, { color: colors.textSecondary }]}>
+                  {t('onboarding.mockSoundsText')}
                 </Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Big Start Focus Button with Pulse Indicator */}
-        <View style={styles.buttonWrapper}>
-          <LinearGradient
-            colors={[colors.primary, colors.primaryDark || colors.primary]}
-            style={styles.focusButton}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name="play" size={20} color={colors.textInverse} style={{ marginRight: 8 }} />
-            <Text style={[styles.focusButtonText, { color: colors.textInverse }]}>
-              {t('onboarding.slide1FocusBtn')}
-            </Text>
-          </LinearGradient>
-          <View style={[styles.buttonPulseBeacon, { borderColor: colors.primary }]} />
-        </View>
-      </View>
-    );
-  }
-
-  // SLIDE 1: Task Management (Pomodoro Count & Recurrence)
-  if (slideIndex === 1) {
-    return (
-      <View style={[styles.card, { backgroundColor: cardBg, borderColor: borderCol }]}>
-        <View style={styles.taskCardHeader}>
-          <Text style={[typography.captionBold, { color: colors.primary, letterSpacing: 1 }]}>
-            {t('tasks.title').toUpperCase()}
-          </Text>
-          <View style={[styles.activeTagPill, { backgroundColor: `${colors.primary}20` }]}>
-            <Ionicons name="pricetag" size={12} color={colors.primary} />
-            <Text style={[styles.tagText, { color: colors.primary }]}>
-              #{t('onboarding.slide2Tag')}
+        {/* Guidance Callout */}
+        <View style={[styles.guidedCalloutStatic, { backgroundColor: calloutBg, borderColor: colors.primary }]}>
+          <View style={styles.calloutHeader}>
+            <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}25` }]}>
+              <Ionicons name="sparkles" size={14} color={colors.primary} />
+            </View>
+            <Text style={[styles.calloutTitle, { color: colors.primary }]}>
+              {t('onboarding.mockManageFromProfile')}
             </Text>
           </View>
-        </View>
-
-        {/* Sample Task Box */}
-        <View style={[styles.taskItemBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', borderColor: borderCol }]}>
-          <View style={styles.taskRowTop}>
-            <View style={[styles.checkCircle, { borderColor: colors.primary }]}>
-              <Ionicons name="checkmark" size={14} color={colors.primary} />
-            </View>
-            <Text style={[styles.taskItemTitle, { color: colors.textPrimary }]}>
-              {t('onboarding.slide2SampleTask')}
-            </Text>
-          </View>
-
-          <View style={styles.taskBadgesRow}>
-            {/* Target Pomodoros */}
-            <View style={[styles.featurePill, { backgroundColor: `${colors.timerWork}22`, borderColor: `${colors.timerWork}44` }]}>
-              <Text style={styles.pillEmoji}>🍅</Text>
-              <Text style={[styles.featurePillText, { color: colors.textPrimary }]}>
-                {t('onboarding.slide2PomodoroTarget')}
-              </Text>
-            </View>
-
-            {/* Recurrence */}
-            <View style={[styles.featurePill, { backgroundColor: `${colors.success}20`, borderColor: `${colors.success}44` }]}>
-              <Ionicons name="repeat" size={14} color={colors.success} style={{ marginRight: 4 }} />
-              <Text style={[styles.featurePillText, { color: colors.textPrimary }]}>
-                {t('onboarding.slide2RecurrenceDaily')}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Add Task Button Mock */}
-        <View style={[styles.addTaskAction, { backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}50` }]}>
-          <Ionicons name="add-circle" size={20} color={colors.primary} style={{ marginRight: 8 }} />
-          <Text style={[styles.addTaskActionText, { color: colors.primary }]}>
-            {t('tasks.addNewTask')}
+          <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
+            {t('onboarding.mockManageFromProfileDesc')}
           </Text>
         </View>
 
-        <Text style={[styles.helperFootnote, { color: colors.textSecondary }]}>
-          {t('onboarding.slide2HabitTip')}
-        </Text>
-      </View>
-    );
-  }
-
-  // SLIDE 2: Buddy Focus (Invite Friends & Psychologically Inviting)
-  if (slideIndex === 2) {
-    return (
-      <View style={[styles.card, { backgroundColor: cardBg, borderColor: borderCol }]}>
-        {/* Timer Bar with Invite Button Highlight */}
-        <View style={styles.timerTopBarMock}>
-          <View style={styles.timerBrandMock}>
-            <Ionicons name="timer-outline" size={18} color={colors.primary} />
-            <Text style={[typography.captionBold, { color: colors.textPrimary, marginLeft: 6 }]}>
-              PomoMate
-            </Text>
+        {/* Mock Bottom Tab Bar with Arrow pointing to 'Profil' */}
+        <View style={styles.mockBottomTabBar}>
+          <View style={styles.mockTabItem}>
+            <Ionicons name="timer-outline" size={18} color={colors.textSecondary} />
+            <Text style={[styles.mockTabLabel, { color: colors.textSecondary }]}>{t('tabs.timer')}</Text>
           </View>
-
-          {/* Highlighted Invite Button */}
-          <View style={[styles.inviteHighlightPill, { backgroundColor: colors.primary }]}>
-            <Ionicons name="person-add" size={14} color={colors.textInverse} style={{ marginRight: 4 }} />
-            <Text style={[styles.inviteHighlightText, { color: colors.textInverse }]}>
-              {t('onboarding.slide3InviteBtn')}
-            </Text>
+          <View style={styles.mockTabItem}>
+            <Ionicons name="stats-chart-outline" size={18} color={colors.textSecondary} />
+            <Text style={[styles.mockTabLabel, { color: colors.textSecondary }]}>{t('tabs.stats')}</Text>
+          </View>
+          <View style={styles.mockTabItem}>
+            <Ionicons name="people-outline" size={18} color={colors.textSecondary} />
+            <Text style={[styles.mockTabLabel, { color: colors.textSecondary }]}>{t('tabs.room')}</Text>
+          </View>
+          <View style={[styles.mockTabItemActive, { borderColor: colors.primary }]}>
+            <Ionicons name="person" size={18} color={colors.primary} />
+            <Text style={[styles.mockTabLabel, { color: colors.primary, fontWeight: '700' }]}>{t('tabs.profile')}</Text>
+            {/* Pointing arrow */}
+            <View style={[styles.pointerArrowUp, { borderBottomColor: colors.primary, top: -10 }]} />
           </View>
         </View>
-
-        {/* Dual Avatars Connection Visual */}
-        <View style={styles.buddyConnectionContainer}>
-          <View style={styles.avatarHolder}>
-            <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
-              <Text style={styles.avatarLetter}>S</Text>
-            </View>
-            <Text style={[styles.avatarName, { color: colors.textPrimary }]}>{t('common.user')}</Text>
-            <View style={[styles.statusDotActive, { backgroundColor: colors.success }]} />
-          </View>
-
-          <View style={styles.syncBeamWrapper}>
-            <LinearGradient
-              colors={[colors.primary, colors.accent || colors.primary]}
-              style={styles.syncBeam}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            />
-            <View style={[styles.syncBadge, { backgroundColor: colors.surface, borderColor: borderCol }]}>
-              <Ionicons name="flash" size={14} color={colors.primary} />
-            </View>
-          </View>
-
-          <View style={styles.avatarHolder}>
-            <View style={[styles.avatarCircle, { backgroundColor: colors.accent || '#8E24AA' }]}>
-              <Text style={styles.avatarLetter}>A</Text>
-            </View>
-            <Text style={[styles.avatarName, { color: colors.textPrimary }]}>{t('common.friend')}</Text>
-            <View style={[styles.statusDotActive, { backgroundColor: colors.success }]} />
-          </View>
-        </View>
-
-        {/* Friendly speech bubble */}
-        <View style={[styles.warmSpeechBubble, { backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}40` }]}>
-          <Text style={styles.bubbleEmoji}>🤝</Text>
-          <Text style={[styles.warmSpeechText, { color: colors.textPrimary }]}>
-            {t('onboarding.slide3WarmNote')}
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
-  // SLIDE 3: Stats, Discover, Invite & Leaderboard
-  if (slideIndex === 3) {
-    return (
-      <View style={[styles.card, { backgroundColor: cardBg, borderColor: borderCol }]}>
-        {/* Streak & Weekly Progress Row */}
-        <View style={styles.statsPreviewRow}>
-          <View style={[styles.streakBadgeBox, { backgroundColor: 'rgba(255, 112, 67, 0.15)', borderColor: 'rgba(255, 112, 67, 0.35)' }]}>
-            <Text style={styles.streakEmoji}>🔥</Text>
-            <View>
-              <Text style={[styles.streakNum, { color: '#FF7043' }]}>7 GÜN</Text>
-              <Text style={[styles.streakSub, { color: colors.textSecondary }]}>Seri Rekoru</Text>
-            </View>
-          </View>
-
-          <View style={[styles.podiumPreviewBox, { backgroundColor: `${colors.primary}15`, borderColor: `${colors.primary}30` }]}>
-            <Text style={styles.streakEmoji}>🏆</Text>
-            <View>
-              <Text style={[styles.streakNum, { color: colors.primary }]}>Liderlik</Text>
-              <Text style={[styles.streakSub, { color: colors.textSecondary }]}>Haftalık Lig</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Feature Highlights Grid */}
-        <View style={styles.featureGrid}>
-          <View style={[styles.gridItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: borderCol }]}>
-            <Ionicons name="compass-outline" size={20} color={colors.primary} />
-            <Text style={[styles.gridTitle, { color: colors.textPrimary }]}>Keşfet (Discover)</Text>
-            <Text style={[styles.gridDesc, { color: colors.textSecondary }]}>
-              {t('onboarding.slide4DiscoverHighlight')}
-            </Text>
-          </View>
-
-          <View style={[styles.gridItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: borderCol }]}>
-            <Ionicons name="qr-code-outline" size={20} color={colors.success} />
-            <Text style={[styles.gridTitle, { color: colors.textPrimary }]}>Bağlantı & QR</Text>
-            <Text style={[styles.gridDesc, { color: colors.textSecondary }]}>
-              {t('onboarding.slide4InviteHighlight')}
-            </Text>
-          </View>
-        </View>
-      </View>
-    );
-  }
-
-  // SLIDE 4: Virtual Study Rooms (Fast, High-Level Overview)
-  if (slideIndex === 4) {
-    return (
-      <View style={[styles.card, { backgroundColor: cardBg, borderColor: borderCol }]}>
-        <LinearGradient
-          colors={['#1E1B4B', '#312E81']}
-          style={styles.roomMockHeader}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.roomHeaderTop}>
-            <View style={styles.liveRoomBadge}>
-              <View style={styles.redLiveDot} />
-              <Text style={styles.liveRoomText}>CANLI ODA</Text>
-            </View>
-            <View style={styles.memberCountBadge}>
-              <Ionicons name="people" size={14} color="#FFF" />
-              <Text style={styles.memberCountText}>12 Katılımcı</Text>
-            </View>
-          </View>
-
-          <Text style={styles.roomBannerTitle}>
-            {t('onboarding.slide5RoomName')}
-          </Text>
-          <Text style={styles.roomBannerSubtitle}>
-            {t('onboarding.slide5RoomAtmosphere')}
-          </Text>
-        </LinearGradient>
-
-        <View style={styles.roomBottomSection}>
-          <View style={styles.roomMembersAvatars}>
-            {['#E91E63', '#9C27B0', '#3F51B5', '#009688', '#FF9800'].map((color, i) => (
-              <View key={i} style={[styles.stackedAvatar, { backgroundColor: color, marginLeft: i === 0 ? 0 : -10 }]}>
-                <Ionicons name="person" size={12} color="#FFF" />
-              </View>
-            ))}
-            <Text style={[styles.moreMembersText, { color: colors.textSecondary }]}>+7 kişi</Text>
-          </View>
-
-          <View style={[styles.roomJoinPill, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.roomJoinText, { color: colors.textInverse }]}>Tek Dokunuşla Katıl</Text>
-          </View>
-        </View>
-
-        <Text style={[styles.helperFootnote, { color: colors.textSecondary, marginTop: spacing.md }]}>
-          {t('onboarding.slide5RoomNote')}
-        </Text>
-      </View>
-    );
-  }
-
-  // SLIDE 5: Profile Customization (Tags, Themes & Ambient Sounds)
-  return (
-    <View style={[styles.card, { backgroundColor: cardBg, borderColor: borderCol }]}>
-      {/* Tags preview */}
-      <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: 8 }]}>
-        {t('onboarding.slide6TagsTitle')}
-      </Text>
-      <View style={styles.tagsPreviewWrap}>
-        {['#YKS2026', '#Yazılım', '#KPSS', '#Kitap', '#İngilizce'].map((tag, i) => (
-          <View
-            key={i}
-            style={[
-              styles.tagPillPreview,
-              {
-                backgroundColor: i === 0 || i === 1 ? `${colors.primary}25` : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'),
-                borderColor: i === 0 || i === 1 ? colors.primary : borderCol,
-              },
-            ]}
-          >
-            <Text style={[styles.tagPillText, { color: i === 0 || i === 1 ? colors.primary : colors.textPrimary }]}>
-              {tag}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Themes preview */}
-      <Text style={[typography.captionBold, { color: colors.textSecondary, marginTop: spacing.md, marginBottom: 8 }]}>
-        {t('onboarding.slide6ThemesTitle')}
-      </Text>
-      <View style={styles.themesPreviewRow}>
-        {['#E91E63', '#3F51B5', '#00BCD4', '#FF9800', '#00E676', '#121212'].map((color, i) => (
-          <View
-            key={i}
-            style={[
-              styles.colorSwatch,
-              { backgroundColor: color },
-              i === 0 ? { borderWidth: 2.5, borderColor: colors.textPrimary } : {},
-            ]}
-          />
-        ))}
-      </View>
-
-      {/* Ambient sound preview */}
-      <Text style={[typography.captionBold, { color: colors.textSecondary, marginTop: spacing.md, marginBottom: 8 }]}>
-        {t('onboarding.slide6SoundsTitle')}
-      </Text>
-      <View style={styles.soundsPreviewRow}>
-        {[
-          { icon: 'rainy-outline', label: 'Yağmur' },
-          { icon: 'flame-outline', label: 'Şömine' },
-          { icon: 'cafe-outline', label: 'Kafe' },
-          { icon: 'headset-outline', label: 'Beyaz Gürültü' },
-        ].map((snd, i) => (
-          <View key={i} style={[styles.soundPill, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: borderCol }]}>
-            <Ionicons name={snd.icon as any} size={16} color={colors.primary} />
-            <Text style={[styles.soundLabel, { color: colors.textPrimary }]}>{snd.label}</Text>
-          </View>
-        ))}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    padding: spacing.lg,
+  mockOuter: {
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    minHeight: 280,
   },
-  timerHeaderPills: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: spacing.md,
-  },
-  timerPillActive: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-  },
-  pillTextActive: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  timerPillInactive: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-  },
-  pillTextInactive: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  timerCircleOuter: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: spacing.sm,
-  },
-  timerCircleGlow: {
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    borderWidth: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timerCircleInner: {
-    width: 146,
-    height: 146,
-    borderRadius: 73,
-    borderWidth: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xs,
-  },
-  timerDigits: {
-    fontSize: 34,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-  },
-  tapHintBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-    marginTop: 4,
-  },
-  tapHintText: {
-    fontSize: 10,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  buttonWrapper: {
-    marginTop: spacing.md,
+  phoneBezel: {
+    borderRadius: 28,
+    borderWidth: 2,
+    overflow: 'hidden',
     position: 'relative',
-    alignItems: 'center',
+    backgroundColor: '#0F0C10',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  focusButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: radius.full,
-    elevation: 3,
+  screenshotImage: {
+    width: '100%',
+    height: '100%',
   },
-  focusButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  buttonPulseBeacon: {
+  imageOverlay: {
     position: 'absolute',
-    top: -4,
-    left: -4,
-    right: -4,
-    bottom: -4,
-    borderRadius: radius.full,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+  },
+  spotlightRing: {
+    position: 'absolute',
+    borderWidth: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  guidedCallout: {
+    position: 'absolute',
+    borderRadius: 14,
     borderWidth: 1.5,
-    opacity: 0.4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    zIndex: 10,
   },
-  taskCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
+  guidedCalloutStatic: {
+    marginHorizontal: 10,
+    marginTop: 8,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    zIndex: 10,
   },
-  activeTagPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.full,
-  },
-  tagText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  taskItemBox: {
-    width: '100%',
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  taskRowTop: {
+  calloutHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: spacing.sm,
+    gap: 6,
+    marginBottom: 2,
   },
-  checkCircle: {
+  iconCircle: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  taskItemTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    flex: 1,
+  emojiIcon: {
+    fontSize: 14,
   },
-  taskBadgesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  calloutTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
-  featurePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: radius.full,
-    borderWidth: 1,
-  },
-  pillEmoji: {
-    fontSize: 13,
-    marginRight: 4,
-  },
-  featurePillText: {
+  calloutDesc: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
+    lineHeight: 15,
   },
-  addTaskAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    paddingVertical: 10,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderStyle: 'dashed',
+  pointerArrowDown: {
+    position: 'absolute',
+    bottom: -8,
+    alignSelf: 'center',
+    width: 0,
+    height: 0,
+    borderLeftWidth: 7,
+    borderRightWidth: 7,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
   },
-  addTaskActionText: {
-    fontSize: 13,
-    fontWeight: '700',
+  pointerArrowUp: {
+    position: 'absolute',
+    top: -8,
+    alignSelf: 'center',
+    width: 0,
+    height: 0,
+    borderLeftWidth: 7,
+    borderRightWidth: 7,
+    borderBottomWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
   },
-  helperFootnote: {
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    lineHeight: 16,
+  pointerArrowUpRight: {
+    position: 'absolute',
+    top: -8,
+    right: 18,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 7,
+    borderRightWidth: 7,
+    borderBottomWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
   },
-  timerTopBarMock: {
+  virtualRoomCard: {
+    margin: 10,
+    borderRadius: 18,
+    padding: 12,
+  },
+  roomBadgeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
-    marginBottom: spacing.lg,
-  },
-  timerBrandMock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  inviteHighlightPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-  },
-  inviteHighlightText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  buddyConnectionContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: spacing.md,
-    width: '100%',
-  },
-  avatarHolder: {
-    alignItems: 'center',
-    position: 'relative',
-  },
-  avatarCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 6,
   },
-  avatarLetter: {
-    color: '#FFF',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  avatarName: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  statusDotActive: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#FFF',
-  },
-  syncBeamWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    marginHorizontal: 12,
-  },
-  syncBeam: {
-    height: 3,
-    width: '100%',
-    borderRadius: 2,
-  },
-  syncBadge: {
-    position: 'absolute',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  warmSpeechBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.sm,
-    gap: 8,
-  },
-  bubbleEmoji: {
-    fontSize: 20,
-  },
-  warmSpeechText: {
-    fontSize: 12,
-    fontWeight: '500',
-    flex: 1,
-    lineHeight: 18,
-  },
-  statsPreviewRow: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-    marginBottom: spacing.md,
-  },
-  streakBadgeBox: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: spacing.sm,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-  },
-  podiumPreviewBox: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: spacing.sm,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-  },
-  streakEmoji: {
-    fontSize: 24,
-  },
-  streakNum: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  streakSub: {
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  featureGrid: {
-    flexDirection: 'row',
-    gap: 10,
-    width: '100%',
-  },
-  gridItem: {
-    flex: 1,
-    padding: spacing.sm,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-  },
-  gridTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 6,
-    marginBottom: 2,
-  },
-  gridDesc: {
-    fontSize: 10,
-    lineHeight: 14,
-  },
-  roomMockHeader: {
-    width: '100%',
-    borderRadius: radius.xl,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  roomHeaderTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  liveRoomBadge: {
+  liveIndicatorPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(239, 68, 68, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radius.full,
-    gap: 5,
+    gap: 4,
   },
-  redLiveDot: {
+  redDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: '#EF4444',
   },
-  liveRoomText: {
+  liveText: {
     color: '#EF4444',
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '800',
-    letterSpacing: 0.5,
   },
-  memberCountBadge: {
+  memberPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -748,98 +560,119 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: radius.full,
   },
-  memberCountText: {
+  memberText: {
     color: '#FFF',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
   },
-  roomBannerTitle: {
+  roomTitle: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  roomBannerSubtitle: {
+  roomSubtitle: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
+    fontSize: 10,
+    marginBottom: 8,
+    lineHeight: 14,
   },
-  roomBottomSection: {
+  roomActionBtn: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-  },
-  roomMembersAvatars: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  stackedAvatar: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFF',
-  },
-  moreMembersText: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  roomJoinPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: radius.full,
-  },
-  roomJoinText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  tagsPreviewWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    width: '100%',
-  },
-  tagPillPreview: {
-    paddingHorizontal: 12,
+    backgroundColor: '#6366F1',
     paddingVertical: 6,
     borderRadius: radius.full,
-    borderWidth: 1,
   },
-  tagPillText: {
-    fontSize: 12,
-    fontWeight: '600',
+  roomActionText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700',
   },
-  themesPreviewRow: {
+  mockBottomTabBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 48,
+    backgroundColor: 'rgba(15, 18, 28, 0.95)',
     flexDirection: 'row',
-    gap: 12,
-    width: '100%',
     alignItems: 'center',
+    justifyContent: 'space-around',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 4,
   },
-  colorSwatch: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  mockTabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  soundsPreviewRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  mockTabItemActive: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  mockTabLabel: {
+    fontSize: 8,
+    marginTop: 2,
+  },
+  profileSectionWrap: {
+    padding: 10,
     gap: 8,
-    width: '100%',
   },
-  soundPill: {
+  profileSettingCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 8,
+  },
+  settingCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.md,
+    marginBottom: 6,
+  },
+  settingCardTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  tagChipsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  tagChipActive: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
     borderWidth: 1,
   },
-  soundLabel: {
-    fontSize: 11,
+  tagChipInactive: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    borderWidth: 1,
+  },
+  tagChipText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  swatchesAndSounds: {
+    gap: 4,
+  },
+  swatchesRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  colorDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+  },
+  soundsRow: {
+    marginTop: 2,
+  },
+  soundBadgeText: {
+    fontSize: 9,
     fontWeight: '500',
   },
 });
