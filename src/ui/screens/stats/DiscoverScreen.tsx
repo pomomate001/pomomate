@@ -37,9 +37,9 @@ type Props = NativeStackScreenProps<StatsStackParamList, 'Discover'>;
 const PAGE_SIZE = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isSmallScreen = SCREEN_HEIGHT < 750;
-const CARD_WIDTH = Math.min(SCREEN_WIDTH - 36, 324);
-const CARD_HEIGHT = isSmallScreen ? 395 : Math.min(Math.round(SCREEN_HEIGHT * 0.49), 430);
-const IMAGE_HEIGHT = isSmallScreen ? 155 : 185;
+const CARD_WIDTH = isSmallScreen ? Math.min(SCREEN_WIDTH - 32, 320) : Math.min(SCREEN_WIDTH - 24, 356);
+const INFO_HEIGHT = isSmallScreen ? 190 : 210;
+const CARD_HEIGHT = CARD_WIDTH + INFO_HEIGHT;
 const SWIPE_THRESHOLD = 120;
 const SWIPE_OUT_DURATION = 250;
 
@@ -84,6 +84,49 @@ export function DiscoverScreen({ navigation }: Props) {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sameCountryOnly, setSameCountryOnly] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const filterAnim = React.useRef(new Animated.Value(0)).current;
+
+  const toggleFilter = useCallback(
+    (open?: boolean) => {
+      setIsFilterOpen((prev) => {
+        const nextState = open !== undefined ? open : !prev;
+        Animated.spring(filterAnim, {
+          toValue: nextState ? 1 : 0,
+          friction: 8,
+          tension: 50,
+          useNativeDriver: false,
+        }).start();
+        return nextState;
+      });
+    },
+    [filterAnim]
+  );
+
+  const notchPanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dy > 12) {
+            toggleFilter(true);
+          } else if (gestureState.dy < -12) {
+            toggleFilter(false);
+          } else {
+            toggleFilter();
+          }
+        },
+      }),
+    [toggleFilter]
+  );
+
+  const hasActiveFilters = Boolean(
+    selectedCategory !== null ||
+    debouncedSearch.trim().length > 0 ||
+    !sameCountryOnly
+  );
 
   const userCountryCode = user?.countryCode || countryService.detectCountryCode() || 'TR';
   const userCountryFlag = getCountryFlag(userCountryCode);
@@ -213,127 +256,191 @@ export function DiscoverScreen({ navigation }: Props) {
   const allSeen = !isLoading && (suggestedUsers.length === 0 || currentIndex >= suggestedUsers.length);
 
   // ─── HEADER ───
-  const renderHeader = () => (
-    <View style={styles.headerWrap}>
-      <LinearGradient
-        colors={[colors.gradientStart, colors.gradientEnd]}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-      <View style={[styles.headerContent, { paddingTop: insets.top + spacing.sm }]}>
-        <View style={styles.headerTop}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </Pressable>
-          <Text style={[typography.h3, { color: colors.textPrimary }]}>{t('discover.title')}</Text>
-          <View style={{ width: 24 }} />
-        </View>
-        <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm }]}>
-          {t('discover.subtitle')}
-        </Text>
+  const renderHeader = () => {
+    const filterMaxHeight = filterAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 200],
+    });
 
-        {/* Search Bar */}
-        <View style={[styles.searchBox, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
-          <Ionicons name="search" size={20} color={colors.textSecondary} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder={t('discover.searchPlaceholder')}
-            placeholderTextColor={colors.textDisabled}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-              <Ionicons name="close-circle" size={18} color={colors.textDisabled} />
+    const filterOpacity = filterAnim.interpolate({
+      inputRange: [0, 0.35, 1],
+      outputRange: [0, 0, 1],
+    });
+
+    const activeCategoryItem = DISCOVER_CATEGORIES.find((c) => c.key === selectedCategory);
+
+    return (
+      <View style={styles.headerWrap}>
+        <LinearGradient
+          colors={[colors.gradientStart, colors.gradientEnd]}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        <View style={[styles.headerContent, { paddingTop: insets.top + spacing.xs }]}>
+          {/* Top Bar: Back Button, Title, and Card Counter */}
+          <View style={styles.headerTop}>
+            <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
+              <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
             </Pressable>
-          )}
-        </View>
+            <Text style={[typography.h3, { color: colors.textPrimary }]}>{t('discover.title')}</Text>
 
-        {/* Country Filter Toggle Bar */}
-        <View style={styles.filterBar}>
-          <Pressable
-            onPress={() => setSameCountryOnly(!sameCountryOnly)}
-            style={[
-              styles.countryFilterChip,
-              sameCountryOnly
-                ? { backgroundColor: `${colors.primary}20`, borderColor: colors.primary }
-                : { backgroundColor: colors.surfaceVariant, borderColor: colors.border },
-            ]}
-          >
-            <Text style={{ fontSize: 13, marginRight: 6 }}>
-              {sameCountryOnly ? userCountryFlag : '🌍'}
-            </Text>
-            <Text
-              style={[
-                typography.captionBold,
-                { color: sameCountryOnly ? colors.primary : colors.textSecondary, fontSize: 12 },
-              ]}
-            >
-              {sameCountryOnly
-                ? (language === 'en' ? `Only in ${userCountryName}` : `Sadece ${userCountryName}'dekiler`)
-                : (language === 'en' ? 'All Countries (Global)' : 'Tüm Dünya (Filtresiz)')}
-            </Text>
-            <Ionicons
-              name={sameCountryOnly ? 'checkmark-circle' : 'globe-outline'}
-              size={14}
-              color={sameCountryOnly ? colors.primary : colors.textSecondary}
-              style={{ marginLeft: 6 }}
-            />
-          </Pressable>
+            {!allSeen && suggestedUsers.length > 0 ? (
+              <View style={[styles.topCounterBadge, { backgroundColor: `${colors.primary}18` }]}>
+                <Text style={[typography.captionBold, { color: colors.primary, fontSize: 12 }]}>
+                  {currentIndex + 1}/{suggestedUsers.length}
+                </Text>
+              </View>
+            ) : (
+              <View style={{ width: 36 }} />
+            )}
+          </View>
 
-          {/* Card counter */}
-          {!allSeen && suggestedUsers.length > 0 && (
-            <View style={[styles.counterBadge, { backgroundColor: `${colors.primary}15` }]}>
-              <Text style={[typography.captionBold, { color: colors.primary, fontSize: 11 }]}>
-                {currentIndex + 1}/{suggestedUsers.length}
-              </Text>
+          {/* Collapsible Filter Section */}
+          <Animated.View style={[styles.collapsibleFilters, { maxHeight: filterMaxHeight, opacity: filterOpacity }]}>
+            <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4, marginBottom: spacing.xs }]}>
+              {t('discover.subtitle')}
+            </Text>
+
+            {/* Search Bar */}
+            <View style={[styles.searchBox, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+              <Ionicons name="search" size={18} color={colors.textSecondary} />
+              <TextInput
+                style={[styles.searchInput, { color: colors.textPrimary }]}
+                placeholder={t('discover.searchPlaceholder')}
+                placeholderTextColor={colors.textDisabled}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                  <Ionicons name="close-circle" size={18} color={colors.textDisabled} />
+                </Pressable>
+              )}
             </View>
-          )}
-        </View>
 
-        {/* Category Filter Horizontal Scroll */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryFilterScroll}
-          contentContainerStyle={{ paddingRight: spacing.sm, alignItems: 'center' }}
-        >
-          {DISCOVER_CATEGORIES.map((cat) => {
-            const isSelected = selectedCategory === cat.key;
-            return (
+            {/* Country Filter Toggle Bar */}
+            <View style={styles.filterBar}>
               <Pressable
-                key={cat.key ?? 'all'}
-                onPress={() => setSelectedCategory(cat.key)}
+                onPress={() => setSameCountryOnly(!sameCountryOnly)}
                 style={[
-                  styles.categoryFilterChip,
-                  isSelected
-                    ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                  styles.countryFilterChip,
+                  sameCountryOnly
+                    ? { backgroundColor: `${colors.primary}20`, borderColor: colors.primary }
                     : { backgroundColor: colors.surfaceVariant, borderColor: colors.border },
                 ]}
               >
-                <Text style={{ fontSize: 12 }}>{cat.icon}</Text>
+                <Text style={{ fontSize: 13, marginRight: 6 }}>
+                  {sameCountryOnly ? userCountryFlag : '🌍'}
+                </Text>
+                <Text
+                  style={[
+                    typography.captionBold,
+                    { color: sameCountryOnly ? colors.primary : colors.textSecondary, fontSize: 12 },
+                  ]}
+                >
+                  {sameCountryOnly
+                    ? (language === 'en' ? `Only in ${userCountryName}` : `Sadece ${userCountryName}'dekiler`)
+                    : (language === 'en' ? 'All Countries (Global)' : 'Tüm Dünya (Filtresiz)')}
+                </Text>
+                <Ionicons
+                  name={sameCountryOnly ? 'checkmark-circle' : 'globe-outline'}
+                  size={14}
+                  color={sameCountryOnly ? colors.primary : colors.textSecondary}
+                  style={{ marginLeft: 6 }}
+                />
+              </Pressable>
+            </View>
+
+            {/* Category Filter Horizontal Scroll */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoryFilterScroll}
+              contentContainerStyle={{ paddingRight: spacing.sm, alignItems: 'center' }}
+            >
+              {DISCOVER_CATEGORIES.map((cat) => {
+                const isSelected = selectedCategory === cat.key;
+                return (
+                  <Pressable
+                    key={cat.key ?? 'all'}
+                    onPress={() => setSelectedCategory(cat.key)}
+                    style={[
+                      styles.categoryFilterChip,
+                      isSelected
+                        ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                        : { backgroundColor: colors.surfaceVariant, borderColor: colors.border },
+                    ]}
+                  >
+                    <Text style={{ fontSize: 12 }}>{cat.icon}</Text>
+                    <Text
+                      style={[
+                        typography.captionBold,
+                        {
+                          color: isSelected ? '#FFF' : colors.textSecondary,
+                          marginLeft: 4,
+                          fontSize: 11,
+                        },
+                      ]}
+                    >
+                      {t(cat.labelKey as any)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Animated.View>
+
+          {/* Notch Handle (Interactive swipeable/tappable drawer notch) */}
+          <View style={styles.notchWrapper} {...notchPanResponder.panHandlers}>
+            <Pressable
+              onPress={() => toggleFilter()}
+              style={({ pressed }) => [
+                styles.notchButton,
+                pressed && { opacity: 0.75 },
+              ]}
+              hitSlop={{ top: 8, bottom: 12, left: 24, right: 24 }}
+            >
+              <View style={[styles.notchHandleBar, { backgroundColor: colors.border }]} />
+              <View style={styles.notchRow}>
+                <Ionicons
+                  name={isFilterOpen ? 'chevron-up' : 'options-outline'}
+                  size={13}
+                  color={hasActiveFilters ? colors.primary : colors.textSecondary}
+                />
                 <Text
                   style={[
                     typography.captionBold,
                     {
-                      color: isSelected ? '#FFF' : colors.textSecondary,
-                      marginLeft: 4,
+                      color: hasActiveFilters ? colors.primary : colors.textSecondary,
                       fontSize: 11,
+                      marginLeft: 5,
                     },
                   ]}
                 >
-                  {t(cat.labelKey as any)}
+                  {isFilterOpen
+                    ? (language === 'en' ? 'Hide Filters' : 'Filtreleri Gizle')
+                    : (language === 'en' ? 'Filters & Search' : 'Filtreler & Arama')}
                 </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+
+                {!isFilterOpen && hasActiveFilters && (
+                  <View style={[styles.notchActiveBadge, { backgroundColor: colors.primary }]}>
+                    {activeCategoryItem?.icon ? (
+                      <Text style={{ fontSize: 9 }}>{activeCategoryItem.icon}</Text>
+                    ) : (
+                      <View style={styles.notchDot} />
+                    )}
+                  </View>
+                )}
+              </View>
+            </Pressable>
+          </View>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   // ─── PROFILE CARD ───
   const renderProfileCard = (suggestedUser: SuggestedUser, isTopCard: boolean) => {
@@ -610,15 +717,63 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     overflow: 'hidden',
+    zIndex: 10,
   },
   headerContent: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.xs,
   },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 38,
+  },
+  topCounterBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  collapsibleFilters: {
+    overflow: 'hidden',
+  },
+  notchWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 6,
+    paddingBottom: 4,
+  },
+  notchButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 2,
+  },
+  notchHandleBar: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: 4,
+  },
+  notchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notchActiveBadge: {
+    marginLeft: 6,
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  notchDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFF',
   },
   backBtn: {
     padding: spacing.xs,
@@ -685,7 +840,7 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     position: 'relative',
-    marginTop: -22,
+    marginTop: 0,
   },
   profileCard: {
     width: '100%',
@@ -699,11 +854,12 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   
-  // ─── Top Half: Image ───
+  // ─── Top Half: 1:1 Square Image ───
   imageContainer: {
     width: '100%',
-    height: IMAGE_HEIGHT,
+    aspectRatio: 1,
     position: 'relative',
+    overflow: 'hidden',
   },
   profileImage: {
     width: '100%',
@@ -717,7 +873,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fallbackInitial: {
-    fontSize: 56,
+    fontSize: 72,
     fontWeight: 'bold',
     color: '#FFF',
   },

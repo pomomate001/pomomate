@@ -2,6 +2,23 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
+## [1.3.32] - 2026-09-11
+
+### Changed
+- **Discover Screen UI Modernization & Collapsible Notch (Keşfet Ekranı Çentikli Filtreleme & 1:1 Kart Tasarımı)**:
+  - **Collapsible Filter Drawer / Notch**: Filtreleme alanı ve arama çubuğu açılır/katlanır şık bir çentik paneli (`notchHandleBar` + etkileşimli pill) arkasına alındı. Ekrandaki kalabalık ve görüntü kirliliği ortadan kaldırılarak arayüz minimalist ve ferah bir görünüme kavuşturuldu.
+  - **Gesture & Tap Controls**: Çentiğe tek bir dokunuşla veya aşağı doğru kaydırarak (swipe down) arama ve kategori seçenekleri açılabilir, yukarı kaydırılarak veya tekrar dokunularak kapatılabilir.
+  - **Active Filter Indicator**: Filtreler kapalıyken bile herhangi bir arama, kategori veya ülke filtresi devrede olduğunda çentikte küçük bir rozet (aktif kategori ikonu / nokta) gösterilerek filtrenin açık olduğu netleştirildi.
+  - **1:1 Square Profile Image**: Keşfet kartının görsel alanına `aspectRatio: 1` verilerek profil fotoğraflarının yatay 4:3 basıklığından kurtulup tam kare 1:1 formatında ve kırpılmadan görünmesi sağlandı.
+  - **Enlarged Discover Card**: Üstteki filtrelerin gizlenmesiyle açılan dikey alan değerlendirilerek kart boyutu ekranın merkezinde belirgin şekilde büyütüldü ve yukarı doğru uzatıldı (~566px yükseklik).
+
+## [1.3.31] - 2026-09-11
+
+### Fixed
+- **Android Native Floating Widget Build & CI Fixes**:
+  - Resolved unresolved `currentActivity` compilation error in `FloatingWidgetModule`.
+  - Removed legacy `floating-bubble-view` CI injection and stabilized Kotlin/Android build pipeline.
+
 ## [1.3.30] - 2026-09-11
 
 ### Fixed
