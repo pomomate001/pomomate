@@ -13,6 +13,7 @@ import { radius } from '../../../theme/radius';
 import { typography } from '../../../theme/typography';
 import { IconButton } from '../../../components/IconButton';
 import { mediaService } from '../../../../services/mobile/media/MediaService';
+import { useTranslation } from '../../../../i18n';
 import type { MediaStream } from 'react-native-webrtc';
 
 interface RoomMediaProps {
@@ -24,6 +25,7 @@ export function RoomMedia({ onStreamChange }: RoomMediaProps) {
   const [camOn, setCamOn] = useState(false);
   const [screenShare, setScreenShare] = useState(false);
   const colors = useColors();
+  const { t } = useTranslation();
 
   const handleToggleMic = useCallback(async () => {
     if (!micOn) {
@@ -34,8 +36,8 @@ export function RoomMedia({ onStreamChange }: RoomMediaProps) {
         onStreamChange?.(stream);
       } else {
         Alert.alert(
-          'Mikrofon İzni Gerekli',
-          'Sesli çalışma oturumu için mikrofon izni vermelisiniz.',
+          t('rooms.micPermissionRequired'),
+          t('rooms.micPermissionBody'),
         );
       }
     } else {
@@ -49,7 +51,7 @@ export function RoomMedia({ onStreamChange }: RoomMediaProps) {
       }
       setMicOn(false);
     }
-  }, [micOn, camOn, onStreamChange]);
+  }, [micOn, camOn, onStreamChange, t]);
 
   const handleToggleCam = useCallback(async () => {
     if (!camOn) {
@@ -60,8 +62,8 @@ export function RoomMedia({ onStreamChange }: RoomMediaProps) {
         onStreamChange?.(stream);
       } else {
         Alert.alert(
-          'Kamera İzni Gerekli',
-          'Görüntülü çalışma oturumu için kamera izni vermelisiniz.',
+          t('rooms.camPermissionRequired'),
+          t('rooms.camPermissionBody'),
         );
       }
     } else {
@@ -75,7 +77,7 @@ export function RoomMedia({ onStreamChange }: RoomMediaProps) {
       }
       setCamOn(false);
     }
-  }, [camOn, micOn, onStreamChange]);
+  }, [camOn, micOn, onStreamChange, t]);
 
   const handleToggleScreen = useCallback(async () => {
     if (!screenShare) {
@@ -91,14 +93,14 @@ export function RoomMedia({ onStreamChange }: RoomMediaProps) {
             onStreamChange?.(null);
           });
         } catch {
-          Alert.alert('Ekran Paylaşımı', 'Ekran paylaşımı başlatılamadı.');
+          Alert.alert(t('rooms.screenShareTitle'), t('rooms.screenShareError'));
         }
       } else {
         // Native: screen sharing requires react-native-webrtc native module
         Alert.alert(
-          'Ekran Paylaşımı',
-          'Mobilde ekran paylaşımı henüz desteklenmiyor. Bunun yerine "Ekran" panelinden dosya/görsel paylaşabilirsiniz.',
-          [{ text: 'Tamam' }],
+          t('rooms.screenShareTitle'),
+          t('rooms.mobileScreenShareNotSupported'),
+          [{ text: t('common.ok') }],
         );
       }
     } else {

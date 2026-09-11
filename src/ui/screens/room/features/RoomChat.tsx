@@ -12,6 +12,7 @@ import { spacing } from '../../../theme/spacing';
 import { radius } from '../../../theme/radius';
 import { generateId } from '../../../../utils/id';
 import { nowIso } from '../../../../utils/datetime';
+import { useTranslation } from '../../../../i18n';
 import type { Message } from '../../../../types';
 
 interface RoomChatProps {
@@ -28,6 +29,7 @@ export function RoomChat({ roomId, isHost }: RoomChatProps) {
   const [text, setText] = useState('');
   const listRef = useRef<FlatList<Message>>(null);
   const colors = useColors();
+  const { t } = useTranslation();
 
   // Filter messages for current room
   const roomMessages = allMessages.filter(
@@ -54,12 +56,17 @@ export function RoomChat({ roomId, isHost }: RoomChatProps) {
           }, 100);
         }
       })
+      .on('broadcast', { event: 'delete_msg' }, ({ payload }) => {
+        if (payload && payload.id) {
+          deleteMessage(payload.id);
+        }
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId, currentUserId, addMessage]);
+  }, [roomId, currentUserId, addMessage, deleteMessage]);
 
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
@@ -85,6 +92,7 @@ export function RoomChat({ roomId, isHost }: RoomChatProps) {
       payload: msg,
     });
 
+    // Auto-scroll to bottom
     setTimeout(() => {
       listRef.current?.scrollToEnd({ animated: true });
     }, 100);
@@ -96,19 +104,27 @@ export function RoomChat({ roomId, isHost }: RoomChatProps) {
       if (messageUserId !== currentUserId && messageUserId !== 'my-user') return;
 
       Alert.alert(
-        'Mesajı Sil',
-        'Bu mesajı silmek istediğinize emin misiniz?',
+        t('rooms.deleteMessageTitle'),
+        t('rooms.deleteMessageConfirm'),
         [
-          { text: 'İptal', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           {
-            text: 'Sil',
+            text: t('common.delete'),
             style: 'destructive',
-            onPress: () => deleteMessage(messageId),
+            onPress: () => {
+              deleteMessage(messageId);
+              const channel = supabase.channel(`room_chat_${roomId}`);
+              channel.send({
+                type: 'broadcast',
+                event: 'delete_msg',
+                payload: { id: messageId },
+              });
+            },
           },
         ],
       );
     },
-    [currentUserId, deleteMessage],
+    [currentUserId, deleteMessage, roomId, t],
   );
 
   const formatDate = (timestamp: string) => {
@@ -139,10 +155,10 @@ export function RoomChat({ roomId, isHost }: RoomChatProps) {
       <View style={[styles.chatHeader, { borderBottomColor: colors.border }]}>
         <Ionicons name="chatbubbles" size={16} color={colors.primary} />
         <Text style={[typography.captionBold, { color: colors.textPrimary, marginLeft: 6 }]}>
-          Oda Sohbeti
+          {t('rooms.roomChatTitle')}
         </Text>
         <Text style={[typography.caption, { color: colors.textDisabled, marginLeft: 'auto' }]}>
-          {roomMessages.length} mesaj
+          {t('rooms.messagesCount', { count: roomMessages.length })}
         </Text>
       </View>
 
@@ -218,7 +234,7 @@ export function RoomChat({ roomId, isHost }: RoomChatProps) {
           <View style={styles.emptyChat}>
             <Ionicons name="chatbubbles-outline" size={36} color={colors.textDisabled} />
             <Text style={[typography.caption, { color: colors.textDisabled, marginTop: spacing.xs }]}>
-              Sohbet henüz başlamadı. İlk mesajı sen gönder!
+              {t('rooms.emptyChatPrompt')}
             </Text>
           </View>
         }
@@ -232,7 +248,7 @@ export function RoomChat({ roomId, isHost }: RoomChatProps) {
             { color: colors.textPrimary, backgroundColor: colors.surfaceVariant },
             (!isHost && !roomSettings.allowChat) && { opacity: 0.5 }
           ]}
-          placeholder={(!isHost && !roomSettings.allowChat) ? "Sohbet yönetici tarafından kapatıldı" : "Mesaj yaz..."}
+          placeholder={(!isHost && !roomSettings.allowChat) ? t('rooms.chatDisabledPlaceholder') : t('rooms.chatInputPlaceholder')}
           placeholderTextColor={colors.textSecondary}
           value={text}
           onChangeText={setText}

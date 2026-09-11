@@ -122,6 +122,8 @@ export const en: TranslationSchema = {
     quickSoundSubtitle: 'Adjust focus sound mode and ambience',
     quickSoundShortcut: 'Quick Sound Settings',
     quickSoundAllSettings: 'All Sound Settings',
+    timerAlarmsChannelName: 'Timer Completion Alarms',
+    timerAlarmsChannelDesc: 'High priority alarm notifications that sound when pomodoro and break sessions end',
   },
   tasks: {
     title: 'Tasks',
@@ -398,6 +400,15 @@ export const en: TranslationSchema = {
     stopScreenShareBtn: 'Stop Screen Sharing',
     dropzoneSharePrompt: 'Share your screen or upload a file',
     dropzoneEmptyPrompt: 'No content has been shared yet',
+    mobileScreenShareNotSupported: 'Screen sharing is not supported on this mobile device. You can share files/images from the "Screen" panel instead.',
+    roomEndedAlert: 'The study room has ended.',
+    deleteMessageTitle: 'Delete Message',
+    deleteMessageConfirm: 'Are you sure you want to delete this message?',
+    roomChatTitle: 'Room Chat',
+    messagesCount: '{count} messages',
+    emptyChatPrompt: 'No messages yet. Send the first message!',
+    chatDisabledPlaceholder: 'Chat is disabled by the host',
+    chatInputPlaceholder: 'Type a message...',
   },
   profile: {
     title: 'Profile',
@@ -418,6 +429,7 @@ export const en: TranslationSchema = {
     myCornerHint: 'Write a short text about yourself (max 120 chars)',
     bioSaved: 'Bio saved',
     onboardingTour: 'App Tour',
+    photoReadError: 'Failed to read photo.',
   },
   appearance: {
     videoBackgrounds: '🎥 Live Video Backgrounds',

@@ -122,6 +122,8 @@ export interface TranslationSchema {
     quickSoundSubtitle: string;
     quickSoundShortcut: string;
     quickSoundAllSettings: string;
+    timerAlarmsChannelName: string;
+    timerAlarmsChannelDesc: string;
   };
   tasks: {
     title: string;
@@ -398,6 +400,15 @@ export interface TranslationSchema {
     stopScreenShareBtn: string;
     dropzoneSharePrompt: string;
     dropzoneEmptyPrompt: string;
+    mobileScreenShareNotSupported: string;
+    roomEndedAlert: string;
+    deleteMessageTitle: string;
+    deleteMessageConfirm: string;
+    roomChatTitle: string;
+    messagesCount: string;
+    emptyChatPrompt: string;
+    chatDisabledPlaceholder: string;
+    chatInputPlaceholder: string;
   };
   profile: {
     title: string;
@@ -418,6 +429,7 @@ export interface TranslationSchema {
     myCornerHint: string;
     bioSaved: string;
     onboardingTour: string;
+    photoReadError: string;
   };
   appearance: {
     videoBackgrounds: string;

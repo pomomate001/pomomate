@@ -7,6 +7,10 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { logger } from '../../../utils/logger';
 import { permissionManager } from '../permissions/PermissionManager';
+import { tr } from '../../../i18n/translations/tr';
+import { en } from '../../../i18n/translations/en';
+import { resolveDeviceLanguage } from '../../../i18n/deviceLanguage';
+import type { Language } from '../../../i18n/types';
 
 export const TIMER_NOTIFICATION_CHANNEL_ID = 'pomomate_timer_alarms';
 
@@ -45,12 +49,16 @@ export class NotificationService {
     }
   }
 
-  private async setupAndroidChannels(): Promise<void> {
+  async setupAndroidChannels(lang?: Language): Promise<void> {
     if (Platform.OS !== 'android') return;
     try {
+      const activeLang = lang || resolveDeviceLanguage();
+      const selected = activeLang === 'en' ? en : tr;
+      const channelName = selected.timer.timerAlarmsChannelName;
+      const channelDesc = selected.timer.timerAlarmsChannelDesc;
       await Notifications.setNotificationChannelAsync(TIMER_NOTIFICATION_CHANNEL_ID, {
-        name: 'Sayaç Bitiş Alarmları',
-        description: 'Pomodoro ve mola süreleri bittiğinde çalan yüksek öncelikli alarm bildirimleri',
+        name: channelName,
+        description: channelDesc,
         importance: Notifications.AndroidImportance.MAX,
         sound: 'default',
         vibrationPattern: [0, 500, 250, 500],
@@ -67,10 +75,14 @@ export class NotificationService {
           },
         },
       });
-      logger.info('[Notifications] Android Alarm notification channel configured with DND bypass');
+      logger.info(`[Notifications] Android Alarm notification channel configured (${lang || 'default'})`);
     } catch (err) {
       logger.warn('[Notifications] Failed to setup Android notification channel:', err);
     }
+  }
+
+  async updateChannelsLanguage(lang: Language): Promise<void> {
+    await this.setupAndroidChannels(lang);
   }
 
   /* ─── Local Notifications ─── */

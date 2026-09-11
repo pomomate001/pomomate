@@ -122,6 +122,8 @@ export const tr: TranslationSchema = {
     quickSoundSubtitle: 'Odaklanma ses modunu ve ambiyansı ayarla',
     quickSoundShortcut: 'Hızlı Ses Ayarları',
     quickSoundAllSettings: 'Tüm Ses Ayarları',
+    timerAlarmsChannelName: 'Sayaç Bitiş Alarmları',
+    timerAlarmsChannelDesc: 'Pomodoro ve mola süreleri bittiğinde çalan yüksek öncelikli alarm bildirimleri',
   },
   tasks: {
     title: 'Görevler',
@@ -398,6 +400,15 @@ export const tr: TranslationSchema = {
     stopScreenShareBtn: 'Ekran Paylaşımını Durdur',
     dropzoneSharePrompt: 'Ekranınızı paylaşın veya dosya yükleyin',
     dropzoneEmptyPrompt: 'Henüz bir içerik paylaşılmadı',
+    mobileScreenShareNotSupported: 'Mobilde ekran paylaşımı henüz desteklenmiyor. Bunun yerine "Ekran" panelinden dosya/görsel paylaşabilirsiniz.',
+    roomEndedAlert: 'Oda sonlandırıldı.',
+    deleteMessageTitle: 'Mesajı Sil',
+    deleteMessageConfirm: 'Bu mesajı silmek istediğinize emin misiniz?',
+    roomChatTitle: 'Oda Sohbeti',
+    messagesCount: '{count} mesaj',
+    emptyChatPrompt: 'Sohbet henüz başlamadı. İlk mesajı sen gönder!',
+    chatDisabledPlaceholder: 'Sohbet yönetici tarafından kapatıldı',
+    chatInputPlaceholder: 'Mesaj yaz...',
   },
   profile: {
     title: 'Profil',
@@ -418,6 +429,7 @@ export const tr: TranslationSchema = {
     myCornerHint: 'Kendine ait kısa bir metin yaz (maks 120 karakter)',
     bioSaved: 'Bio kaydedildi',
     onboardingTour: 'Uygulama Tanıtım Turu',
+    photoReadError: 'Fotoğraf okunamadı.',
   },
   appearance: {
     videoBackgrounds: '🎥 Canlı Video Arka Planlar',

@@ -94,6 +94,11 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       setLanguage: (language) => {
         set({ language });
         void floatingWidgetService.setAppLocale(language);
+        try {
+          // Dynamically invoke to avoid circular import and test runner issues
+          const { notificationService } = require('../services/mobile/notifications/NotificationService');
+          void notificationService.updateChannelsLanguage?.(language);
+        } catch {}
       },
       setThemeId: (themeId) => set({ themeId }),
       setTimerDesignId: (timerDesignId) => set({ timerDesignId }),

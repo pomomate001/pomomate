@@ -108,7 +108,7 @@ export function ProfileScreen({
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
         if (!asset.base64) {
-          Alert.alert(t('common.error'), 'Fotoğraf okunamadı.');
+          Alert.alert(t('common.error'), t('profile.photoReadError'));
           return;
         }
 

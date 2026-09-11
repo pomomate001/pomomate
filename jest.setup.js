@@ -49,3 +49,19 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     clear: jest.fn(async () => {}),
   },
 }));
+
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(async () => {}),
+  scheduleNotificationAsync: jest.fn(async () => 'mock-id'),
+  cancelScheduledNotificationAsync: jest.fn(async () => {}),
+  cancelAllScheduledNotificationsAsync: jest.fn(async () => {}),
+  getPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
+  requestPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
+  getExpoPushTokenAsync: jest.fn(async () => ({ data: 'mock-token' })),
+  AndroidImportance: { MAX: 5 },
+  AndroidNotificationVisibility: { PUBLIC: 1 },
+  AndroidAudioUsage: { ALARM: 4 },
+  AndroidAudioContentType: { SONIFICATION: 4 },
+  AndroidNotificationPriority: { MAX: 'max' },
+}));
