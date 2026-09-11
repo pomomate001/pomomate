@@ -45,22 +45,23 @@ describe('Mini Mode Android Native Architecture & Contract Validation', () => {
       serviceContent = fs.readFileSync(servicePath, 'utf8');
     });
 
-    it('extends ExpandableBubbleService', () => {
-      expect(serviceContent).toContain('class FloatingWidgetService : ExpandableBubbleService()');
+    it('extends Service directly without fragile 3rd-party library', () => {
+      expect(serviceContent).toContain('class FloatingWidgetService : Service()');
     });
 
-    it('overrides startNotificationForeground() to intercept library foreground lifecycle cleanly', () => {
-      expect(serviceContent).toContain('override fun startNotificationForeground()');
+    it('implements startNotificationForeground() to manage foreground lifecycle cleanly', () => {
+      expect(serviceContent).toContain('fun startNotificationForeground()');
     });
 
-    it('does NOT declare unsupported initialNotification or setupNotificationBuilder overrides', () => {
-      expect(serviceContent).not.toContain('override fun initialNotification()');
-      expect(serviceContent).not.toContain('override fun setupNotificationBuilder(');
+    it('does NOT use crash-prone FLAG_WATCH_OUTSIDE_TOUCH to prevent Samsung Knox kill', () => {
+      expect(serviceContent).not.toContain('FLAG_WATCH_OUTSIDE_TOUCH');
     });
 
-    it('configures both compact bubble and expanded menu layout builders', () => {
-      expect(serviceContent).toContain('override fun configBubble(): BubbleBuilder?');
-      expect(serviceContent).toContain('override fun configExpandedBubble(): ExpandedBubbleBuilder?');
+    it('configures both compact bubble and expanded menu views', () => {
+      expect(serviceContent).toContain('createBubbleView()');
+      expect(serviceContent).toContain('createMenuView()');
+      expect(serviceContent).toContain('fun showBubble()');
+      expect(serviceContent).toContain('fun showExpandedMenu()');
     });
 
     it('implements state synchronization methods for mic, cam, and screen share', () => {
@@ -68,6 +69,7 @@ describe('Mini Mode Android Native Architecture & Contract Validation', () => {
       expect(serviceContent).toContain('currentMicOn');
       expect(serviceContent).toContain('currentCamOn');
       expect(serviceContent).toContain('currentScreenShareOn');
+      expect(serviceContent).toContain('isOverlayAttached');
     });
   });
 
@@ -80,8 +82,14 @@ describe('Mini Mode Android Native Architecture & Contract Validation', () => {
       moduleContent = fs.readFileSync(modulePath, 'utf8');
     });
 
-    it('uses moveTaskToBack(true) to avoid Android 12 background launch race conditions', () => {
-      expect(moduleContent).toContain('currentActivity?.moveTaskToBack(true)');
+    it('uses AppOpsManager and WindowManager functional test to eliminate false-positives', () => {
+      expect(moduleContent).toContain('AppOpsManager.OPSTR_SYSTEM_ALERT_WINDOW');
+      expect(moduleContent).toContain('wm.addView(testView, testParams)');
+    });
+
+    it('verifies overlay attachment before minimizing activity to prevent crash loops', () => {
+      expect(moduleContent).toContain('FloatingWidgetService.isOverlayAttached');
+      expect(moduleContent).toContain('moveTaskToBack(true)');
     });
 
     it('provides graceful fallback when starting service under strict background limits', () => {

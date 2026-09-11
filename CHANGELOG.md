@@ -2,6 +2,16 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
+## [1.3.30] - 2026-09-11
+
+### Fixed
+- **Mini Mode (Floating Widget / PiP) Android 12 & Samsung Knox Root-Cause Fix**:
+  - **Bulletproof Permission Check**: Replaced naive `Settings.canDrawOverlays` with `AppOpsManager.OPSTR_SYSTEM_ALERT_WINDOW == MODE_ALLOWED` plus a functional 0x0 `WindowManager.addView` test. Fixes the issue where active `MediaProjection` (screen sharing) falsely reported permission as granted at the system level and bypassed the permission dialog.
+  - **Direct Settings Navigation**: Removed the blocking pre-check in `requestPermission()` and added robust multi-tier OEM fallbacks (`package:` URI, generic overlay list, and application details settings) to directly open the Samsung "Appear on top" / "Üstte göster" configuration.
+  - **Knox Untrusted Touch Protection**: Completely replaced the crash-prone 3rd-party `io.github.torrydo:floating-bubble-view` library with a pure Kotlin Android `WindowManager` implementation. Eliminated `FLAG_WATCH_OUTSIDE_TOUCH` and `FLAG_LAYOUT_NO_LIMITS` which caused Samsung Knox to immediately terminate the process under active WebRTC screen capture.
+  - **Gated Background Transition**: `showWidget()` now verifies `FloatingWidgetService.isOverlayAttached` before backgrounding the activity, completely eliminating false minimization and app crash loops.
+  - **Removed Bloat Dependencies**: Removed `floating-bubble-view` dependency from `build.gradle` along with its Compose coroutine lifecycle overhead.
+
 ## [1.3.29] - 2026-09-11
 
 ### Fixed
