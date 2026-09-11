@@ -379,6 +379,25 @@ export interface TranslationSchema {
     inviteFailedTitle: string;
     inviteFailedAlert: string;
     roomInfoError: string;
+    miniMode: string;
+    closeMiniMode: string;
+    miniModePermissionTitle: string;
+    miniModePermissionDesc: string;
+    miniModeGrantPermission: string;
+    miniModeStartErrorTitle: string;
+    miniModeStartErrorDesc: string;
+    miniModeUnexpectedError: string;
+    miniModeNotificationTitle: string;
+    miniModeNotificationText: string;
+    screenSharingNotificationTitle: string;
+    screenSharingNotificationText: string;
+    sharingScreenHeader: string;
+    liveScreenBroadcast: string;
+    screenSharingActiveTitle: string;
+    screenSharingActiveDesc: string;
+    stopScreenShareBtn: string;
+    dropzoneSharePrompt: string;
+    dropzoneEmptyPrompt: string;
   };
   profile: {
     title: string;

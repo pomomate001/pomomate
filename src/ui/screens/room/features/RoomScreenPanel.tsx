@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { RTCView, type MediaStream } from 'react-native-webrtc';
+import { useTranslation } from '../../../../i18n';
 
 interface SharedFile {
   id: string;
@@ -44,6 +45,8 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
   onEnterPiP,
   onStopScreenShare,
 }) => {
+  const { t } = useTranslation();
+
   // Rotation logic
   const [rotationMultiplier, setRotationMultiplier] = useState(0);
 
@@ -177,7 +180,7 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
             <View style={styles.liveBadge}>
               <View style={styles.liveDot} />
               <Text style={styles.liveText}>
-                {presenterName ? `${presenterName.toUpperCase()} EKRANINI PAYLAŞIYOR` : 'CANLI EKRAN YAYINI'}
+                {presenterName ? t('rooms.sharingScreenHeader', { name: presenterName.toUpperCase() }) : t('rooms.liveScreenBroadcast')}
               </Text>
             </View>
             {screenQuality && (
@@ -195,9 +198,9 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
               <View style={styles.broadcastIconBox}>
                 <Ionicons name="desktop" size={54} color="#A855F7" />
               </View>
-              <Text style={styles.broadcastTitle}>Ekranınız Odaya Paylaşılıyor</Text>
+              <Text style={styles.broadcastTitle}>{t('rooms.screenSharingActiveTitle')}</Text>
               <Text style={styles.broadcastDesc}>
-                Katılımcılar şu anda ekranınızı canlı olarak izliyor.
+                {t('rooms.screenSharingActiveDesc')}
               </Text>
             </View>
           )}
@@ -207,7 +210,7 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
             {onStopScreenShare && (
               <Pressable style={styles.stopActionBtn} onPress={onStopScreenShare}>
                 <Ionicons name="stop-circle-outline" size={18} color="#FF4D4D" />
-                <Text style={styles.stopActionBtnText}>Ekran Paylaşımını Durdur</Text>
+                <Text style={styles.stopActionBtnText}>{t('rooms.stopScreenShareBtn')}</Text>
               </Pressable>
             )}
           </View>
@@ -281,7 +284,7 @@ export const RoomScreenPanel: React.FC<RoomScreenPanelProps> = ({
       >
         <Ionicons name="cloud-upload-outline" size={48} color="rgba(255,255,255,0.5)" />
         <Text style={styles.dropzoneText}>
-          {(isHost || allowFiles) ? 'Ekranınızı paylaşın veya dosya yükleyin' : 'Henüz bir içerik paylaşılmadı'}
+          {(isHost || allowFiles) ? t('rooms.dropzoneSharePrompt') : t('rooms.dropzoneEmptyPrompt')}
         </Text>
       </Pressable>
     </View>

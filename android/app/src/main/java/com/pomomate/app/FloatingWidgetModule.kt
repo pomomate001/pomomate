@@ -215,4 +215,31 @@ class FloatingWidgetModule(private val reactContext: ReactApplicationContext) :
         FloatingWidgetService.instance?.updateButtonStates()
         promise.resolve(true)
     }
+
+    @ReactMethod
+    fun updateNotificationText(title: String, text: String, promise: Promise) {
+        FloatingWidgetService.notificationTitle = title
+        FloatingWidgetService.notificationText = text
+        FloatingWidgetService.instance?.updateNotification()
+        promise.resolve(true)
+    }
+
+    @ReactMethod
+    fun setAppLocale(languageCode: String, promise: Promise) {
+        try {
+            val locale = java.util.Locale(languageCode)
+            java.util.Locale.setDefault(locale)
+            val config = reactContext.resources.configuration
+            config.setLocale(locale)
+            reactContext.resources.updateConfiguration(config, reactContext.resources.displayMetrics)
+            reactContext.applicationContext?.let { appCtx ->
+                val appConfig = appCtx.resources.configuration
+                appConfig.setLocale(locale)
+                appCtx.resources.updateConfiguration(appConfig, appCtx.resources.displayMetrics)
+            }
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
+    }
 }

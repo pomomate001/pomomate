@@ -45,6 +45,8 @@ class FloatingWidgetService : Service() {
         var currentMicOn: Boolean = true
         var currentCamOn: Boolean = false
         var currentScreenShareOn: Boolean = false
+        var notificationTitle: String? = null
+        var notificationText: String? = null
     }
 
     private var windowManager: WindowManager? = null
@@ -137,10 +139,17 @@ class FloatingWidgetService : Service() {
     }
 
     private fun createNotification(): Notification {
+        val channelName = try {
+            val resId = resources.getIdentifier("mini_mode_channel_name", "string", packageName)
+            if (resId != 0) getString(resId) else "PomoMate Widget"
+        } catch (e: Exception) {
+            "PomoMate Widget"
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "PomoMate Widget",
+                channelName,
                 NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -154,13 +163,36 @@ class FloatingWidgetService : Service() {
             android.R.drawable.ic_dialog_info
         }
 
+        val title = notificationTitle ?: try {
+            val resId = resources.getIdentifier("mini_mode_notification_title", "string", packageName)
+            if (resId != 0) getString(resId) else "PomoMate"
+        } catch (e: Exception) {
+            "PomoMate"
+        }
+
+        val text = notificationText ?: try {
+            val resId = resources.getIdentifier("mini_mode_notification_text", "string", packageName)
+            if (resId != 0) getString(resId) else "Mini Mode active"
+        } catch (e: Exception) {
+            "Mini Mode active"
+        }
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("PomoMate")
-            .setContentText("Mini Mod aktif")
+            .setContentTitle(title)
+            .setContentText(text)
             .setSmallIcon(iconRes)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
+    }
+
+    fun updateNotification() {
+        try {
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.notify(NOTIFICATION_ID, createNotification())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     /**

@@ -97,12 +97,14 @@ describe('Mini Mode Android Native Architecture & Contract Validation', () => {
       expect(moduleContent).toContain('reactContext.startService(fallbackIntent)');
     });
 
-    it('exports showWidget, hideWidget, checkPermission, requestPermission, updateWidgetActions', () => {
+    it('exports showWidget, hideWidget, checkPermission, requestPermission, updateWidgetActions, updateNotificationText, setAppLocale', () => {
       expect(moduleContent).toContain('fun showWidget(');
       expect(moduleContent).toContain('fun hideWidget(');
       expect(moduleContent).toContain('fun checkPermission(');
       expect(moduleContent).toContain('fun requestPermission(');
       expect(moduleContent).toContain('fun updateWidgetActions(');
+      expect(moduleContent).toContain('fun updateNotificationText(');
+      expect(moduleContent).toContain('fun setAppLocale(');
     });
   });
 

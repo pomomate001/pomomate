@@ -1,0 +1,15 @@
+<resources>
+  <string name="app_name">PomoMate – Birlikte Çalış</string>
+  <string name="expo_runtime_version">1.1.0</string>
+  <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
+
+  <!-- WebRTC Screen Sharing Notification (Turkish) -->
+  <string name="media_projection_notification_title">Ekran Paylaşımı</string>
+  <string name="media_projection_notification_text">Şu anda ekranınızı paylaşıyorsunuz.</string>
+  <string name="ongoing_notification_channel_name">Ekran Paylaşımı Bildirimleri</string>
+
+  <!-- Mini Mode Foreground Notification (Turkish) -->
+  <string name="mini_mode_notification_title">PomoMate</string>
+  <string name="mini_mode_notification_text">Mini Mod aktif</string>
+  <string name="mini_mode_channel_name">PomoMate Mini Mod</string>
+</resources>

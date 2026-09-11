@@ -47,6 +47,24 @@ class FloatingWidgetService {
     } catch {}
   }
 
+  async updateNotificationText(title: string, text: string): Promise<void> {
+    if (Platform.OS !== 'android' || !FloatingWidget) return;
+    try {
+      if (FloatingWidget.updateNotificationText) {
+        await FloatingWidget.updateNotificationText(title, text);
+      }
+    } catch {}
+  }
+
+  async setAppLocale(languageCode: string): Promise<void> {
+    if (Platform.OS !== 'android' || !FloatingWidget) return;
+    try {
+      if (FloatingWidget.setAppLocale) {
+        await FloatingWidget.setAppLocale(languageCode);
+      }
+    } catch {}
+  }
+
   addActionListener(callback: (action: string) => void) {
     if (Platform.OS !== 'android') return () => {};
     

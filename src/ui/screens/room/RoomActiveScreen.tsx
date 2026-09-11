@@ -43,6 +43,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
   const [isScreenShrunk, setIsScreenShrunk] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [isMiniModeActive, setIsMiniModeActive] = useState(false);
+  const { t, language } = useTranslation();
 
   // Detect Floating Widget action events
   useEffect(() => {
@@ -78,12 +79,12 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
       const hasPermission = await floatingWidgetService.checkPermission();
       if (!hasPermission) {
         Alert.alert(
-          'Mini Mod İzni Gerekli',
-          'PomoMate\'in diğer uygulamaların üzerinde mini kontrol penceresi olarak çalışabilmesi için "Üstte göster" (veya "Diğer uygulamaların üzerinde göster") iznine ihtiyacı var.\n\nŞimdi ayarlardan bu izni açmak ister misiniz?',
+          t('rooms.miniModePermissionTitle'),
+          t('rooms.miniModePermissionDesc'),
           [
-            { text: 'Vazgeç', style: 'cancel' },
+            { text: t('common.cancel'), style: 'cancel' },
             {
-              text: 'İzin Ver',
+              text: t('rooms.miniModeGrantPermission'),
               onPress: () => {
                 void floatingWidgetService.requestPermission();
               },
@@ -93,23 +94,27 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         return;
       }
 
+      await floatingWidgetService.setAppLocale(language);
+      await floatingWidgetService.updateNotificationText(
+        t('rooms.miniModeNotificationTitle'),
+        t('rooms.miniModeNotificationText')
+      );
       const success = await floatingWidgetService.showWidget();
       if (success) {
         setIsMiniModeActive(true);
       } else {
         Alert.alert(
-          'Mini Mod Başlatılamadı',
-          'Mini mod servisi başlatılamadı. Lütfen sistem ayarlarından uygulamanın diğer uygulamaların üzerinde gösterim izninin açık olduğunu kontrol edin.'
+          t('rooms.miniModeStartErrorTitle'),
+          t('rooms.miniModeStartErrorDesc')
         );
       }
     } catch {
-      Alert.alert('Hata', 'Mini moda geçilirken beklenmedik bir hata oluştu.');
+      Alert.alert(t('common.error'), t('rooms.miniModeUnexpectedError'));
     }
-  }, [isMiniModeActive]);
+  }, [isMiniModeActive, t, language]);
 
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { t } = useTranslation();
 
   const room = useRoomStore((s) => s.currentRoom);
   const members = useRoomStore((s) => s.members);
@@ -623,6 +628,11 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         if (Platform.OS === 'android') {
           // Medya projeksiyonu için Foreground Service gereklidir, bu da bildirim izni ister (Android 13+).
           await permissionManager.requestNotifications();
+          await floatingWidgetService.setAppLocale(language);
+          await floatingWidgetService.updateNotificationText(
+            t('rooms.screenSharingNotificationTitle'),
+            t('rooms.screenSharingNotificationText')
+          );
         }
         
         let stream = null;
@@ -711,7 +721,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         },
       });
     }
-  }, [screenShareOn, isHost, viewToggles.screen, toggleView, t, roomId, user, screenStream]);
+  }, [screenShareOn, isHost, viewToggles.screen, toggleView, t, roomId, user, screenStream, language]);
 
   const handleToggleMicRef = useRef(handleToggleMic);
   const handleToggleCamRef = useRef(handleToggleCam);
@@ -1025,7 +1035,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
             color="#FFF"
           />
           <Text style={styles.miniModText}>
-            {isMiniModeActive ? "Mini Modu Kapat" : "Mini Mod"}
+            {isMiniModeActive ? t('rooms.closeMiniMode') : t('rooms.miniMode')}
           </Text>
         </Pressable>
       )}

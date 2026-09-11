@@ -7,6 +7,8 @@ const mockFloatingWidget = {
   showWidget: jest.fn<() => Promise<boolean>>(),
   hideWidget: jest.fn<() => Promise<boolean>>(),
   updateWidgetActions: jest.fn<(mic: boolean, cam: boolean, screen: boolean) => Promise<boolean>>(),
+  updateNotificationText: jest.fn<(title: string, text: string) => Promise<boolean>>(),
+  setAppLocale: jest.fn<(lang: string) => Promise<boolean>>(),
 };
 
 // Set up native module before importing the service
@@ -105,6 +107,32 @@ describe('FloatingWidgetService (Mini Mod)', () => {
     it('handles native update failure gracefully without unhandled rejection', async () => {
       mockFloatingWidget.updateWidgetActions.mockRejectedValueOnce(new Error('Widget not active'));
       await expect(floatingWidgetService.updateWidgetActions(false, false, false)).resolves.toBeUndefined();
+    });
+  });
+
+  describe('updateNotificationText', () => {
+    it('calls native updateNotificationText with title and text', async () => {
+      mockFloatingWidget.updateNotificationText.mockResolvedValueOnce(true);
+      await floatingWidgetService.updateNotificationText('PomoMate', 'Mini Mode active');
+      expect(mockFloatingWidget.updateNotificationText).toHaveBeenCalledWith('PomoMate', 'Mini Mode active');
+    });
+
+    it('handles failure gracefully without throwing', async () => {
+      mockFloatingWidget.updateNotificationText.mockRejectedValueOnce(new Error('Notification failed'));
+      await expect(floatingWidgetService.updateNotificationText('PomoMate', 'Error')).resolves.toBeUndefined();
+    });
+  });
+
+  describe('setAppLocale', () => {
+    it('calls native setAppLocale with language code', async () => {
+      mockFloatingWidget.setAppLocale.mockResolvedValueOnce(true);
+      await floatingWidgetService.setAppLocale('en');
+      expect(mockFloatingWidget.setAppLocale).toHaveBeenCalledWith('en');
+    });
+
+    it('handles failure gracefully without throwing', async () => {
+      mockFloatingWidget.setAppLocale.mockRejectedValueOnce(new Error('Locale failed'));
+      await expect(floatingWidgetService.setAppLocale('tr')).resolves.toBeUndefined();
     });
   });
 

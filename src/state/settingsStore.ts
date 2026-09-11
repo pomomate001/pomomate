@@ -9,6 +9,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { storage } from '../platform/storage';
 import { resolveDeviceLanguage } from '../i18n/deviceLanguage';
+import { floatingWidgetService } from '../services/mobile/floating/FloatingWidgetService';
 
 export type AmbientSoundMode = 'work' | 'break' | 'always' | 'off';
 
@@ -90,7 +91,10 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
     (set) => ({
       ...initialSettings,
 
-      setLanguage: (language) => set({ language }),
+      setLanguage: (language) => {
+        set({ language });
+        void floatingWidgetService.setAppLocale(language);
+      },
       setThemeId: (themeId) => set({ themeId }),
       setTimerDesignId: (timerDesignId) => set({ timerDesignId }),
       setBackgroundEffectId: (backgroundEffectId) => set({ backgroundEffectId }),

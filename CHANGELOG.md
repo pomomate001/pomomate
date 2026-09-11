@@ -2,6 +2,17 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
+## [1.3.36] - 2026-09-12
+
+### Fixed & Localized
+- **Çalışma Odası Ekran Paylaşımı Arka Plan Bildirimi ve Mini Mod İzin Talebi Çevirisi (Screen Sharing & Mini Mode i18n)**:
+  - **Mini Mod İzin Talebi & Uyarıları**: Mini moda geçişte istenen sistem overlay ("Üstte göster") izni iletişim kutusu, hata uyarıları ve arayüz butonları tamamen İngilizce ve Türkçe dil desteğine kavuşturuldu (`rooms.miniModePermissionTitle`, `rooms.miniModePermissionDesc`, `rooms.miniModeGrantPermission`, `rooms.miniModeStartErrorTitle`, `rooms.miniModeStartErrorDesc`, `rooms.miniModeUnexpectedError`).
+  - **Arka Plan Bildirimi Yerelleştirmesi**: Uygulama içi dil İngilizce seçildiğinde, ekran paylaşımı ve Mini Mod başlatıldığında Android arka plan/foreground bildiriminin İngilizce görünmesi sağlandı (`Screen Sharing`, `You are currently sharing your screen.`, `Mini Mode is active`). Android yerel kaynakları (`res/values/strings.xml` ve `res/values-tr/strings.xml`) ile native köprü (`setAppLocale`, `updateNotificationText`) dinamik olarak senkronize edildi.
+  - **Ekran Paylaşım Paneli Metinleri**: Çalışma odası içerisindeki canlı ekran yayını başlıkları, katılımcı ekran izleme açıklamaları ve "Ekran Paylaşımını Durdur" butonu çok dilli yapıya uyarlandı.
+- **Onboarding (İlk Kullanım Tanıtım Akışı) Mükemmelleştirmesi**:
+  - Tüm slaytlar için Türkçe ve İngilizce 1:1 gerçek uygulama içi ekran görüntüleri entegre edildi.
+  - En boy oranı (aspect ratio) piksel hassasiyetinde kalibre edilerek taşma ve kayma sorunları tamamen giderildi.
+
 ## [1.3.34] - 2026-09-11
 
 ### Added

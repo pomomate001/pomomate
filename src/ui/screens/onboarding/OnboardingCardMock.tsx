@@ -34,8 +34,16 @@ export function OnboardingCardMock({ slideIndex }: OnboardingCardMockProps) {
   const screenshotBuddy = isEn ? SCREENSHOT_BUDDY_EN : SCREENSHOT_BUDDY_TR;
   const screenshotLeaderboard = isEn ? SCREENSHOT_LEADERBOARD_EN : SCREENSHOT_LEADERBOARD_TR;
 
+  const isLeaderboard = slideIndex === 3;
+  const isVectorSlide = slideIndex >= 4;
+
+  // Exact smartphone screenshot ratio:
+  // slide1 (501/1024 = 0.489), slide1_en (720/1451 = 0.496) -> ~0.492
+  // slide4_leaderboard: 596/1024 = 0.582
+  // Vector slides: 0.56
+  const bezelRatio = isLeaderboard ? 0.582 : isVectorSlide ? 0.56 : 0.492;
   const bezelHeight = Math.min(380, Math.max(270, height * 0.42));
-  const bezelWidth = Math.round(bezelHeight * 0.58);
+  const bezelWidth = Math.round(bezelHeight * bezelRatio);
 
   const isDark = theme.dark;
   const frameBorder = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.12)';
@@ -57,11 +65,15 @@ export function OnboardingCardMock({ slideIndex }: OnboardingCardMockProps) {
           {/* Semi-transparent focal overlay */}
           <View style={styles.imageOverlay} />
 
-          {/* Pointer 1: Tap to Adjust Duration (around 25:00 digits) */}
-          <View style={[styles.guidedCallout, { top: '16%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: calloutBorder }]}>
+          {/* Spotlight box over 25:00 digits (20.6% - 26.2%) */}
+          <View style={[styles.spotlightRing, { top: '19.5%', left: '20%', width: '60%', height: '8.5%', borderColor: colors.primary, borderRadius: 14 }]} />
+
+          {/* Pointer 1: Tap to Adjust Duration (placed right below 25:00 digits in open black space) */}
+          <View style={[styles.guidedCallout, { top: '29.5%', left: '6%', right: '6%', backgroundColor: calloutBg, borderColor: calloutBorder }]}>
+            <View style={[styles.pointerArrowUp, { borderBottomColor: calloutBorder }]} />
             <View style={styles.calloutHeader}>
               <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}25` }]}>
-                <Ionicons name="finger-print" size={14} color={colors.primary} />
+                <Ionicons name="finger-print" size={12} color={colors.primary} />
               </View>
               <Text style={[styles.calloutTitle, { color: colors.primary }]}>
                 {t('onboarding.mockAdjustTitle')}
@@ -70,19 +82,13 @@ export function OnboardingCardMock({ slideIndex }: OnboardingCardMockProps) {
             <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
               {t('onboarding.slide1AdjustTip')}
             </Text>
-            <View style={[styles.pointerArrowDown, { borderTopColor: calloutBorder }]} />
           </View>
 
-          {/* Spotlight box over 25:00 digits */}
-          <View style={[styles.spotlightRing, { top: '27%', left: '22%', width: '56%', height: '11%', borderColor: colors.primary }]} />
-
-          {/* Pointer 2: Start Focus Button */}
-          <View style={[styles.spotlightRing, { top: '61%', left: '16%', width: '68%', height: '9%', borderColor: colors.primary, borderRadius: 20 }]} />
-          <View style={[styles.guidedCallout, { top: '72%', left: '10%', right: '10%', backgroundColor: calloutBg, borderColor: calloutBorder }]}>
-            <View style={[styles.pointerArrowUp, { borderBottomColor: calloutBorder }]} />
+          {/* Pointer 2: Start Focus Button Guide (placed right above the button in open space) */}
+          <View style={[styles.guidedCallout, { top: '50.5%', left: '6%', right: '6%', backgroundColor: calloutBg, borderColor: colors.primary }]}>
             <View style={styles.calloutHeader}>
               <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}25` }]}>
-                <Ionicons name="play" size={14} color={colors.primary} />
+                <Ionicons name="play" size={12} color={colors.primary} />
               </View>
               <Text style={[styles.calloutTitle, { color: colors.primary }]}>
                 {t('onboarding.slide1FocusBtn')}
@@ -91,7 +97,11 @@ export function OnboardingCardMock({ slideIndex }: OnboardingCardMockProps) {
             <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
               {t('onboarding.mockFocusDesc')}
             </Text>
+            <View style={[styles.pointerArrowDown, { borderTopColor: colors.primary }]} />
           </View>
+
+          {/* Spotlight box over Start Focus Button (64.2% - 70.7%) */}
+          <View style={[styles.spotlightRing, { top: '63.5%', left: '22%', width: '56%', height: '8.2%', borderColor: colors.primary, borderRadius: 22 }]} />
         </View>
       </View>
     );
@@ -107,9 +117,24 @@ export function OnboardingCardMock({ slideIndex }: OnboardingCardMockProps) {
           {/* Semi-transparent focal overlay */}
           <View style={styles.imageOverlay} />
 
-          {/* Pointer 1: Pomodoro Duration Target (1..6) */}
-          <View style={[styles.spotlightRing, { top: '66%', left: '6%', width: '88%', height: '9%', borderColor: colors.primary, borderRadius: 16 }]} />
-          <View style={[styles.guidedCallout, { top: '50%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: calloutBorder }]}>
+          {/* Top Dimmed Area: Recurrence & Habit Guide with Arrow Down to Sheet */}
+          <View style={[styles.guidedCallout, { top: '13%', left: '6%', right: '6%', backgroundColor: calloutBg, borderColor: colors.success }]}>
+            <View style={styles.calloutHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: `${colors.success}25` }]}>
+                <Ionicons name="repeat" size={12} color={colors.success} />
+              </View>
+              <Text style={[styles.calloutTitle, { color: colors.success }]}>
+                {t('onboarding.mockRecurrenceTitle')}
+              </Text>
+            </View>
+            <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
+              {t('onboarding.slide2HabitTip')}
+            </Text>
+            <View style={[styles.pointerArrowDown, { borderTopColor: colors.success }]} />
+          </View>
+
+          {/* Pointer 1: Pomodoro Duration Target (placed at top: 51% above Target 1, arrow pointing down) */}
+          <View style={[styles.guidedCallout, { top: '51%', left: '6%', right: '6%', backgroundColor: calloutBg, borderColor: calloutBorder }]}>
             <View style={styles.calloutHeader}>
               <Text style={styles.emojiIcon}>🍅</Text>
               <Text style={[styles.calloutTitle, { color: colors.primary }]}>
@@ -122,22 +147,11 @@ export function OnboardingCardMock({ slideIndex }: OnboardingCardMockProps) {
             <View style={[styles.pointerArrowDown, { borderTopColor: calloutBorder }]} />
           </View>
 
-          {/* Pointer 2: Recurrence (Her Gün / Hafta İçi) */}
-          <View style={[styles.spotlightRing, { top: '80%', left: '26%', width: '25%', height: '8%', borderColor: colors.success, borderRadius: 18 }]} />
-          <View style={[styles.guidedCallout, { top: '89%', left: '10%', right: '10%', backgroundColor: calloutBg, borderColor: colors.success }]}>
-            <View style={[styles.pointerArrowUp, { borderBottomColor: colors.success }]} />
-            <View style={styles.calloutHeader}>
-              <View style={[styles.iconCircle, { backgroundColor: `${colors.success}25` }]}>
-                <Ionicons name="repeat" size={14} color={colors.success} />
-              </View>
-              <Text style={[styles.calloutTitle, { color: colors.success }]}>
-                {t('onboarding.mockRecurrenceTitle')}
-              </Text>
-            </View>
-            <Text style={[styles.calloutDesc, { color: colors.textPrimary }]}>
-              {t('onboarding.slide2HabitTip')}
-            </Text>
-          </View>
+          {/* Spotlight 1: Target '1' Pomodoro button (68.7% - 72.8%) */}
+          <View style={[styles.spotlightRing, { top: '68%', left: '26%', width: '15%', height: '5.5%', borderColor: colors.primary, borderRadius: 16 }]} />
+
+          {/* Spotlight 2: Recurrence 'Her Gün / Daily' button (83.0% - 87.2%) */}
+          <View style={[styles.spotlightRing, { top: '82.5%', left: '24%', width: '25%', height: '5.5%', borderColor: colors.success, borderRadius: 18 }]} />
         </View>
       </View>
     );
@@ -153,14 +167,14 @@ export function OnboardingCardMock({ slideIndex }: OnboardingCardMockProps) {
           {/* Semi-transparent focal overlay */}
           <View style={styles.imageOverlay} />
 
-          {/* Top-Right Invite Button Pointer & Spotlight */}
-          <View style={[styles.spotlightRing, { top: '4%', right: '5%', width: 36, height: 36, borderRadius: 18, borderColor: '#FF4081', borderWidth: 2.5 }]} />
-          
-          <View style={[styles.guidedCallout, { top: '12%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: '#FF4081' }]}>
+          {/* Top-Right Invite Button Pointer & Spotlight (3.2% - 8.5%, right: 3.5%) */}
+          <View style={[styles.spotlightRing, { top: '3.2%', right: '3.5%', width: 34, height: 34, borderRadius: 17, borderColor: '#FF4081', borderWidth: 2 }]} />
+
+          <View style={[styles.guidedCallout, { top: '11.5%', left: '6%', right: '6%', backgroundColor: calloutBg, borderColor: '#FF4081' }]}>
             <View style={[styles.pointerArrowUpRight, { borderBottomColor: '#FF4081' }]} />
             <View style={styles.calloutHeader}>
               <View style={[styles.iconCircle, { backgroundColor: 'rgba(255, 64, 129, 0.2)' }]}>
-                <Ionicons name="person-add" size={14} color="#FF4081" />
+                <Ionicons name="person-add" size={12} color="#FF4081" />
               </View>
               <Text style={[styles.calloutTitle, { color: '#FF4081' }]}>
                 {t('onboarding.slide3InviteBtn')}
@@ -171,10 +185,11 @@ export function OnboardingCardMock({ slideIndex }: OnboardingCardMockProps) {
             </Text>
           </View>
 
-          {/* Center: Live Buddy Avatars Guidance */}
-          <View style={[styles.spotlightRing, { top: '42%', left: '26%', width: '48%', height: '14%', borderColor: colors.primary, borderRadius: 24 }]} />
-          
-          <View style={[styles.guidedCallout, { top: '58%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: colors.primary }]}>
+          {/* Center: Live Buddy Avatars Spotlight (44.7% - 50.0%) */}
+          <View style={[styles.spotlightRing, { top: '43.5%', left: '26%', width: '48%', height: '8.5%', borderColor: colors.primary, borderRadius: 20 }]} />
+
+          {/* Center: Live Buddy Guidance Callout (placed between avatars and play button) */}
+          <View style={[styles.guidedCallout, { top: '54%', left: '6%', right: '6%', backgroundColor: calloutBg, borderColor: colors.primary }]}>
             <View style={[styles.pointerArrowUp, { borderBottomColor: colors.primary }]} />
             <View style={styles.calloutHeader}>
               <Text style={styles.emojiIcon}>🤝</Text>
@@ -203,7 +218,7 @@ export function OnboardingCardMock({ slideIndex }: OnboardingCardMockProps) {
 
           {/* Pointer 1: Leaderboard & Personal Rank */}
           <View style={[styles.spotlightRing, { top: '34%', left: '6%', width: '88%', height: '15%', borderColor: '#FFD700', borderRadius: 20 }]} />
-          <View style={[styles.guidedCallout, { top: '16%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: '#FFD700' }]}>
+          <View style={[styles.guidedCallout, { top: '15%', left: '6%', right: '6%', backgroundColor: calloutBg, borderColor: '#FFD700' }]}>
             <View style={styles.calloutHeader}>
               <Text style={styles.emojiIcon}>🏆</Text>
               <Text style={[styles.calloutTitle, { color: '#FFD700' }]}>
@@ -218,10 +233,10 @@ export function OnboardingCardMock({ slideIndex }: OnboardingCardMockProps) {
 
           {/* Pointer 2: Invite Friends to Leaderboard */}
           <View style={[styles.spotlightRing, { top: '89%', left: '6%', width: '88%', height: '7%', borderColor: colors.primary, borderRadius: 16 }]} />
-          <View style={[styles.guidedCallout, { top: '74%', left: '8%', right: '8%', backgroundColor: calloutBg, borderColor: colors.primary }]}>
+          <View style={[styles.guidedCallout, { top: '72%', left: '6%', right: '6%', backgroundColor: calloutBg, borderColor: colors.primary }]}>
             <View style={styles.calloutHeader}>
               <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}25` }]}>
-                <Ionicons name="share-social" size={14} color={colors.primary} />
+                <Ionicons name="share-social" size={12} color={colors.primary} />
               </View>
               <Text style={[styles.calloutTitle, { color: colors.primary }]}>
                 {t('onboarding.mockDiscoverTitle')}
@@ -438,10 +453,10 @@ const styles = StyleSheet.create({
   },
   guidedCallout: {
     position: 'absolute',
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1.5,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -452,37 +467,37 @@ const styles = StyleSheet.create({
   guidedCalloutStatic: {
     marginHorizontal: 10,
     marginTop: 8,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1.5,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     zIndex: 10,
   },
   calloutHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     marginBottom: 2,
   },
   iconCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
   emojiIcon: {
-    fontSize: 14,
+    fontSize: 12,
   },
   calloutTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   calloutDesc: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
-    lineHeight: 15,
+    lineHeight: 13,
   },
   pointerArrowDown: {
     position: 'absolute',
