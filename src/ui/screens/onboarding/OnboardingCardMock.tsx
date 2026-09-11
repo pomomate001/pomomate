@@ -3,8 +3,6 @@ import { View, Text, StyleSheet, Image, useWindowDimensions } from 'react-native
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, useTheme } from '../../theme';
-import { typography } from '../../theme/typography';
-import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { useTranslation } from '../../../i18n';
 

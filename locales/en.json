@@ -1,6 +1,8 @@
 {
-  "NSCameraUsageDescription": "Camera access is required for video study sessions and setting a profile photo.",
-  "NSMicrophoneUsageDescription": "Microphone access is required for voice study rooms and communication.",
-  "NSPhotoLibraryUsageDescription": "Photo library access is required to choose a profile photo and share files in rooms.",
-  "NSUserNotificationsUsageDescription": "Notification permissions are required to alert you when pomodoro and break timers complete."
+  "ios": {
+    "NSCameraUsageDescription": "Camera access is required for video study sessions and setting a profile photo.",
+    "NSMicrophoneUsageDescription": "Microphone access is required for voice study rooms and communication.",
+    "NSPhotoLibraryUsageDescription": "Photo library access is required to choose a profile photo and share files in rooms.",
+    "NSUserNotificationsUsageDescription": "Notification permissions are required to alert you when pomodoro and break timers complete."
+  }
 }

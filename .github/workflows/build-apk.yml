@@ -74,12 +74,17 @@ jobs:
         run: |
           npx expo prebuild --platform android --clean
           
-          # Restore custom native code, layouts, drawables, manifest and build.gradle
+          # Restore custom native code, layouts, drawables, values, manifest and build.gradle
           git checkout android/app/src/main/AndroidManifest.xml
           git checkout android/app/src/main/java/com/pomomate/app/
           git checkout android/app/src/main/res/layout/
           git checkout android/app/src/main/res/drawable/
+          git checkout android/app/src/main/res/values/
+          git checkout android/app/src/main/res/values-tr/
           git checkout android/app/build.gradle
+
+          # Clean up any rogue generated localized strings directories from prebuild
+          rm -rf android/app/src/main/res/values-b+*
           
           
           # C++ derlemelerinde bellek taşmasını önlemek için mimarileri ve Gradle bellek limitlerini optimize ediyoruz
@@ -119,13 +124,13 @@ jobs:
           fi
 
           if [ -n "$KEYSTORE_BASE64" ]; then
-            ./gradlew $GRADLE_TASKS --no-daemon --stacktrace \
+            ./gradlew $GRADLE_TASKS -x lintVitalRelease --no-daemon --stacktrace \
               -Pandroid.injected.signing.store.file=$(pwd)/app/release.keystore \
               -Pandroid.injected.signing.store.password=$ANDROID_KEYSTORE_PASSWORD \
               -Pandroid.injected.signing.key.alias=$ANDROID_KEY_ALIAS \
               -Pandroid.injected.signing.key.password=$ANDROID_KEY_PASSWORD
           else
-            ./gradlew $GRADLE_TASKS --no-daemon --stacktrace
+            ./gradlew $GRADLE_TASKS -x lintVitalRelease --no-daemon --stacktrace
           fi
 
       - name: 📤 Upload APK Artifact

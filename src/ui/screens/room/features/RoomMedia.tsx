@@ -116,7 +116,7 @@ export function RoomMedia({ onStreamChange }: RoomMediaProps) {
       }
       onStreamChange?.(null);
     }
-  }, [screenShare, onStreamChange]);
+  }, [screenShare, onStreamChange, t]);
 
   return (
     <View style={styles.container}>

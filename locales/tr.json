@@ -1,6 +1,8 @@
 {
-  "NSCameraUsageDescription": "Profil fotoğrafı eklemek ve görüntülü çalışma odaları için kamera erişimi gerekiyor.",
-  "NSMicrophoneUsageDescription": "Sesli çalışma odalarında iletişim kurabilmek için mikrofon erişimi gerekiyor.",
-  "NSPhotoLibraryUsageDescription": "Profil fotoğrafı seçmek ve odalarda dosya paylaşmak için galeri erişimi gerekiyor.",
-  "NSUserNotificationsUsageDescription": "Pomodoro ve mola süreleri tamamlandığında bildirim göndermek için izin gerekiyor."
+  "ios": {
+    "NSCameraUsageDescription": "Profil fotoğrafı eklemek ve görüntülü çalışma odaları için kamera erişimi gerekiyor.",
+    "NSMicrophoneUsageDescription": "Sesli çalışma odalarında iletişim kurabilmek için mikrofon erişimi gerekiyor.",
+    "NSPhotoLibraryUsageDescription": "Profil fotoğrafı seçmek ve odalarda dosya paylaşmak için galeri erişimi gerekiyor.",
+    "NSUserNotificationsUsageDescription": "Pomodoro ve mola süreleri tamamlandığında bildirim göndermek için izin gerekiyor."
+  }
 }
