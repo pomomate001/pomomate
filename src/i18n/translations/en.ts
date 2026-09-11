@@ -118,6 +118,10 @@ export const en: TranslationSchema = {
     startFocus: 'Start Focus',
     restart: 'Restart',
     finish: 'Finish',
+    quickSoundTitle: 'Sound & Ambience',
+    quickSoundSubtitle: 'Adjust focus sound mode and ambience',
+    quickSoundShortcut: 'Quick Sound Settings',
+    quickSoundAllSettings: 'All Sound Settings',
   },
   tasks: {
     title: 'Tasks',

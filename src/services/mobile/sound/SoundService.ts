@@ -33,7 +33,7 @@ export const NOTIFICATION_SOUNDS: SoundItem[] = [
     id: 'chime',
     label: 'Yumuşak Melodi',
     description: 'Sakinleştirici ve nazik bitiş sesi',
-    url: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
+    url: 'https://assets.mixkit.co/active_storage/sfx/3109/3109-preview.mp3',
   },
 ];
 

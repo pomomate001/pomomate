@@ -118,6 +118,10 @@ export interface TranslationSchema {
     startFocus: string;
     restart: string;
     finish: string;
+    quickSoundTitle: string;
+    quickSoundSubtitle: string;
+    quickSoundShortcut: string;
+    quickSoundAllSettings: string;
   };
   tasks: {
     title: string;

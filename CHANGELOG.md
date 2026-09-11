@@ -2,6 +2,21 @@
 
 All notable changes to the PomoMate project will be documented in this file.
 
+## [1.3.34] - 2026-09-11
+
+### Added
+- **Sayaç Ekranı Hızlı Ses Menüsü Kısayolu (Timer Screen Quick Sound Settings)**:
+  - **Kusursuz Simetrik Ses Butonu**: Sayaç ekranının sol üst köşesine, çalışma modu kapsülünün soluna ve sağdaki arkadaş davet butonuyla tam simetrik ve hizalı (`left: spacing.lg, top: 10`, 34x34px) ses kısayol ikonu yerleştirildi. Aktif ses/ortam durumuna göre dinamik ikon ve renk geri bildirimi sağlandı.
+  - **Ödüllü Tasarım Estetiğine Sahip `QuickSoundModal`**:
+    - **Yarı Saydam Glassmorphism & Spring Animasyonu**: Akıcı açılış, derinlik hissi veren mat obsidian zemin (`#161923`), zarif kenarlık parıltısı ve mikro-etkileşimler.
+    - **Yatay Ses Modu Segmented Bar**: Pencerenin en üstünde `[ Kapalı | Her zaman | Sadece Molada | Sadece Çalışırken ]` seçenekleri tek parça segmented bar olarak sunuldu; seçim yapıldığında haptic titreşim eşliğinde sayaç çalışırken dahi anında arka plan ambiyans sesi senkronize edildi.
+    - **Odaklanma & Ortam Sesi Seçimi**: `[ Ortam Sesi Yok | Yağmur Sesi | Kamp Ateşi | Kuş Cıvıltısı ]` seçenekleri tematik glowing rozetler, aktif çalıyor animasyon rozeti ve 2 saniyelik hızlı önizleme desteğiyle kartlar halinde yapılandırıldı.
+
+### Fixed
+- **"Yumuşak Melodi" Zil Sesi Çalmama Sorunu Düzeltildi**:
+  - `SoundService.ts` içerisindeki `id: 'chime'` (Yumuşak Melodi / Soft Chime) zil sesine ait Mixkit CDN URL'sinin (`1435-preview.mp3`) CloudFront üzerinde 403 Forbidden hatası verdiği tespit edildi.
+  - Aynı ses kütüphanesindeki çalışır durumda ve yüksek kaliteli `3109-preview.mp3` (Relaxing bell chime) ile güncellenerek profil ses ayarlarında ve sayaç bitişinde kesintisiz çalması sağlandı.
+
 ## [1.3.32] - 2026-09-11
 
 ### Changed

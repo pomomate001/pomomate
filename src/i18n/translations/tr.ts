@@ -118,6 +118,10 @@ export const tr: TranslationSchema = {
     startFocus: 'Odaklanmaya Başla',
     restart: 'Yeniden Başlat',
     finish: 'Bitir',
+    quickSoundTitle: 'Ses & Ambiyans',
+    quickSoundSubtitle: 'Odaklanma ses modunu ve ambiyansı ayarla',
+    quickSoundShortcut: 'Hızlı Ses Ayarları',
+    quickSoundAllSettings: 'Tüm Ses Ayarları',
   },
   tasks: {
     title: 'Görevler',

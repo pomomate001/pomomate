@@ -34,6 +34,7 @@ import { BuddyAvatarBar } from './BuddyAvatarBar';
 import { BuddyInviteNotification } from './BuddyInviteNotification';
 import { AchievementCardModal } from './AchievementCardModal';
 import { DurationPickerSheet } from './DurationPickerSheet';
+import { QuickSoundModal } from './QuickSoundModal';
 import { useDeepFocus } from '../../../hooks/useDeepFocus';
 
 // Enable LayoutAnimation on Android
@@ -63,6 +64,7 @@ export function TimerScreen() {
   const buddyProfile = useBuddyStore((s) => s.buddyProfile);
   const myRole = useBuddyStore((s) => s.myRole);
   const [showBuddyInvite, setShowBuddyInvite] = useState(false);
+  const [showSoundModal, setShowSoundModal] = useState(false);
   const [showAchievementCard, setShowAchievementCard] = useState(false);
   const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [completedDuration, setCompletedDuration] = useState(0);
@@ -82,6 +84,9 @@ export function TimerScreen() {
   const breakAnimationId = useSettingsStore((s) => s.breakAnimationId);
   const isPremium = useSettingsStore((s) => s.isPremium);
   const deepFocusEnabled = useSettingsStore((s) => s.deepFocusEnabled);
+  const soundEnabled = useSettingsStore((s) => s.soundEnabled);
+  const ambientSoundId = useSettingsStore((s) => s.ambientSoundId);
+  const ambientSoundMode = useSettingsStore((s) => s.ambientSoundMode);
   const isVisualWallpaperActive =
     backgroundEffectId.startsWith('video_') ||
     backgroundEffectId.startsWith('image_');
@@ -149,7 +154,7 @@ export function TimerScreen() {
     return () => {
       soundService.stopAmbient();
     };
-  }, [isRunning, mode]);
+  }, [isRunning, mode, ambientSoundId, ambientSoundMode, soundEnabled]);
 
   // Listen for AppState changes to sync timer when screen turns on or app returns to foreground
   useEffect(() => {
@@ -530,6 +535,29 @@ export function TimerScreen() {
       >
         {/* 1. ÜST BÖLÜM: Mod Seçici, Sayaç ve Döngü */}
         <View style={styles.topSection}>
+          {/* Sound settings quick shortcut */}
+          <Pressable
+            onPress={() => setShowSoundModal(true)}
+            style={[styles.soundQuickBtn, { backgroundColor: surfaceBg, borderColor: surfaceBorderLight, borderWidth: 1 }]}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('timer.quickSoundShortcut')}
+          >
+            <Ionicons
+              name={
+                !soundEnabled || ambientSoundMode === 'off' || ambientSoundId === 'none'
+                  ? 'volume-mute-outline'
+                  : 'volume-high'
+              }
+              size={16}
+              color={
+                !soundEnabled || ambientSoundMode === 'off' || ambientSoundId === 'none'
+                  ? colors.textSecondary
+                  : colors.primary
+              }
+            />
+          </Pressable>
+
           {/* Mode selector */}
           <View style={[styles.modeRow, { backgroundColor: surfaceBg, borderColor: surfaceBorder }]}>
             {modeButtons.map((m) => (
@@ -761,6 +789,11 @@ export function TimerScreen() {
         onClose={() => setShowDurationPicker(false)}
         mode={mode}
       />
+
+      <QuickSoundModal
+        visible={showSoundModal}
+        onClose={() => setShowSoundModal(false)}
+      />
     </BackgroundEffect>
   );
 }
@@ -777,6 +810,17 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
+  soundQuickBtn: {
+    position: 'absolute',
+    left: spacing.lg,
+    top: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
   buddyInviteBtn: {
     position: 'absolute',
     right: spacing.lg,
@@ -786,6 +830,7 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10,
   },
   modeRow: {
     flexDirection: 'row',
