@@ -13,6 +13,7 @@ import { useColors } from '../ui/theme';
 import { TimerStack, StatsStack, RoomStack, ProfileStack } from './stacks';
 import { AuthNavigator } from './AuthNavigator';
 import { UpdatePasswordModal } from '../ui/screens/auth';
+import { OnboardingScreen } from '../ui/screens/onboarding';
 import type { RootTabParamList } from './types';
 import { useUserStore, useFriendsStore, useRoomStore, useSettingsStore } from '../state';
 import { authService, supabase } from '../services/auth';
@@ -109,6 +110,22 @@ function MainTabs() {
 export function RootNavigator() {
   const user = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
+  const hasSeenOnboarding = useSettingsStore((state) => state.hasSeenOnboarding);
+  const setHasSeenOnboarding = useSettingsStore((state) => state.setHasSeenOnboarding);
+
+  const [hasHydratedSettings, setHasHydratedSettings] = React.useState(() =>
+    useSettingsStore.persist.hasHydrated()
+  );
+
+  useEffect(() => {
+    const unsub = useSettingsStore.persist.onFinishHydration(() => {
+      setHasHydratedSettings(true);
+    });
+    setHasHydratedSettings(useSettingsStore.persist.hasHydrated());
+    return () => {
+      unsub();
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -153,6 +170,14 @@ export function RootNavigator() {
       authListener.subscription.unsubscribe();
     };
   }, [setUser]);
+
+  if (!hasHydratedSettings) {
+    return null;
+  }
+
+  if (!hasSeenOnboarding) {
+    return <OnboardingScreen onFinish={() => setHasSeenOnboarding(true)} />;
+  }
 
   if (!user) {
     return <AuthNavigator />;

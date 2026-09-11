@@ -398,6 +398,7 @@ export interface TranslationSchema {
     myCornerPlaceholder: string;
     myCornerHint: string;
     bioSaved: string;
+    onboardingTour: string;
   };
   appearance: {
     videoBackgrounds: string;
@@ -567,6 +568,7 @@ export interface TranslationSchema {
     video_rain: { title: string; desc: string };
     image_pixel_art: { title: string; desc: string };
     image_winter_village: { title: string; desc: string };
+    image_ocean: { title: string; desc: string };
     particles: { title: string; desc: string };
     rain: { title: string; desc: string };
     snow: { title: string; desc: string };
@@ -576,9 +578,15 @@ export interface TranslationSchema {
     none_anim: { title: string; desc: string };
     cat_tail: { title: string; desc: string };
     cat_table_right: { title: string; desc: string };
-    campfire_svg: { title: string; desc: string };
     campfire_lottie: { title: string; desc: string };
     camping_marshmallow: { title: string; desc: string };
+    boy_reading: { title: string; desc: string };
+    bunny_and_dog: { title: string; desc: string };
+    cozy_night: { title: string; desc: string };
+    girl_reading: { title: string; desc: string };
+    girl_reading_2: { title: string; desc: string };
+    study_boy: { title: string; desc: string };
+    study_girl: { title: string; desc: string };
 
     theme_light: { title: string; desc: string };
     theme_dark: { title: string; desc: string };
@@ -617,6 +625,53 @@ export interface TranslationSchema {
     openInApp: string;
     downloadFromStore: string;
     autoOpenHint: string;
+  };
+  onboarding: {
+    skip: string;
+    next: string;
+    start: string;
+    back: string;
+    stepIndicator: string;
+    slide1Badge: string;
+    slide1Title: string;
+    slide1Subtitle: string;
+    slide1FocusBtn: string;
+    slide1AdjustTip: string;
+    slide1RhythmNote: string;
+    slide2Badge: string;
+    slide2Title: string;
+    slide2Subtitle: string;
+    slide2SampleTask: string;
+    slide2Tag: string;
+    slide2PomodoroTarget: string;
+    slide2RecurrenceDaily: string;
+    slide2HabitTip: string;
+    slide3Badge: string;
+    slide3Title: string;
+    slide3Subtitle: string;
+    slide3InviteBtn: string;
+    slide3TogetherBadge: string;
+    slide3WarmNote: string;
+    slide4Badge: string;
+    slide4Title: string;
+    slide4Subtitle: string;
+    slide4StatsHighlight: string;
+    slide4DiscoverHighlight: string;
+    slide4InviteHighlight: string;
+    slide4LeaderboardHighlight: string;
+    slide5Badge: string;
+    slide5Title: string;
+    slide5Subtitle: string;
+    slide5RoomName: string;
+    slide5RoomAtmosphere: string;
+    slide5RoomNote: string;
+    slide6Badge: string;
+    slide6Title: string;
+    slide6Subtitle: string;
+    slide6TagsTitle: string;
+    slide6ThemesTitle: string;
+    slide6SoundsTitle: string;
+    slide6FinalReady: string;
   };
 }
 

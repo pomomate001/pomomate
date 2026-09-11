@@ -55,6 +55,98 @@ export const FocusAnimation: React.FC<FocusAnimationProps> = ({
         </View>
       );
 
+    case 'boy_reading':
+    case 'study_desk': // Backward compatibility
+      return (
+        <View style={[styles.container, { width: size, height: size }]}>
+          <LottieView
+            source={require('../../assets/animations/Boy Reading.json')}
+            autoPlay
+            loop
+            renderMode="SOFTWARE"
+            style={{ width: size, height: size }}
+          />
+        </View>
+      );
+
+    case 'bunny_and_dog':
+      return (
+        <View style={[styles.container, { width: size, height: size }]}>
+          <LottieView
+            source={require('../../assets/animations/bunny and dog.json')}
+            autoPlay
+            loop
+            renderMode="SOFTWARE"
+            style={{ width: size, height: size }}
+          />
+        </View>
+      );
+
+    case 'cozy_night':
+      return (
+        <View style={[styles.container, { width: size, height: size }]}>
+          <LottieView
+            source={require('../../assets/animations/Cozy Night.json')}
+            autoPlay
+            loop
+            renderMode="SOFTWARE"
+            style={{ width: size, height: size }}
+          />
+        </View>
+      );
+
+    case 'girl_reading':
+      return (
+        <View style={[styles.container, { width: size, height: size }]}>
+          <LottieView
+            source={require('../../assets/animations/Girl Reading.json')}
+            autoPlay
+            loop
+            renderMode="SOFTWARE"
+            style={{ width: size, height: size }}
+          />
+        </View>
+      );
+
+    case 'girl_reading_2':
+      return (
+        <View style={[styles.container, { width: size, height: size }]}>
+          <LottieView
+            source={require('../../assets/animations/Girl Reading 2.json')}
+            autoPlay
+            loop
+            renderMode="SOFTWARE"
+            style={{ width: size, height: size }}
+          />
+        </View>
+      );
+
+    case 'study_boy':
+      return (
+        <View style={[styles.container, { width: size, height: size }]}>
+          <LottieView
+            source={require('../../assets/animations/Study boy.json')}
+            autoPlay
+            loop
+            renderMode="SOFTWARE"
+            style={{ width: size, height: size }}
+          />
+        </View>
+      );
+
+    case 'study_girl':
+      return (
+        <View style={[styles.container, { width: size, height: size }]}>
+          <LottieView
+            source={require('../../assets/animations/Study girl.json')}
+            autoPlay
+            loop
+            renderMode="SOFTWARE"
+            style={{ width: size, height: size }}
+          />
+        </View>
+      );
+
     case 'cat_table_right':
     case 'cat_table_left': // Safe fallback for existing user state
       return (

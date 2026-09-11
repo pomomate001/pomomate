@@ -70,6 +70,14 @@ export const backgroundEffects: BackgroundEffectDef[] = [
     icon: 'image',
     description: 'Huzurlu karlı dağ ve kulübe manzarası',
   },
+  {
+    id: 'image_ocean',
+    label: 'Okyanus',
+    category: 'image',
+    free: true,
+    icon: 'image',
+    description: 'Renkli mercan resifleri ve tropik okyanus dünyası',
+  },
 
   // Parçacık Efektleri
   {

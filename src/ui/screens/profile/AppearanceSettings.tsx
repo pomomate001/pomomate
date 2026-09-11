@@ -20,6 +20,7 @@ import {
   VideoRainPreview,
   PixelArtPreview,
   WinterVillagePreview,
+  OceanPreview,
   EffectNonePreview,
   EffectParticlesPreview,
   EffectRainPreview,
@@ -28,9 +29,15 @@ import {
   FocusNonePreview,
   FocusCatTailPreview,
   FocusCatTableRightPreview,
-  FocusCampfireSvgPreview,
   FocusCampfireLottiePreview,
   FocusCampingMarshmallowPreview,
+  FocusBoyReadingPreview,
+  FocusBunnyAndDogPreview,
+  FocusCozyNightPreview,
+  FocusGirlReadingPreview,
+  FocusGirlReading2Preview,
+  FocusStudyBoyPreview,
+  FocusStudyGirlPreview,
   ThemeMockupPreview,
   TimerDesignPreview,
 } from './AppearancePreviews';
@@ -137,6 +144,8 @@ export function AppearanceSettings() {
         return <PixelArtPreview />;
       case 'image_winter_village':
         return <WinterVillagePreview />;
+      case 'image_ocean':
+        return <OceanPreview />;
       case 'particles':
         return <EffectParticlesPreview />;
       case 'rain':
@@ -157,12 +166,25 @@ export function AppearanceSettings() {
         return <FocusCatTailPreview />;
       case 'cat_table_right':
         return <FocusCatTableRightPreview />;
-      case 'campfire_svg':
-        return <FocusCampfireSvgPreview />;
       case 'campfire_lottie':
         return <FocusCampfireLottiePreview />;
       case 'camping_marshmallow':
         return <FocusCampingMarshmallowPreview />;
+      case 'boy_reading':
+      case 'study_desk': // Backward compatibility
+        return <FocusBoyReadingPreview />;
+      case 'bunny_and_dog':
+        return <FocusBunnyAndDogPreview />;
+      case 'cozy_night':
+        return <FocusCozyNightPreview />;
+      case 'girl_reading':
+        return <FocusGirlReadingPreview />;
+      case 'girl_reading_2':
+        return <FocusGirlReading2Preview />;
+      case 'study_boy':
+        return <FocusStudyBoyPreview />;
+      case 'study_girl':
+        return <FocusStudyGirlPreview />;
       case 'none':
       default:
         return <FocusNonePreview />;

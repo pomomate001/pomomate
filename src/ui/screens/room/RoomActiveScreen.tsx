@@ -928,7 +928,7 @@ export function RoomActiveScreen({ roomId, onLeave }: RoomActiveScreenProps) {
         style={[
           styles.contentArea,
           {
-            paddingTop: insets.top + 16, // Fixed padding, timer is absolute overlay
+            paddingTop: insets.top + (viewToggles.timer ? 64 : 16), // Offset for timer dynamic island if active
             paddingBottom: 90, // Space for collapsed bottom bar
           },
         ]}

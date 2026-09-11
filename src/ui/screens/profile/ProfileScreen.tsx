@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '../../theme';
@@ -14,6 +14,7 @@ import { PremiumPaywallSheet } from './PremiumPaywallSheet';
 import { ReferralSheet } from './ReferralSheet';
 import { AboutSheet } from './AboutSheet';
 import { LanguageSheet } from './LanguageSheet';
+import { OnboardingScreen } from '../onboarding';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../../../services/auth/supabaseClient';
@@ -74,6 +75,7 @@ export function ProfileScreen({
   const [showEditName, setShowEditName] = React.useState(false);
   const [showEditBio, setShowEditBio] = React.useState(false);
   const [showManageSubscription, setShowManageSubscription] = React.useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = React.useState(false);
   const userTags = useTagStore((s) => s.userTags);
   const isPremium = useSettingsStore((s) => s.isPremium);
 
@@ -284,6 +286,7 @@ export function ProfileScreen({
             <SettingRow icon="volume-high-outline" label={t('profile.soundSettings')} onPress={onNavigateSounds} />
             <SettingRow icon="globe-outline" label={t('profile.language')} onPress={() => setShowLanguage(true)} />
             <SettingRow icon="shield-checkmark-outline" label={t('profile.privacyData')} onPress={() => alert(t('profile.privacyAlert'))} />
+            <SettingRow icon="sparkles-outline" label={t('profile.onboardingTour')} onPress={() => setShowOnboardingModal(true)} />
             <SettingRow icon="information-circle-outline" label={t('profile.about')} onPress={() => setShowAbout(true)} hideBorder />
           </View>
 
@@ -346,6 +349,15 @@ export function ProfileScreen({
         visible={showManageSubscription}
         onClose={() => setShowManageSubscription(false)}
       />
+
+      <Modal
+        visible={showOnboardingModal}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowOnboardingModal(false)}
+      >
+        <OnboardingScreen onFinish={() => setShowOnboardingModal(false)} />
+      </Modal>
     </>
   );
 }

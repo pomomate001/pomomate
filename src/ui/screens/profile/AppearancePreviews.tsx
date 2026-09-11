@@ -6,7 +6,6 @@ import LottieView from 'lottie-react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { AppTheme } from '../../theme/themes';
 import { useColors } from '../../theme';
-import { CampfireAnimation } from '../../animations/CampfireAnimation';
 import { SvgWebAnimation } from '../../animations/SvgWebAnimation';
 import { getSleepingCatSvg } from '../../animations/catSvgData';
 
@@ -107,6 +106,22 @@ export function WinterVillagePreview() {
       <View style={styles.imageOverlay} />
       <View style={styles.centerIconWrap}>
         <Ionicons name="snow-outline" size={24} color="#FFFFFF" />
+      </View>
+    </View>
+  );
+}
+
+export function OceanPreview() {
+  return (
+    <View style={styles.previewContainer}>
+      <Image
+        source={require('../../../assets/picture/ocean.jpg')}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+      />
+      <View style={styles.imageOverlay} />
+      <View style={styles.centerIconWrap}>
+        <Ionicons name="fish-outline" size={24} color="#FFFFFF" />
       </View>
     </View>
   );
@@ -233,15 +248,6 @@ export function FocusCatTableRightPreview() {
   );
 }
 
-export function FocusCampfireSvgPreview() {
-  const colors = useColors();
-  return (
-    <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
-      <CampfireAnimation size={54} />
-    </View>
-  );
-}
-
 export function FocusCampfireLottiePreview() {
   const colors = useColors();
   return (
@@ -262,6 +268,111 @@ export function FocusCampingMarshmallowPreview() {
     <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
       <LottieView
         source={require('../../../assets/animations/camping_marshmallow.json')}
+        autoPlay
+        loop
+        renderMode="SOFTWARE"
+        style={styles.lottieThumb}
+      />
+    </View>
+  );
+}
+
+export function FocusBoyReadingPreview() {
+  const colors = useColors();
+  return (
+    <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
+      <LottieView
+        source={require('../../../assets/animations/Boy Reading.json')}
+        autoPlay
+        loop
+        renderMode="SOFTWARE"
+        style={styles.lottieThumb}
+      />
+    </View>
+  );
+}
+
+export function FocusBunnyAndDogPreview() {
+  const colors = useColors();
+  return (
+    <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
+      <LottieView
+        source={require('../../../assets/animations/bunny and dog.json')}
+        autoPlay
+        loop
+        renderMode="SOFTWARE"
+        style={styles.lottieThumb}
+      />
+    </View>
+  );
+}
+
+export function FocusCozyNightPreview() {
+  const colors = useColors();
+  return (
+    <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
+      <LottieView
+        source={require('../../../assets/animations/Cozy Night.json')}
+        autoPlay
+        loop
+        renderMode="SOFTWARE"
+        style={styles.lottieThumb}
+      />
+    </View>
+  );
+}
+
+export function FocusGirlReadingPreview() {
+  const colors = useColors();
+  return (
+    <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
+      <LottieView
+        source={require('../../../assets/animations/Girl Reading.json')}
+        autoPlay
+        loop
+        renderMode="SOFTWARE"
+        style={styles.lottieThumb}
+      />
+    </View>
+  );
+}
+
+export function FocusGirlReading2Preview() {
+  const colors = useColors();
+  return (
+    <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
+      <LottieView
+        source={require('../../../assets/animations/Girl Reading 2.json')}
+        autoPlay
+        loop
+        renderMode="SOFTWARE"
+        style={styles.lottieThumb}
+      />
+    </View>
+  );
+}
+
+export function FocusStudyBoyPreview() {
+  const colors = useColors();
+  return (
+    <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
+      <LottieView
+        source={require('../../../assets/animations/Study boy.json')}
+        autoPlay
+        loop
+        renderMode="SOFTWARE"
+        style={styles.lottieThumb}
+      />
+    </View>
+  );
+}
+
+export function FocusStudyGirlPreview() {
+  const colors = useColors();
+  return (
+    <View style={[styles.previewContainer, { backgroundColor: colors.surfaceVariant }]}>
+      <LottieView
+        source={require('../../../assets/animations/Study girl.json')}
         autoPlay
         loop
         renderMode="SOFTWARE"
