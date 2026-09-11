@@ -4,7 +4,7 @@
  * Kullanıcı oturum açmışsa alt sekmeler gösterilir,
  * oturum yoksa kimlik doğrulama akışı gösterilir.
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
 import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
@@ -107,25 +107,22 @@ function MainTabs() {
   );
 }
 
+const subscribeToHydration = (callback: () => void) => {
+  return useSettingsStore.persist.onFinishHydration(callback);
+};
+const getHydrationSnapshot = () => useSettingsStore.persist.hasHydrated();
+
 export function RootNavigator() {
   const user = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
   const hasSeenOnboarding = useSettingsStore((state) => state.hasSeenOnboarding);
   const setHasSeenOnboarding = useSettingsStore((state) => state.setHasSeenOnboarding);
 
-  const [hasHydratedSettings, setHasHydratedSettings] = React.useState(() =>
-    useSettingsStore.persist.hasHydrated()
+  const hasHydratedSettings = useSyncExternalStore(
+    subscribeToHydration,
+    getHydrationSnapshot,
+    () => false
   );
-
-  useEffect(() => {
-    const unsub = useSettingsStore.persist.onFinishHydration(() => {
-      setHasHydratedSettings(true);
-    });
-    setHasHydratedSettings(useSettingsStore.persist.hasHydrated());
-    return () => {
-      unsub();
-    };
-  }, []);
 
   useEffect(() => {
     let isMounted = true;

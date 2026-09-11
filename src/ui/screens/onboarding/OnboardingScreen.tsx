@@ -15,7 +15,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColors, useTheme } from '../../theme';
-import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { radius } from '../../theme/radius';
 import { useTranslation } from '../../../i18n';
@@ -34,7 +33,7 @@ interface SlideData {
 }
 
 export function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { theme } = useTheme();
